@@ -1,0 +1,14 @@
+[
+  {"trigger":{"url-filter":"^https?://([^/:]*\\.)?doubleclick\\.net[:/]","url-filter-is-case-sensitive":false,"load-type":["third-party"]},"action":{"type":"block"}},
+  {"trigger":{"url-filter":"^https?://([^/:]*\\.)?googlesyndication\\.com[:/]","url-filter-is-case-sensitive":false,"load-type":["third-party"]},"action":{"type":"block"}},
+  {"trigger":{"url-filter":"^https?://([^/:]*\\.)?googleadservices\\.com[:/]","url-filter-is-case-sensitive":false,"load-type":["third-party"]},"action":{"type":"block"}},
+  {"trigger":{"url-filter":"^https?://([^/:]*\\.)?google-analytics\\.com[:/]","url-filter-is-case-sensitive":false,"load-type":["third-party"]},"action":{"type":"block"}},
+  {"trigger":{"url-filter":"^https?://([^/:]*\\.)?googletagmanager\\.com[:/]","url-filter-is-case-sensitive":false,"load-type":["third-party"]},"action":{"type":"block"}},
+  {"trigger":{"url-filter":"^https?://([^/:]*\\.)?adnxs\\.com[:/]","url-filter-is-case-sensitive":false,"load-type":["third-party"]},"action":{"type":"block"}},
+  {"trigger":{"url-filter":"^https?://([^/:]*\\.)?adsrvr\\.org[:/]","url-filter-is-case-sensitive":false,"load-type":["third-party"]},"action":{"type":"block"}},
+  {"trigger":{"url-filter":"^https?://([^/:]*\\.)?scorecardresearch\\.com[:/]","url-filter-is-case-sensitive":false,"load-type":["third-party"]},"action":{"type":"block"}},
+  {"trigger":{"url-filter":"^https?://([^/:]*\\.)?quantserve\\.com[:/]","url-filter-is-case-sensitive":false,"load-type":["third-party"]},"action":{"type":"block"}},
+  {"trigger":{"url-filter":"^https?://([^/:]*\\.)?criteo\\.com[:/]","url-filter-is-case-sensitive":false,"load-type":["third-party"]},"action":{"type":"block"}},
+  {"trigger":{"url-filter":"^https?://([^/:]*\\.)?taboola\\.com[:/]","url-filter-is-case-sensitive":false,"load-type":["third-party"]},"action":{"type":"block"}},
+  {"trigger":{"url-filter":"^https?://([^/:]*\\.)?outbrain\\.com[:/]","url-filter-is-case-sensitive":false,"load-type":["third-party"]},"action":{"type":"block"}}
+]

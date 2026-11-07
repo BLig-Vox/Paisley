@@ -1,0 +1,10 @@
+/* Hide DuckDuckGo's install/default-search promotion cards, not its search
+ * form, results, or intentional links in the menu. Class hashes may change;
+ * the component name and data-testid prefix identify the promotion UI.
+ * WebKit restricts this sheet to DuckDuckGo's HTTPS top-level documents.
+ * CSS also applies to cards inserted later by the site's JavaScript. */
+section[class*="desktop-homepage-module-"][class*="__ctaSection"],
+[data-testid^="cta-cards-"],
+[data-testid="download-panel"] {
+    display: none !important;
+}

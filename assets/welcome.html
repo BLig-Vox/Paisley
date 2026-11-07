@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+  <title>New tab</title>
+  <style>
+    :root { color-scheme: light dark; font-family: system-ui, sans-serif; color: #243746; background: #eef3f6; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 40px 24px; }
+    main { width: min(100%, 700px); }
+    .brand { display: flex; align-items: center; gap: 12px; font-size: 19px; font-weight: 650; }
+    .mark { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: #166a72; color: #fff; font-family: Georgia, serif; font-size: 26px; }
+    h1 { font-family: Georgia, "Times New Roman", serif; font-size: clamp(52px, 8vw, 88px); font-weight: 400; line-height: 1.12; letter-spacing: -0.04em; margin: 42px 0 22px; }
+    p { max-width: 46ch; font-size: 18px; line-height: 1.65; margin: 0; }
+    .shortcuts { display: flex; flex-wrap: wrap; gap: 16px 30px; margin-top: 52px; padding-top: 24px; border-top: 1px solid #becdd6; }
+    .shortcuts p { font-size: 14px; }
+    kbd { font-family: inherit; font-weight: 650; color: #166a72; margin-right: 8px; }
+    .note { margin-top: 30px; font-size: 13px; color: #526773; }
+    @media (prefers-color-scheme: dark) {
+      :root { color: #edf3f6; background: #243746; }
+      .mark { background: #a5d8d5; color: #243746; }
+      kbd { color: #a5d8d5; }
+      .shortcuts { border-color: #526773; }
+      .note { color: #bdcdd5; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="brand"><span class="mark" aria-hidden="true">b</span> Browny</div>
+    <h1>Hello, world!</h1>
+    <p>A new tab. An open web. Enter a website or a search in the address bar to get started.</p>
+    <div class="shortcuts" aria-label="Keyboard shortcuts">
+      <p><kbd>Ctrl + L</kbd> Address bar</p>
+      <p><kbd>Ctrl + T</kbd> New tab</p>
+      <p><kbd>Ctrl + W</kbd> Close tab</p>
+    </div>
+    <p class="note">Searches use DuckDuckGo. Cookies and site data last only for this browser session.</p>
+  </main>
+</body>
+</html>

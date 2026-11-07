@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Browny
+Comment=Linux-first multi-tab web browser
+Exec=browny
+Icon=web-browser
+Terminal=false
+Categories=Network;WebBrowser;
+StartupNotify=true
