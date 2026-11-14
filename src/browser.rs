@@ -86,11 +86,11 @@ impl Browser {
             .width_chars(40)
             .tooltip_text("Address or DuckDuckGo search (Ctrl+L)")
             .build();
-        let back = icon_button("go-previous-symbolic", "Back (Alt+Left)", "win.back");
-        let forward = icon_button("go-next-symbolic", "Forward (Alt+Right)", "win.forward");
-        let reload = icon_button("view-refresh-symbolic", "Reload (Ctrl+R)", "win.reload");
-        let home = icon_button("go-home-symbolic", "Home", "win.home");
-        let new_tab = icon_button("tab-new-symbolic", "New tab (Ctrl+T)", "win.new-tab");
+        let back = icon_button("lucide-arrow-left-symbolic", "Back (Alt+Left)", "win.back");
+        let forward = icon_button("lucide-arrow-right-symbolic", "Forward (Alt+Right)", "win.forward");
+        let reload = icon_button("lucide-rotate-cw-symbolic", "Reload (Ctrl+R)", "win.reload");
+        let home = icon_button("lucide-house-symbolic", "Home", "win.home");
+        let new_tab = icon_button("lucide-plus-symbolic", "New tab (Ctrl+T)", "win.new-tab");
         let header = gtk::HeaderBar::new();
         header.pack_start(&back);
         header.pack_start(&forward);
@@ -99,12 +99,12 @@ impl Browser {
         header.set_title_widget(Some(&address));
         header.pack_end(&new_tab);
         header.pack_end(&icon_button(
-            "folder-download-symbolic",
+            "lucide-download-symbolic",
             "Downloads (Ctrl+J)",
             "win.downloads",
         ));
         header.pack_end(&icon_button(
-            "applications-engineering-symbolic",
+            "lucide-code-xml-symbolic",
             "Web Inspector / Console (F12)",
             "win.inspector",
         ));
@@ -124,7 +124,7 @@ impl Browser {
         menu.append(Some("Downloads"), Some("win.downloads"));
         menu.append(Some("Web Inspector / Console"), Some("win.inspector"));
         let menu_button = gtk::MenuButton::builder()
-            .icon_name("open-menu-symbolic")
+            .icon_name("lucide-menu-symbolic")
             .menu_model(&menu)
             .tooltip_text("Browny menu")
             .build();
@@ -862,7 +862,7 @@ impl Browser {
             .build();
         let spinner = gtk::Spinner::new();
         spinner.set_visible(false);
-        let close = gtk::Button::from_icon_name("window-close-symbolic");
+        let close = gtk::Button::from_icon_name("lucide-x-symbolic");
         close.add_css_class("flat");
         close.set_tooltip_text(Some("Close tab (Ctrl+W)"));
         let label = gtk::Box::new(gtk::Orientation::Horizontal, 6);
@@ -959,9 +959,9 @@ impl Browser {
         self.forward.set_sensitive(tab.view.can_go_forward());
         let loading = tab.view.is_loading();
         self.reload.set_icon_name(if loading {
-            "process-stop-symbolic"
+            "lucide-square-symbolic"
         } else {
-            "view-refresh-symbolic"
+            "lucide-rotate-cw-symbolic"
         });
         self.reload.set_tooltip_text(Some(if loading {
             "Stop loading (Escape)"
@@ -985,7 +985,7 @@ impl Browser {
             .filter(|_| self.settings.borrow().show_memory)
             .map(|usage| {
                 format!(
-                    " · RAM ≈ {} MiB ({}; {} visible processes{})",
+                    " · Browny ≈ {} MiB ({}; {} processes{})",
                     usage.kib / 1024,
                     usage.metric,
                     usage.processes,
@@ -1026,7 +1026,7 @@ impl Browser {
             }
         );
         self.status.set_text(&status);
-        self.status.set_tooltip_text(Some("Memory covers only the Linux-visible owned process tree. Shared memory is proportionally counted when PSS is readable; RSS is approximate. Sandbox/reparented processes may be missing. Starter blocking rules are not Brave/uBlock-equivalent protection."));
+        self.status.set_tooltip_text(Some("Browny memory is recalculated about every 10 seconds from the Linux-visible process tree. PSS proportionally counts shared pages; if a process PSS cannot be read, that process uses RSS instead, which can overcount shared memory. Sandboxed or reparented processes may be missing, so this is an estimate rather than total system RAM. Starter blocking rules are not Brave/uBlock-equivalent protection."));
     }
 
     fn record_visit(&self, tab: &Tab) {

@@ -67,6 +67,12 @@ fn main() -> gtk::glib::ExitCode {
     let output = std::rc::Rc::clone(&failed);
     app.connect_activate(move |app| {
         if let Some(window) = app.active_window() { window.present(); return; }
+        let display = gtk::gdk::Display::default().expect("GTK display is available after activation");
+        if let Err(error) = fonts_rs_lucide::Lucide::install_icon_theme(&display) {
+            output.set(true);
+            eprintln!("Could not register bundled Lucide icons: {error}");
+            return;
+        }
         match browny::profile::Profile::open(&profile_id, private).and_then(|profile| browser::Browser::with_profile(app, profile)) {
             Ok(browser) => browser.present(),
             Err(error) => {

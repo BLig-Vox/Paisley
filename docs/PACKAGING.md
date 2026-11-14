@@ -6,6 +6,23 @@ The archive contains an explicitly supplied, already-built release executable, a
 
 There is no license choice in `Cargo.toml`; redistribution/release is blocked pending the project owner's license choice, dependency notices and provenance, signing, and update policy. Do not infer a license or treat checksums as signatures.
 
+## Web video playback
+
+WebKitGTK plays HTML5 media through GStreamer plugins provided by the operating system. Available video and audio formats depend on the installed plugins; DRM-protected streams may still be unavailable. The Browny archive does not bundle GStreamer or codecs.
+
+On Ubuntu or Debian, install the common playback plugin sets with:
+
+```sh
+sudo apt install \
+  gstreamer1.0-plugins-base \
+  gstreamer1.0-plugins-good \
+  gstreamer1.0-plugins-bad \
+  gstreamer1.0-plugins-ugly \
+  gstreamer1.0-libav
+```
+
+For diagnostics, install `gstreamer1.0-tools` and inspect available elements with `gst-inspect-1.0`. The tools package is optional and is not required for playback.
+
 ## Build and package locally
 
 From the `Browny/` project directory, build the release binary using the project's locally available Rust toolchain and development libraries:

@@ -67,17 +67,30 @@ pub fn sample(root: u32) -> Option<Usage> {
     if owned.is_empty() {
         return None;
     }
-    let rss: u64 = owned.iter().map(|pid| processes[pid].rss_kib).sum();
-    let pss: Option<u64> = owned.iter().try_fold(0u64, |sum, pid| {
-        let text = std::fs::read_to_string(format!("/proc/{pid}/smaps_rollup")).ok()?;
-        let value: u64 = field(&text, "Pss:")?.parse().ok()?;
-        sum.checked_add(value)
-    });
+    // Keep PSS for each readable process. Falling back to RSS for the whole
+    // tree when one smaps_rollup is inaccessible needlessly double-counts
+    // shared pages for every other process.
+    let mut kib = 0u64;
+    let mut pss_unavailable = false;
+    for pid in &owned {
+        let pss = std::fs::read_to_string(format!("/proc/{pid}/smaps_rollup"))
+            .ok()
+            .and_then(|text| field(&text, "Pss:")?.parse::<u64>().ok());
+        let value = match pss {
+            Some(value) => value,
+            None => {
+                pss_unavailable = true;
+                processes[pid].rss_kib
+            }
+        };
+        kib = kib.checked_add(value)?;
+    }
     Some(Usage {
-        kib: pss.unwrap_or(rss),
+        kib,
         processes: owned.len(),
-        metric: if pss.is_some() { "PSS" } else { "RSS" },
-        // Visible ancestry is not proof of full cgroup/namespace coverage.
+        metric: if pss_unavailable { "PSS/RSS" } else { "PSS" },
+        // Visible ancestry is not proof of full namespace coverage; if any
+        // PSS read failed, the RSS fallback is additionally less precise.
         partial: true,
     })
 }
