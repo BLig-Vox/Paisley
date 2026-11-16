@@ -85,7 +85,7 @@ If the desktop-entry validation utility `desktop-file-validate` is available, va
 desktop-file-validate packaging/site.blig.Paisley.desktop
 ```
 
-The desktop entry launches `paisley` without URL arguments: the current application CLI supports `--profile ID` and `--private`, not a URL positional argument or URL association. It uses the generic `web-browser` icon name.
+The desktop entry launches `paisley` without URL arguments: the current application CLI supports `--profile ID` and `--private`, not a URL positional argument or URL association. It uses the bundled pink Paisley logo (`site.blig.Paisley`). The local packager includes the PNG and uses an absolute icon path so an `/opt` installation does not depend on a system icon search path. After a Cargo or extracted binary install, run `paisley --install-desktop` as your normal desktop user to register the launcher and logo under `$XDG_DATA_HOME` (normally `~/.local/share`). The logo and desktop template are embedded in the executable; no network fetch or source checkout is needed. This command is available starting with the next release.
 
 If YouTube says “Your browser can’t play this video”, check the runtime inside
 its actual desktop environment, not the build host. In the 2026-11-16 Bot Screen

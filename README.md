@@ -1,5 +1,7 @@
 # Paisley
 
+<p align="center"><img src="assets/branding/paisley-logo-stand.png" alt="Paisley logo" width="180"></p>
+
 Formerly Browny. The executable is `paisley`; the Cargo package is `vox-paisley`
 on crates.io. Existing profiles continue to use the `browny` storage
 directories below, so this rename preserves settings, sessions and site data.
@@ -14,8 +16,17 @@ interface and **WebKitGTK** for rendering and JavaScript. Default window:
 ## Install
 
 ```sh
-cargo install vox-paisley --version 0.1.0 --locked
+cargo install --git https://github.com/BLig-Vox/Paisley --locked vox-paisley
+paisley --install-desktop
 ```
+
+The commands above install the current GitHub source. The crates.io 0.1.0 release
+does not yet include desktop integration; it will be included in the next release. For the current
+source checkout, use `cargo install --path . --locked`, then
+`paisley --install-desktop`. It installs the launcher and bundled logo for your
+user, without sudo, and points the launcher at the installed executable. Run it
+again if you move or reinstall the binary in another directory. Cargo alone
+installs the executable; it does not register desktop entries.
 
 The executable is `paisley`. Building requires the Linux development libraries and
 Pango 1.55+ SDK described below. WebKitGTK 6, GTK 4.10+, GStreamer codecs and

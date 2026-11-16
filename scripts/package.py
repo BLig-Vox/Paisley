@@ -60,7 +60,9 @@ def main():
         if desktop.count(b"Exec=paisley\n") != 1:
             raise ValueError("desktop launcher template must have exactly one Exec=paisley")
         desktop = desktop.replace(b"Exec=paisley\n", f"Exec={args.prefix}/bin/paisley\n".encode("ascii"))
+        desktop = desktop.replace(b"Icon=site.blig.Paisley\n", f"Icon={args.prefix}/share/icons/hicolor/256x256/apps/site.blig.Paisley.png\n".encode("ascii"))
         payloads = [
+            (f"{root}/share/icons/hicolor/256x256/apps/site.blig.Paisley.png", read_regular(ROOT / "assets/branding/paisley-logo-stand.png", 4 * 1024 * 1024), 0o644),
             (f"{root}/bin/paisley", read_regular(args.binary, 256 * 1024 * 1024), 0o755),
             (f"{root}/share/applications/site.blig.Paisley.desktop", desktop, 0o644),
             (f"{root}/share/doc/paisley/PACKAGING.md", read_regular(PACKAGING_DOC, 1024 * 1024), 0o644),

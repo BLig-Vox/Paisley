@@ -2,6 +2,7 @@ mod automation_runtime;
 mod blocking;
 mod browser;
 mod browsing_ui;
+mod desktop_install;
 mod download_ui;
 mod downloads;
 mod favicons;
@@ -35,9 +36,18 @@ fn main() -> gtk::glib::ExitCode {
                 }
             },
             "--private" => private = true,
+            "--install-desktop" if std::env::args().len() == 2 => {
+                return match desktop_install::install() {
+                    Ok(()) => gtk::glib::ExitCode::SUCCESS,
+                    Err(error) => {
+                        eprintln!("Could not install desktop launcher: {error}");
+                        gtk::glib::ExitCode::FAILURE
+                    }
+                };
+            }
             "--help" | "-h" => {
                 println!(
-                    "Paisley\nUsage: paisley [--profile ID] [--private]\n       paisley --mcp --allow-origin http://127.0.0.1:PORT\nNormal profiles persist site data and restore tabs. Private windows do not.\nMCP uses a separate isolated ephemeral fixture workspace; requires Wayland, Python 3, bubblewrap, dbus-run-session and WebKitWebDriver."
+                    "Paisley\nUsage: paisley [--profile ID] [--private]\n       paisley --install-desktop\n       paisley --mcp --allow-origin http://127.0.0.1:PORT\nNormal profiles persist site data and restore tabs. Private windows do not.\nMCP uses a separate isolated ephemeral fixture workspace; requires Wayland, Python 3, bubblewrap, dbus-run-session and WebKitWebDriver."
                 );
                 return gtk::glib::ExitCode::SUCCESS;
             }
@@ -79,6 +89,7 @@ fn main() -> gtk::glib::ExitCode {
             eprintln!("Could not register bundled Lucide icons: {error}");
             return;
         }
+        gtk::Window::set_default_icon_name(desktop_install::ICON_NAME);
         crate::download_ui::install_styles(&display);
         match paisley::profile::Profile::open(&profile_id, private).and_then(|profile| browser::Browser::with_profile(app, profile)) {
             Ok(browser) => browser.present(),
