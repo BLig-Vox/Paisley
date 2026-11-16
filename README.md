@@ -82,6 +82,9 @@ in new tabs. This external-link support is newer than the published 0.1.1 crate.
   metadata persists in normal profiles; private records stay in memory. Clearing
   records requires confirmation and never deletes saved files. Files never execute
   or auto-open.
+- **Memory-saving engine policy:** smaller browsing caches, earlier native
+  reclamation and reloaded Back/Forward pages instead of retained page snapshots.
+  See [behavior, tradeoffs and measurements](docs/RAM_EFFICIENCY.md).
 - **Memory sampled about once per second in the window title and visible status bar**, with stale/unavailable readings identified, including Linux-visible
   owned engine subprocesses. PSS is preferred; RSS is an approximate fallback.
   Coverage is explicitly partial, not a measurement of every profile on the host.

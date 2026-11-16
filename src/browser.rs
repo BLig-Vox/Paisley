@@ -1307,7 +1307,7 @@ This describes transport security, not the trustworthiness of the website.",
                     .as_ref()
                     .is_none_or(|(grants, _)| *grants != notification_origins)
                 {
-                    let context = webkit::WebContext::new();
+                    let context = crate::engine_memory::context();
                     let origins: Vec<_> = notification_origins
                         .iter()
                         .map(|uri| webkit::SecurityOrigin::for_uri(uri))
@@ -1332,6 +1332,9 @@ This describes transport security, not the trustworthiness of the website.",
         };
         if let Some(settings) = webkit::prelude::WebViewExt::settings(&view) {
             settings.set_enable_developer_extras(true);
+            // Back/Forward keeps URL history, but not entire prior DOM/JS heaps.
+            // Live tabs remain resident; this does not discard open page state.
+            settings.set_enable_page_cache(false);
             settings.set_media_playback_requires_user_gesture(true);
             settings.set_javascript_can_open_windows_automatically(false);
         }

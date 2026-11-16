@@ -7,6 +7,7 @@ mod desktop_notifications;
 mod download_ui;
 mod downloads;
 mod favicons;
+mod engine_memory;
 mod inspector_dock;
 mod library_ui;
 mod managed_ui;
@@ -99,6 +100,7 @@ fn main() -> gtk::glib::ExitCode {
         std::rc::Weak::<browser::Browser>::new(),
     ));
     let activation_controller = controller.clone();
+    app.connect_startup(|_| engine_memory::configure_network());
     app.connect_activate(move |app| {
         if let Some(window) = app.active_window() { window.present(); return; }
         let display = gtk::gdk::Display::default().expect("GTK display is available after activation");

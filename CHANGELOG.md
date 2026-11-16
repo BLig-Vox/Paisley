@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Smaller WebKit browsing caches, disabled full Back/Forward page snapshots and earlier native cache reclamation, without automatic live-tab discarding.
+
 - Memory counter sampled about once per second, with newest-only delivery, decimal MiB, stale markers and cleared unavailable readings.
 
 - HTTP/HTTPS command-line links and desktop scheme handling, forwarded into new tabs in the running profile.
