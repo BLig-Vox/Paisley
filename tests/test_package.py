@@ -46,6 +46,7 @@ class PackageTests(unittest.TestCase):
                 "opt/paisley/share/applications/site.blig.Paisley.desktop",
                 "opt/paisley/share/doc/paisley/MANIFEST.json",
                 "opt/paisley/share/doc/paisley/PACKAGING.md",
+                "opt/paisley/share/icons/hicolor/256x256/apps/site.blig.Paisley.png",
             ]
             self.assertEqual([item.name for item in members], expected)
             for member in members:
@@ -56,10 +57,12 @@ class PackageTests(unittest.TestCase):
             manifest = json.load(archive.extractfile(members[2]))
             self.assertEqual(binary, self.binary.read_bytes())
             desktop = archive.extractfile(members[1]).read()
-            self.assertIn(b"Exec=/opt/paisley/bin/paisley\n", desktop)
+            self.assertIn(b"Exec=/opt/paisley/bin/paisley %U\n", desktop)
+            self.assertIn(b"Icon=/opt/paisley/share/icons/hicolor/256x256/apps/site.blig.Paisley.png\n", desktop)
             expected_hashes = {
                 "bin/paisley": hashlib.sha256(binary).hexdigest(),
-                "share/applications/site.blig.Paisley.desktop": hashlib.sha256(DESKTOP.read_bytes().replace(b"Exec=paisley\n", b"Exec=/opt/paisley/bin/paisley\n")).hexdigest(),
+                "share/applications/site.blig.Paisley.desktop": hashlib.sha256(desktop).hexdigest(),
+                "share/icons/hicolor/256x256/apps/site.blig.Paisley.png": hashlib.sha256((DESKTOP.parents[1] / "assets/branding/paisley-logo-stand.png").read_bytes()).hexdigest(),
                 "share/doc/paisley/PACKAGING.md": hashlib.sha256((DESKTOP.parents[1] / "docs" / "PACKAGING.md").read_bytes()).hexdigest(),
             }
             self.assertEqual(manifest, {"files": expected_hashes})
@@ -104,12 +107,12 @@ class PackageTests(unittest.TestCase):
         result = self.run_package("--binary", str(fifo))
         self.assertNotEqual(result.returncode, 0)
 
-    def test_desktop_launcher_matches_cli_and_has_no_url_handler(self):
+    def test_desktop_launcher_matches_cli_and_registers_web_urls(self):
         text = DESKTOP.read_text()
-        self.assertIn("Exec=paisley", text)
-        self.assertIn("Icon=web-browser", text)
+        self.assertIn("Exec=paisley %U\n", text)
+        self.assertIn("Icon=site.blig.Paisley\n", text)
         self.assertNotIn("%u", text)
-        self.assertNotIn("MimeType=", text)
+        self.assertIn("MimeType=x-scheme-handler/http;x-scheme-handler/https;", text)
         self.assertIn("Terminal=false", text)
 
 

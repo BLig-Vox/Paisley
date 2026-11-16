@@ -1,0 +1,217 @@
+{
+  "binary": "/home/recruas/Workspace/Alexander Vox/Servo-preview/servo-gtk/target/debug/build/vox-paisley/73c43310f230ba8f/out/cef_native-73c43310f230ba8f",
+  "sha256": "24b039f412db5a3252af76840d639c2011595ba39bc1b6ab9338247fa999dfac",
+  "temporary_no_sandbox": true,
+  "samples": [
+    {
+      "seconds": 0.0,
+      "mib": 3.66,
+      "metric": "PSS",
+      "pids": [
+        12437
+      ],
+      "available_mib": 10270
+    },
+    {
+      "seconds": 0.52,
+      "mib": 424.17,
+      "metric": "PSS",
+      "pids": [
+        12437,
+        12450,
+        12453,
+        12454,
+        12482,
+        12486
+      ],
+      "available_mib": 10175
+    },
+    {
+      "seconds": 1.04,
+      "mib": 663.99,
+      "metric": "PSS",
+      "pids": [
+        12437,
+        12450,
+        12453,
+        12454,
+        12482,
+        12486,
+        12512,
+        12536,
+        12559
+      ],
+      "available_mib": 9708
+    },
+    {
+      "seconds": 1.56,
+      "mib": 691.81,
+      "metric": "PSS",
+      "pids": [
+        12437,
+        12450,
+        12453,
+        12454,
+        12482,
+        12486,
+        12512,
+        12536,
+        12559,
+        12570
+      ],
+      "available_mib": 9523
+    },
+    {
+      "seconds": 2.08,
+      "mib": 691.81,
+      "metric": "PSS",
+      "pids": [
+        12437,
+        12450,
+        12453,
+        12454,
+        12482,
+        12486,
+        12512,
+        12536,
+        12559,
+        12570
+      ],
+      "available_mib": 9473
+    },
+    {
+      "seconds": 2.6,
+      "mib": 691.82,
+      "metric": "PSS",
+      "pids": [
+        12437,
+        12450,
+        12453,
+        12454,
+        12482,
+        12486,
+        12512,
+        12536,
+        12559,
+        12570
+      ],
+      "available_mib": 9424
+    },
+    {
+      "seconds": 3.13,
+      "mib": 691.82,
+      "metric": "PSS",
+      "pids": [
+        12437,
+        12450,
+        12453,
+        12454,
+        12482,
+        12486,
+        12512,
+        12536,
+        12559,
+        12570
+      ],
+      "available_mib": 9369
+    },
+    {
+      "seconds": 3.65,
+      "mib": 703.47,
+      "metric": "PSS+RSS fallback",
+      "pids": [
+        12437,
+        12450,
+        12453,
+        12454,
+        12482,
+        12486,
+        12512,
+        12536,
+        12559,
+        12570,
+        12584
+      ],
+      "available_mib": 9300
+    },
+    {
+      "seconds": 4.17,
+      "mib": 683.83,
+      "metric": "PSS+RSS fallback",
+      "pids": [
+        12437,
+        12450,
+        12453,
+        12454,
+        12482,
+        12486,
+        12512,
+        12536,
+        12559,
+        12570,
+        12584
+      ],
+      "available_mib": 9365
+    },
+    {
+      "seconds": 4.69,
+      "mib": 684.98,
+      "metric": "PSS+RSS fallback",
+      "pids": [
+        12437,
+        12450,
+        12453,
+        12454,
+        12482,
+        12486,
+        12512,
+        12536,
+        12559,
+        12570,
+        12584
+      ],
+      "available_mib": 9354
+    },
+    {
+      "seconds": 5.22,
+      "mib": 684.97,
+      "metric": "PSS+RSS fallback",
+      "pids": [
+        12437,
+        12450,
+        12453,
+        12454,
+        12482,
+        12486,
+        12512,
+        12536,
+        12559,
+        12570,
+        12584
+      ],
+      "available_mib": 9356
+    },
+    {
+      "seconds": 5.74,
+      "mib": 680.35,
+      "metric": "PSS+RSS fallback",
+      "pids": [
+        12437,
+        12450,
+        12453,
+        12454,
+        12482,
+        12486,
+        12512,
+        12559,
+        12584,
+        12595
+      ],
+      "available_mib": 9313
+    }
+  ],
+  "running": false,
+  "owned_processes_after_exit": [],
+  "exit_code": 0,
+  "reason": null
+}

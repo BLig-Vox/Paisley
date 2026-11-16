@@ -10,3 +10,5 @@ pub mod settings_transfer;
 mod transfer_io;
 
 pub mod managed_download;
+
+pub use paisley_engine_transport::residency as tab_residency;

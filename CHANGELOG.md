@@ -1,6 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.2.0-alpha.1 — CEF migration preview
+
+- Optional CEF 156.0.30 backend, one engine per profile, bounded IPC and latest-frame queues.
+- Conservative LRU sleeping of inactive eligible CEF tabs, with active pages, unknown activity, forms and media protected. Production thresholds remain five minutes idle, or thirty seconds under memory pressure.
+- CEF downloads with received/total bytes, pause/resume/cancel, file-type icons and atomic no-overwrite publication; failed/cancelled staging cleanup.
+- Native CEF dialogs, HTTP authentication and file inputs; offscreen dropdown painting; right-side real DevTools.
+- CEF favicon capture, site-data clearing and strict cookie/WebRTC behavior for newly opened tabs.
+- Kernel-enforced 2 GiB build supervisor, regression fixtures and whole-process PSS measurements.
+- WebKitGTK remains the default and prebuilt backend. CEF needs a separate matching runtime; website notifications/permissions, IME, HiDPI and opener-preserving popups are incomplete. Secure non-root CEF deployment has not been validated. See docs/CEF_PRERELEASE.md.
+
+### Shared browser fixes
 
 - Smaller WebKit browsing caches, disabled full Back/Forward page snapshots and earlier native cache reclamation, without automatic live-tab discarding.
 

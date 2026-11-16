@@ -1,0 +1,110 @@
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+[7514:7529:1116/195004.136224:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+[7514:7529:1116/195004.513847:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[7514:7529:1116/195004.513897:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[7514:7529:1116/195004.513914:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[7514:7529:1116/195004.712719:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[7514:7529:1116/195004.712764:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[7514:7514:1116/195004.714554:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.Properties.GetAll: object_path= /org/freedesktop/UPower/devices/DisplayDevice: unknown error type: 
+
+(process:7494): Gtk-CRITICAL **: 19:50:05.658: gtk_widget_measure: assertion 'for_size >= -1' failed
+
+(process:7494): Gtk-WARNING **: 19:50:05.658: gtk_widget_size_allocate(): attempt to allocate GtkImage image 0x562fb74d9f70 with width 0 and height -9
+
+(process:7494): Gtk-CRITICAL **: 19:50:05.658: gtk_widget_measure: assertion 'for_size >= -1' failed
+
+(process:7494): Gtk-WARNING **: 19:50:05.658: gtk_widget_size_allocate(): attempt to allocate GtkImage image 0x562fb74e50b0 with width 0 and height -9
+[7514:7514:1116/195008.724670:ERROR:mojo/public/cpp/bindings/lib/interface_endpoint_client.cc:652] Message 2 rejected by interface blink.mojom.Widget
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+[7810:7826:1116/195010.371852:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[7810:7826:1116/195010.376948:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[7810:7826:1116/195010.377012:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[7810:7826:1116/195010.377041:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[7810:7826:1116/195010.549031:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[7810:7826:1116/195010.549092:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[7810:7810:1116/195010.553745:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.Properties.GetAll: object_path= /org/freedesktop/UPower/devices/DisplayDevice: unknown error type: 
+
+(process:7494): Gtk-CRITICAL **: 19:50:10.789: gtk_widget_measure: assertion 'for_size >= -1' failed
+
+(process:7494): Gtk-WARNING **: 19:50:10.789: gtk_widget_size_allocate(): attempt to allocate GtkImage image 0x562fc087d670 with width 0 and height -9
+
+(process:7494): Gtk-CRITICAL **: 19:50:10.789: gtk_widget_measure: assertion 'for_size >= -1' failed
+
+(process:7494): Gtk-WARNING **: 19:50:10.789: gtk_widget_size_allocate(): attempt to allocate GtkImage image 0x562fc087f600 with width 0 and height -9
+MEMORY STAGE eight resident tabs with 32 MiB each: 1075 MiB 17 processes (PSS)
+MEMORY STAGE after inactive tabs slept: 844 MiB 12 processes (PSS)
+Live tab residency: 5 tabs slept; restore and protected draft passed
+TRANSFER 1 bytes=0 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=0 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=106496 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=204800 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=204800 paused=true complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=204800 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=319488 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=417792 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=520192 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=618496 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=720896 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=819200 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=921600 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=1019904 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=1122304 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=1220608 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=1318912 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=1417216 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=1519616 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=1617920 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=1720320 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=1818624 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=1916928 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=2015232 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=2097152 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=2097152 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=2097152 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=2097152 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=2097152 paused=false complete=true cancelled=false interrupted=false reason=0
+TRANSFER 2 bytes=0 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 2 bytes=70 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 2 bytes=70 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 2 bytes=70 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 2 bytes=70 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 2 bytes=70 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 2 bytes=70 paused=false complete=true cancelled=false interrupted=false reason=0
+TRANSFER 3 bytes=0 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 3 bytes=167 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 3 bytes=167 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 3 bytes=167 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 3 bytes=167 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 3 bytes=167 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 3 bytes=167 paused=false complete=true cancelled=false interrupted=false reason=0
+TRANSFER 4 bytes=0 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 4 bytes=51 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 4 bytes=51 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 4 bytes=51 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 4 bytes=51 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 4 bytes=51 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 4 bytes=51 paused=false complete=true cancelled=false interrupted=false reason=0
+TRANSFER 5 bytes=0 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 5 bytes=599 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 5 bytes=599 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 5 bytes=599 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 5 bytes=599 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 5 bytes=599 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 5 bytes=599 paused=false complete=true cancelled=false interrupted=false reason=0
+Native downloads: authenticated bytes, pause/resume, closed source tab, PNG/ZIP/PDF/TXT and atomic publication passed
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+[8104:8114:1116/195033.275238:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[8104:8114:1116/195033.277297:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[8104:8114:1116/195033.277347:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[8104:8114:1116/195033.277372:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[8104:8114:1116/195033.401130:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[8104:8114:1116/195033.401181:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[8104:8104:1116/195033.405413:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.Properties.GetAll: object_path= /org/freedesktop/UPower/devices/DisplayDevice: unknown error type: 
+[8104:8104:1116/195033.588448:ERROR:mojo/public/cpp/bindings/lib/interface_endpoint_client.cc:652] Message 2 rejected by interface blink.mojom.Widget
+Engine crash recovery: page and profile services reconnected
+Native engine: 12 tab cycles, form retention, cookie sharing and private isolation passed

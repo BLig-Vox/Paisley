@@ -519,6 +519,10 @@ fn build(
             }
         });
     } else {
+        // A sheet may be removed or its owner closed while callbacks still hold
+        // its widgets. Destruction alone is too late to dismiss native consent.
+        let lifetime = handles.lifetime.clone();
+        root.connect_unmap(move |_| lifetime.cancel());
         let lifetime = handles.lifetime.clone();
         root.connect_destroy(move |_| lifetime.cancel());
     }

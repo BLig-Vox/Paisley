@@ -164,7 +164,10 @@ fn build(
             .build(),
     );
     let notes = gtk::Box::new(gtk::Orientation::Vertical, 8);
+    #[cfg(not(feature="cef"))]
     notes.append(&gtk::Label::builder().label("Changes apply to this profile when saved. Existing history is kept when recording is disabled. Strict privacy disables WebRTC and third-party cookies and can affect calls or sign-ins. Private settings remain in memory.").wrap(true).xalign(0.0).build());
+    #[cfg(feature="cef")]
+    notes.append(&gtk::Label::builder().label("Changes apply to this profile when saved. Strict privacy blocks third-party cookies and removes WebRTC APIs from newly opened tabs. Reopen existing tabs after changing strict privacy. Private settings remain in memory.").wrap(true).xalign(0.0).build());
     notes.append(&gtk::Label::builder().label("Import and reset change the draft only. Export saves supported preferences without site URLs or secrets. Exported files remain after a private window closes.").wrap(true).xalign(0.0).build());
     content.append(
         &gtk::Expander::builder()

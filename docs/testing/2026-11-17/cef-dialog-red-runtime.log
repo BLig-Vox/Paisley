@@ -1,0 +1,16 @@
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+[15519:15530:1116/204152.528357:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+[15519:15530:1116/204152.776324:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[15519:15530:1116/204152.776383:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[15519:15530:1116/204152.776443:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[15519:15530:1116/204152.886537:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[15519:15530:1116/204152.886589:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[15519:15519:1116/204152.887682:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.Properties.GetAll: object_path= /org/freedesktop/UPower/devices/DisplayDevice: unknown error type: 
+[15519:15519:1116/204153.345495:ERROR:cef/libcef/browser/javascript_dialog_manager.cc:331] Default dialog implementation requires a parent window handle; canceling the JS dialog
+
+thread 'main' (15504) panicked at tests/../src/cef_browser_tests.rs:23:9:
+timed out: native alert presented in GTK
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

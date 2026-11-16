@@ -231,3 +231,11 @@ License files were taken from the exact downloaded crate sources. Where a crate 
 
 - [Pinned upstream license](https://github.com/smearor/fonts-rs/blob/9dfc3fd4a3f4158df23ca74d0f546ecc9f055ee0/LICENSE)
 - [Pinned upstream license](https://gitlab.gnome.org/World/Rust/webkit6-rs/-/blob/16c6035a19f747322b1814b02ca482e12e23f5fd/LICENSE)
+
+## GTK adapter provenance
+
+The source under `engine/cef-gtk` is adapted from [servo-gtk](https://github.com/nacho/servo-gtk), revision c78c94079337803173fd40e69f5f7cd62347cac7, by Ignacio Casal Quinteiro and contributors, retrieved 2026-11-17. It remains MPL-2.0 with original LICENSE and source notices preserved; see `engine/cef-gtk/UPSTREAM.md`. The Servo renderer is not linked or distributed. The Paisley-owned `engine/transport` crate uses MIT.
+
+## Optional CEF prerelease backend
+
+The CEF feature uses cef-rs 156.6.0+156.0.30 by the tauri-apps contributors (Apache-2.0 OR MIT), https://github.com/tauri-apps/cef-rs. Matching runtime: Chromium Embedded Framework 156.0.30+g6028375+chromium-156.0.8078.96, by Marshall A. Greenblatt and contributors, BSD-3-Clause plus Chromium third-party licenses. Retrieved 2026-11-17 through cef-rs's verified archive downloader (SHA-1 0b4c2189e3b93033bbef13add1a86f66849c1e62). The original CEF copyright/license appears in its include headers; bundled CREDITS.html and the runtime notices must accompany any packaged distribution. The MPL-2.0 GTK adapter retains upstream source notices; its CEF runner is a Paisley addition. No binary distribution has been published by this migration.

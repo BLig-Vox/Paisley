@@ -1,0 +1,44 @@
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+[4266:4281:1116/192410.010743:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[4266:4281:1116/192410.011419:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[4266:4281:1116/192410.011463:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[4266:4281:1116/192410.011490:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[4266:4281:1116/192410.142083:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[4266:4281:1116/192410.142190:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[4266:4266:1116/192410.145387:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.Properties.GetAll: object_path= /org/freedesktop/UPower/devices/DisplayDevice: unknown error type: 
+
+(process:4246): Gtk-CRITICAL **: 19:24:10.737: gtk_widget_measure: assertion 'for_size >= -1' failed
+
+(process:4246): Gtk-WARNING **: 19:24:10.737: gtk_widget_size_allocate(): attempt to allocate GtkImage image 0x55736ab39050 with width 0 and height -9
+
+(process:4246): Gtk-CRITICAL **: 19:24:10.737: gtk_widget_measure: assertion 'for_size >= -1' failed
+
+(process:4246): Gtk-WARNING **: 19:24:10.737: gtk_widget_size_allocate(): attempt to allocate GtkImage image 0x55736ab44190 with width 0 and height -9
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+[4546:4557:1116/192415.307831:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[4546:4557:1116/192415.308651:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[4546:4557:1116/192415.308681:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[4546:4557:1116/192415.308694:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[4546:4557:1116/192415.430527:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[4546:4557:1116/192415.430568:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[4546:4546:1116/192415.433537:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.Properties.GetAll: object_path= /org/freedesktop/UPower/devices/DisplayDevice: unknown error type: 
+
+(process:4246): Gtk-CRITICAL **: 19:24:15.570: gtk_widget_measure: assertion 'for_size >= -1' failed
+
+(process:4246): Gtk-WARNING **: 19:24:15.570: gtk_widget_size_allocate(): attempt to allocate GtkImage image 0x55737356e710 with width 0 and height -9
+
+(process:4246): Gtk-CRITICAL **: 19:24:15.570: gtk_widget_measure: assertion 'for_size >= -1' failed
+
+(process:4246): Gtk-WARNING **: 19:24:15.570: gtk_widget_size_allocate(): attempt to allocate GtkImage image 0x5573735705e0 with width 0 and height -9
+[4546:4546:1116/192415.645769:ERROR:mojo/public/cpp/bindings/lib/interface_endpoint_client.cc:652] Message 2 rejected by interface blink.mojom.Widget
+MEMORY STAGE eight resident tabs with 32 MiB each: 1066 MiB 17 processes (PSS)
+MEMORY STAGE after inactive tabs slept: 837 MiB 12 processes (PSS)
+Live tab residency: 5 tabs slept; restore and protected draft passed
+
+thread 'main' (4246) panicked at tests/../src/cef_browser_tests.rs:23:9:
+timed out: native download paused
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

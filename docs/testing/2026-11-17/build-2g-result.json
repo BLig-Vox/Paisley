@@ -1,0 +1,20 @@
+{
+  "limit_mib": 2048,
+  "swap_limit_mib": 0,
+  "running": false,
+  "command": [
+    "cargo",
+    "rustc",
+    "--no-default-features",
+    "--bin",
+    "paisley",
+    "--",
+    "-C",
+    "linker=/home/recruas/Workspace/Alexander Vox/Browny/target/servo-platform/ubuntu-linker.py"
+  ],
+  "peak_mib": 1794.0,
+  "reason": null,
+  "seconds": 133.0,
+  "exit_code": 0,
+  "memory_events": "low 0\nhigh 2960\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0\n"
+}

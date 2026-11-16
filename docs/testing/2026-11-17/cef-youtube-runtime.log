@@ -1,0 +1,25 @@
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+[2715:2725:1116/184317.353420:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[2715:2725:1116/184317.354036:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[2715:2725:1116/184317.354066:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[2715:2725:1116/184317.354090:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[2715:2725:1116/184317.494069:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[2715:2725:1116/184317.494107:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[2715:2715:1116/184317.496416:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.Properties.GetAll: object_path= /org/freedesktop/UPower/devices/DisplayDevice: unknown error type: 
+
+(process:2678): Gtk-CRITICAL **: 18:43:17.580: gtk_widget_measure: assertion 'for_size >= -1' failed
+
+(process:2678): Gtk-WARNING **: 18:43:17.580: gtk_widget_size_allocate(): attempt to allocate GtkImage image 0x563ef7972380 with width 0 and height -9
+
+(process:2678): Gtk-CRITICAL **: 18:43:17.580: gtk_widget_measure: assertion 'for_size >= -1' failed
+
+(process:2678): Gtk-WARNING **: 18:43:17.580: gtk_widget_size_allocate(): attempt to allocate GtkImage image 0x563ef797d4c0 with width 0 and height -9
+[2748:2748:1116/184323.214190:ERROR:gpu/command_buffer/service/context_group.cc:140] ContextResult::kFatalFailure: WebGL1 blocklisted
+YouTube video probe: {"ad":false,"error":null,"paused":true,"time":0}
+YouTube video probe: {"ad":false,"error":null,"paused":true,"time":0}
+YouTube video probe: {"ad":false,"error":null,"paused":false,"time":0.02322}
+YouTube video probe: {"ad":false,"error":null,"paused":false,"time":4.888815}
+YouTube actual playback verified: true

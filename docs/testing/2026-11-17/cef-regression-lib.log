@@ -1,0 +1,102 @@
+Build cap: 2048 MiB RAM, no swap, one build job
+   Compiling glib v0.22.10
+   Compiling syn v2.0.119
+   Compiling gio v0.22.10
+   Compiling phf_macros v0.14.0
+   Compiling pango v0.22.9
+   Compiling gdk-pixbuf v0.22.0
+   Compiling cairo-rs v0.22.9
+   Compiling gdk4 v0.11.5
+   Compiling graphene-rs v0.22.8
+   Compiling miette-derive v7.6.0
+   Compiling gsk4 v0.11.5
+   Compiling read-fonts v0.45.1
+   Compiling gtk4 v0.11.5
+   Compiling phf v0.14.0
+   Compiling miette v7.6.0
+   Compiling fonts-rs-model v0.5.0
+   Compiling skrifa v0.48.0
+   Compiling fonts-rs-generator v0.5.0
+   Compiling fonts-rs-lucide v0.5.0
+   Compiling soup3 v0.9.0
+   Compiling javascriptcore6 v0.6.0
+   Compiling webkit6 v0.6.1
+   Compiling vox-paisley v0.1.1 (/home/recruas/Workspace/Alexander Vox/Browny)
+    Finished `test` profile [unoptimized] target(s) in 2m 01s
+     Running unittests src/lib.rs (Servo-preview/servo-gtk/target/debug/build/vox-paisley/a13f5299953875a8/out/paisley-a13f5299953875a8)
+
+running 54 tests
+test bookmark_transfer::tests::export_roundtrips_only_bookmarks_without_history_or_timestamps ... ok
+test bookmark_transfer::tests::export_refuses_unsafe_in_memory_records_before_creating_a_file ... ok
+test download_history::tests::records_sanitized_metadata_without_unsafe_urls_or_paths ... ok
+test bookmark_transfer::tests::additive_merge_preserves_current_conflicts_history_and_source_order ... ok
+test library::tests::bookmarks_search_and_removal_preserve_other_records ... ok
+test library::tests::late_titles_update_only_existing_visits_without_reordering ... ok
+test library::tests::records_safe_urls_only_and_sanitizes_titles ... ok
+test download_history::tests::persistence_isolated_private_and_preserves_bad_records ... ok
+test library::tests::persistence_isolated_private_and_corruption_preserving ... ok
+test bookmark_transfer::tests::file_transfer_is_private_regular_bounded_and_never_overwrites ... ok
+test navigation::tests::malformed_addresses_and_control_characters_are_rejected ... ok
+test memory::tests::includes_owned_descendants_once_not_unrelated_engine_processes ... ok
+test navigation::tests::explicit_web_urls_preserve_their_scheme_and_components ... ok
+test navigation::tests::page_navigation_allows_engine_managed_documents ... ok
+test memory::tests::parses_memory_and_parent_without_relying_on_field_order ... ok
+test navigation::tests::home_addresses_resolve_to_duckduckgo ... ok
+test navigation::tests::page_navigation_still_blocks_local_files_and_external_protocols ... ok
+test navigation::tests::public_hostnames_default_to_https ... ok
+test navigation::tests::search_queries_are_encoded_without_injecting_parameters ... ok
+test navigation::tests::unsupported_schemes_are_rejected_instead_of_executed_or_searched ... ok
+test navigation::tests::website_destinations_preserve_the_resolved_url ... ok
+test navigation::tests::loopback_development_addresses_default_to_http ... ok
+test profile::tests::catalog_rejects_invalid_and_symlink_paths ... ok
+test profile::tests::locks_and_releases_independent_profiles ... ok
+test profile::tests::catalog_renames_only_closed_profile_without_changing_data ... ok
+test profile::tests::corruption_and_versions_do_not_overwrite ... ok
+test profile::tests::catalog_rejects_fifo_metadata_without_waiting_for_a_writer ... ok
+test profile::tests::catalog_requires_confirmation_and_exclusive_lock ... ok
+test profile::tests::rejects_invalid_ids ... ok
+test profile::tests::catalog_preserves_bad_metadata_and_private_writes_nothing ... ok
+test profile::tests::private_never_writes ... ok
+test profile::tests::persists_settings_and_filters_session ... ok
+test profile::tests::rejects_symlinks ... ok
+test profile::tests::profile_startup_and_catalog_mutations_respect_maintenance_lock ... ok
+test profile_catalog::tests::deletion_refuses_nested_roots_that_would_remove_another_profile ... ok
+test settings_transfer::tests::import_applies_supported_typed_patch_without_resetting_omitted_fields ... ok
+test settings_transfer::tests::export_omits_homepage_site_exceptions_paths_and_unsupported_agent_option ... ok
+test tab_residency::tests::no_discard_below_target_or_before_idle_grace ... ok
+test settings_transfer::tests::file_export_is_private_no_overwrite_and_import_is_bounded_regular_only ... ok
+test settings_transfer::tests::import_rejects_unknown_future_duplicate_wrong_type_and_oversized_records ... ok
+test settings_transfer::tests::import_validates_homepage_and_exact_bounded_origins ... ok
+test tab_residency::tests::pressure_reclaims_eligible_pages_after_thirty_seconds ... ok
+test tab_residency::tests::ties_are_stable_and_future_activity_is_not_trusted ... ok
+test tab_residency::tests::trims_oldest_idle_pages_to_three ... ok
+test transfer_io::tests::fifo_import_rejects_promptly_without_waiting_for_a_writer ... ok
+test library::tests::bookmark_limit_rejects_without_dropping_existing_entries ... ok
+test tab_residency::tests::protects_active_unknown_dirty_stale_busy_and_non_reloadable ... ok
+test bookmark_transfer::tests::schema_rejects_unsafe_duplicate_unbounded_or_unsupported_data ... ok
+test profile::tests::transient_session_documents_become_payload_free_placeholders ... ok
+test profile_catalog::tests::discovery_and_metadata_are_bounded_and_invalid_names_do_not_write ... ok
+test library::tests::visits_deduplicate_and_bound_old_records ... ok
+test bookmark_transfer::tests::merge_refuses_capacity_without_evicting_existing_records ... ok
+test download_history::tests::evicts_old_terminal_records_and_bounds_serialized_size ... ok
+test library::tests::long_histories_fit_the_state_budget_without_losing_bookmarks ... ok
+
+test result: ok. 54 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.96s
+
+{
+  "limit_mib": 2048,
+  "swap_limit_mib": 0,
+  "running": false,
+  "command": [
+    "cargo",
+    "test",
+    "--manifest-path",
+    "Browny/Cargo.toml",
+    "--lib"
+  ],
+  "peak_mib": 1793.8,
+  "reason": null,
+  "seconds": 125.1,
+  "exit_code": 0,
+  "memory_events": "low 0\nhigh 501\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0\n"
+}

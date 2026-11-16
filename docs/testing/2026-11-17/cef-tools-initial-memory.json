@@ -1,0 +1,94 @@
+{
+  "owned_processes_after_exit": [],
+  "running": false,
+  "exit_code": 0,
+  "reason": null,
+  "samples": [
+    {
+      "seconds": 0.01,
+      "mib": 2.21,
+      "metric": "PSS",
+      "pids": [
+        9153
+      ],
+      "available_mib": 5040
+    },
+    {
+      "seconds": 0.6,
+      "mib": 253.78,
+      "metric": "PSS",
+      "pids": [
+        9153,
+        9169,
+        9173,
+        9180,
+        9181
+      ],
+      "available_mib": 4915
+    },
+    {
+      "seconds": 1.23,
+      "mib": 595.6,
+      "metric": "PSS",
+      "pids": [
+        9153,
+        9169,
+        9173,
+        9180,
+        9181,
+        9220,
+        9223,
+        9243,
+        9269,
+        9271
+      ],
+      "available_mib": 4694
+    },
+    {
+      "seconds": 1.88,
+      "mib": 641.2,
+      "metric": "PSS",
+      "pids": [
+        9153,
+        9169,
+        9173,
+        9180,
+        9181,
+        9220,
+        9223,
+        9243,
+        9269,
+        9271
+      ],
+      "available_mib": 4635
+    },
+    {
+      "seconds": 2.43,
+      "mib": 672.66,
+      "metric": "PSS",
+      "pids": [
+        9153,
+        9169,
+        9173,
+        9180,
+        9181,
+        9220,
+        9223,
+        9243,
+        9269,
+        9271,
+        9293
+      ],
+      "available_mib": 4616
+    },
+    {
+      "seconds": 2.94,
+      "mib": 0.0,
+      "metric": "PSS/RSS",
+      "pids": [
+        9153
+      ],
+      "available_mib": 5004
+    }
+  ]
+}

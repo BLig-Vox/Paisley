@@ -1,0 +1,21 @@
+F.
+======================================================================
+FAIL: test_gio_critical_is_a_runtime_failure (test_native_supervisor.NativeSupervisorTests.test_gio_critical_is_a_runtime_failure)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/recruas/Workspace/Alexander Vox/Browny/tests/test_native_supervisor.py", line 12, in test_gio_critical_is_a_runtime_failure
+    self.assertEqual(module.runtime_criticals("startup\n"+line+"\n"),[line])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [] != ['(process:42): GLib-GIO-CRITICAL: invalid connection']
+
+Second list contains 1 additional elements.
+First extra element 0:
+'(process:42): GLib-GIO-CRITICAL: invalid connection'
+
+- []
++ ['(process:42): GLib-GIO-CRITICAL: invalid connection']
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.001s
+
+FAILED (failures=1)

@@ -9,6 +9,16 @@ use gtk::prelude::*;
 use paisley::download_history::{DownloadHistory, DownloadRecord, Outcome};
 use webkit::prelude::*;
 
+// Diagnostic completion/error snapshots must not grow with session duration.
+fn remember<T>(history: &RefCell<Vec<T>>, value: T) {
+    let mut history = history.borrow_mut();
+    if history.len() >= 200 {
+        let remove = history.len() - 199;
+        history.drain(..remove);
+    }
+    history.push(value);
+}
+
 struct Item {
     row: gtk::Box,
     reveal: gtk::Button,
@@ -33,6 +43,8 @@ struct Item {
 
 pub struct Downloads {
     managed: RefCell<Option<Rc<crate::managed_ui::Manager>>>,
+    #[cfg(feature = "cef")]
+    native: RefCell<Option<Rc<crate::cef_downloads::Manager>>>,
     managed_box: gtk::Box,
     controls: gtk::Box,
     parent: gtk::ApplicationWindow,
@@ -95,6 +107,81 @@ impl Downloads {
             this.refresh_summary();
         }
         this
+    }
+
+    #[cfg(feature = "cef")]
+    pub fn bind_native(self: &Rc<Self>, session: Rc<cef_gtk::ProfileSession>) {
+        let existing = self.native.borrow().clone();
+        let manager = existing.unwrap_or_else(|| {
+            let manager = crate::cef_downloads::Manager::new(&self.parent);
+            self.list.prepend(&manager.widget);
+            let weak = Rc::downgrade(self);
+            manager.on_changed(move || {
+                if let Some(this) = weak.upgrade() {
+                    this.refresh_summary();
+                }
+            });
+            let weak = Rc::downgrade(self);
+            manager.on_record(move |record| {
+                if let Some(this) = weak.upgrade() {
+                    if this.history.borrow_mut().record(
+                        Some(&record.source),
+                        record.destination.as_deref(),
+                        record.outcome,
+                        record.received,
+                        now(),
+                    ) {
+                        this.history_changed();
+                    }
+                    if record.outcome == Outcome::Completed {
+                        if let Some(path) = record.destination {
+                            remember(&this.completed, path);
+                        }
+                    }
+                    if let Some(event) = this.event.borrow().as_ref() {
+                        if record.outcome != Outcome::Cancelled {
+                            event(
+                                if record.outcome == Outcome::Completed {
+                                    "Download complete"
+                                } else {
+                                    "Download interrupted"
+                                },
+                                "See Downloads for details",
+                            );
+                        }
+                    }
+                }
+            });
+            self.native.replace(Some(manager.clone()));
+            manager
+        });
+        manager.bind(session);
+    }
+    #[cfg(feature = "cef")]
+    pub fn native_disconnected(&self) {
+        if let Some(manager) = self.native.borrow().clone() {
+            manager.disconnected();
+        }
+    }
+    #[cfg(feature = "cef")]
+    pub fn native_event(self: &Rc<Self>, event: cef_gtk::proto_ipc::servo_event::Event) {
+        let Some(manager) = self.native.borrow().clone() else {
+            return;
+        };
+        match event {
+            cef_gtk::proto_ipc::servo_event::Event::DownloadStarted(info) => {
+                manager.start(info);
+                self.show();
+            }
+            cef_gtk::proto_ipc::servo_event::Event::DownloadProgress(info) => {
+                manager.progress(info)
+            }
+            _ => {}
+        }
+    }
+    #[cfg(all(test, feature = "cef"))]
+    pub fn native_test_manager(&self) -> Rc<crate::cef_downloads::Manager> {
+        self.native.borrow().clone().unwrap()
     }
 
     pub fn on_event(&self, event: impl Fn(&str, &str) + 'static) {
@@ -233,6 +320,8 @@ impl Downloads {
         let window: gtk::Window = parent.clone().upcast();
         let this = Rc::new_cyclic(|weak| Self {
             managed: RefCell::new(None),
+            #[cfg(feature = "cef")]
+            native: RefCell::new(None),
             managed_box,
             controls,
             parent: parent.clone(),
@@ -297,6 +386,8 @@ impl Downloads {
                     for item in this.items.borrow().iter() {
                         if matches!(item.status.as_str(), "Completed" | "Failed" | "Cancelled") { item.row.set_visible(false); }
                     }
+                    #[cfg(feature="cef")]
+                    if let Some(native)=this.native.borrow().as_ref(){native.clear_completed();}
                     this.render_saved();
                     this.history_changed();
                 }
@@ -518,19 +609,24 @@ impl Downloads {
             })
             .count();
         let saved = self.previous.borrow().len();
+        #[cfg(feature = "cef")]
+        let (native, native_active) = self.native.borrow().as_ref().map_or((0, 0), |m| m.counts());
+        #[cfg(not(feature = "cef"))]
+        let (native, native_active) = (0, 0);
         let (managed, managed_active) = self
             .managed
             .borrow()
             .as_ref()
             .map_or((0, 0), |manager| manager.counts());
-        self.current_heading.set_visible(visible > 0);
+        self.current_heading.set_visible(visible + native > 0);
         self.saved_heading.set_visible(saved > 0);
-        self.empty.set_visible(visible + saved + managed == 0);
+        self.empty
+            .set_visible(visible + native + saved + managed == 0);
         self.summary.set_text(&format!(
             "{} active · {} {}",
-            active + managed_active,
-            visible + saved + managed,
-            if visible + saved + managed == 1 {
+            active + managed_active + native_active,
+            visible + native + saved + managed,
+            if visible + native + saved + managed == 1 {
                 "file"
             } else {
                 "files"
@@ -546,7 +642,7 @@ impl Downloads {
     pub fn errors(&self) -> Vec<String> {
         self.errors.borrow().clone()
     }
-    #[cfg(test)]
+    #[cfg(any(test, feature = "cef"))]
     pub fn active_count(&self) -> usize {
         self.items
             .borrow()
@@ -558,6 +654,11 @@ impl Downloads {
                 )
             })
             .count()
+            + self
+                .managed
+                .borrow()
+                .as_ref()
+                .map_or(0, |manager| manager.counts().1)
     }
 
     fn prepare(self: &Rc<Self>, download: &webkit::Download) -> (usize, String) {
@@ -936,7 +1037,7 @@ impl Downloads {
         item.progress.set_visible(false);
         item.cancel.set_visible(false);
         if let Some(path) = &item.path {
-            self.completed.borrow_mut().push(path.clone());
+            remember(&self.completed, path.clone());
         }
         drop(items);
         self.record_terminal(index, Outcome::Completed);
@@ -948,7 +1049,7 @@ impl Downloads {
         if matches!(item.status.as_str(), "Failed" | "Cancelled" | "Completed") {
             return;
         }
-        self.errors.borrow_mut().push(message.clone());
+        remember(&self.errors, message.clone());
         item.status = "Failed".into();
         item.status_cell.set_text("Failed");
         item.date_cell.set_text(&crate::download_ui::date(now()));
@@ -971,6 +1072,10 @@ impl Downloads {
     }
 
     pub fn shutdown(&self) {
+        #[cfg(feature = "cef")]
+        if let Some(native) = self.native.borrow().as_ref() {
+            native.shutdown();
+        }
         if let Some(managed) = self.managed.borrow().as_ref() {
             managed.shutdown();
         }
@@ -1034,9 +1139,7 @@ impl Downloads {
             // The session's download-started/decide-destination path owns the
             // replacement item. Starting it here would create two choosers.
             if download.is_none() {
-                self.errors
-                    .borrow_mut()
-                    .push("Could not restart this download.".into());
+                remember(&self.errors, "Could not restart this download.".into());
             }
         }
     }
@@ -1075,7 +1178,7 @@ fn checked_reveal_path(path: &Path) -> Result<PathBuf, String> {
     Ok(path.to_path_buf())
 }
 
-fn safe_basename(name: &str) -> String {
+pub(crate) fn safe_basename(name: &str) -> String {
     let leaf = Path::new(name)
         .file_name()
         .and_then(|n| n.to_str())
@@ -1093,7 +1196,7 @@ fn safe_basename(name: &str) -> String {
     }
 }
 
-fn fresh_file_path(directory: &Path, name: &str) -> Result<PathBuf, String> {
+pub(crate) fn fresh_file_path(directory: &Path, name: &str) -> Result<PathBuf, String> {
     let root = fs::canonicalize(directory)
         .map_err(|e| format!("Download directory is unavailable: {e}"))?;
     if !root.is_dir() {
@@ -1115,7 +1218,7 @@ fn fresh_file_path(directory: &Path, name: &str) -> Result<PathBuf, String> {
     Err("Could not find an unused download directory.".into())
 }
 
-fn canonical_destination(path: &Path) -> Result<PathBuf, String> {
+pub(crate) fn canonical_destination(path: &Path) -> Result<PathBuf, String> {
     let parent = path
         .parent()
         .ok_or_else(|| "The selected destination has no parent directory.".to_owned())?;
@@ -1130,7 +1233,7 @@ fn canonical_destination(path: &Path) -> Result<PathBuf, String> {
     Ok(canonical_parent.join(name))
 }
 
-fn ensure_destination_is_fresh(path: &Path) -> Result<(), String> {
+pub(crate) fn ensure_destination_is_fresh(path: &Path) -> Result<(), String> {
     match fs::symlink_metadata(path) {
         Ok(_) => Err("That destination already exists; choose a new filename.".into()),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
@@ -1153,7 +1256,7 @@ fn unique_name(name: &str, suffix: u32) -> String {
     }
 }
 
-fn format_size(bytes: u64) -> String {
+pub(crate) fn format_size(bytes: u64) -> String {
     const UNITS: [&str; 5] = ["B", "KB", "MB", "GB", "TB"];
     let mut amount = bytes as f64;
     let mut unit = 0;
@@ -1272,12 +1375,37 @@ mod tests {
     }
 
     #[test]
+    fn diagnostic_history_retains_only_the_latest_200_entries() {
+        let history = std::cell::RefCell::new(Vec::new());
+        for value in 0..10000 {super::remember(&history, value);}
+        let history = history.borrow();
+        assert_eq!(history.len(), 200);
+        assert_eq!(history.first(), Some(&9800));
+        assert_eq!(history.last(), Some(&9999));
+    }
+
+    #[test]
+    fn discarded_native_download_removes_only_its_staging_files() {
+        let directory = temp_dir();
+        let destination = directory.join("report.txt");
+        fs::write(&destination, "existing download").unwrap();
+        let partial = super::native_partial(&destination).unwrap();
+        fs::write(&partial, "unfinished bytes").unwrap();
+        super::discard_native(&partial);
+        assert!(!partial.exists());
+        assert!(!partial.parent().unwrap().exists());
+        assert_eq!(fs::read_to_string(&destination).unwrap(), "existing download");
+        super::discard_native(&partial); // Repeated terminal events are harmless.
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[test]
     fn duplicate_name_preserves_extension() {
         assert_eq!(unique_name("archive.tar.gz", 2), "archive.tar (2).gz");
     }
 }
 
-fn native_partial(destination: &Path) -> Result<PathBuf, String> {
+pub(crate) fn native_partial(destination: &Path) -> Result<PathBuf, String> {
     use std::os::unix::fs::DirBuilderExt;
     let parent = destination.parent().ok_or("Missing download parent")?;
     let stamp = std::time::SystemTime::now()
@@ -1294,7 +1422,7 @@ fn native_partial(destination: &Path) -> Result<PathBuf, String> {
         .map_err(|e| format!("Cannot stage download: {e}"))?;
     Ok(directory.join("payload.part"))
 }
-fn publish_native(partial: &Path, destination: &Path) -> Result<(), String> {
+pub(crate) fn publish_native(partial: &Path, destination: &Path) -> Result<(), String> {
     use std::os::unix::fs::OpenOptionsExt;
     let file = std::fs::OpenOptions::new()
         .read(true)
@@ -1316,4 +1444,13 @@ fn publish_native(partial: &Path, destination: &Path) -> Result<(), String> {
         let _ = std::fs::remove_dir(directory);
     }
     Ok(())
+}
+
+/// Remove only the private leaf and empty directory allocated by native_partial.
+/// Never recursively delete a download directory or the selected destination.
+pub(crate) fn discard_native(partial: &Path) {
+    let _ = std::fs::remove_file(partial);
+    if let Some(directory) = partial.parent() {
+        let _ = std::fs::remove_dir(directory);
+    }
 }

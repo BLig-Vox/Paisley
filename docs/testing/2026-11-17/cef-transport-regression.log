@@ -1,0 +1,45 @@
+Build cap: 2048 MiB RAM, no swap, one build job
+   Compiling futures-core v0.3.34
+   Compiling async-channel v2.5.0
+   Compiling paisley-engine-transport v0.1.0 (/home/recruas/Workspace/Alexander Vox/Browny/engine/transport)
+    Finished `test` profile [unoptimized] target(s) in 0.98s
+     Running unittests src/lib.rs (Servo-preview/servo-gtk/target/debug/build/paisley-engine-transport/b4d21f3f22c66079/out/paisley_engine_transport-b4d21f3f22c66079)
+
+running 12 tests
+test mailbox::tests::controls_have_a_total_byte_budget_and_close_releases_everything ... ok
+test residency::tests::no_discard_below_target_or_before_idle_grace ... ok
+test residency::tests::pressure_reclaims_eligible_pages_after_thirty_seconds ... ok
+test residency::tests::protects_active_unknown_dirty_stale_busy_and_non_reloadable ... ok
+test residency::tests::ties_are_stable_and_future_activity_is_not_trusted ... ok
+test residency::tests::trims_oldest_idle_pages_to_three ... ok
+test tests::busy_ui_applies_backpressure_instead_of_accumulating_frames ... ok
+test tests::malformed_pixel_lengths_and_dimensions_are_rejected ... ok
+test tests::oversized_packets_are_rejected_before_allocating ... ok
+test tests::tracker_filter_respects_domain_boundaries_and_first_party ... ok
+test tests::input_queue_is_bounded_without_spawning_waiting_tasks ... ok
+test mailbox::tests::frames_replace_without_losing_ordered_control_events ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests paisley_engine_transport
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+{
+  "limit_mib": 2048,
+  "swap_limit_mib": 0,
+  "running": false,
+  "command": [
+    "cargo",
+    "test",
+    "--manifest-path",
+    "Browny/engine/transport/Cargo.toml"
+  ],
+  "peak_mib": 109.56,
+  "reason": null,
+  "seconds": 1.3,
+  "exit_code": 0,
+  "memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0\n"
+}

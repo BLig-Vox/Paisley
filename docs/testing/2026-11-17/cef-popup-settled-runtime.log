@@ -1,0 +1,210 @@
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+[20425:20436:1116/211402.249336:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+[20425:20436:1116/211402.435554:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[20425:20436:1116/211402.435596:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[20425:20436:1116/211402.435618:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[20425:20436:1116/211402.518229:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[20425:20436:1116/211402.518275:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[20425:20425:1116/211402.520159:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.Properties.GetAll: object_path= /org/freedesktop/UPower/devices/DisplayDevice: unknown error type: 
+
+(process:20409): Gtk-CRITICAL **: 21:14:02.612: gtk_widget_measure: assertion 'for_size >= -1' failed
+
+(process:20409): Gtk-WARNING **: 21:14:02.612: gtk_widget_size_allocate(): attempt to allocate GtkImage image 0x55dd12b513a0 with width 0 and height -9
+
+(process:20409): Gtk-CRITICAL **: 21:14:02.612: gtk_widget_measure: assertion 'for_size >= -1' failed
+
+(process:20409): Gtk-WARNING **: 21:14:02.612: gtk_widget_size_allocate(): attempt to allocate GtkImage image 0x55dd12b5c4d0 with width 0 and height -9
+POPUP native show 1
+POPUP native size Some(Rect { x: 20, y: 60, width: 300, height: 80 })
+POPUP ui state PopupState { serial: 1, x: 0, y: 0, visible: true }
+POPUP ui state PopupState { serial: 1, x: 20, y: 60, visible: true }
+POPUP native paint 300x80
+POPUP ui frame serial 1
+POPUP native paint 300x80
+POPUP ui frame serial 1
+POPUP native show 0
+POPUP ui state PopupState { serial: 2, x: 20, y: 60, visible: false }
+POPUP native show 1
+POPUP native size Some(Rect { x: 20, y: 60, width: 300, height: 80 })
+POPUP ui state PopupState { serial: 3, x: 20, y: 60, visible: true }
+POPUP ui state PopupState { serial: 3, x: 20, y: 60, visible: true }
+POPUP native paint 300x80
+POPUP ui frame serial 3
+POPUP native show 0
+POPUP ui state PopupState { serial: 4, x: 20, y: 60, visible: false }
+POPUP native show 1
+POPUP native size Some(Rect { x: 20, y: 60, width: 300, height: 80 })
+POPUP ui state PopupState { serial: 5, x: 20, y: 60, visible: true }
+POPUP ui state PopupState { serial: 5, x: 20, y: 60, visible: true }
+POPUP native paint 300x80
+POPUP ui frame serial 5
+POPUP native paint 300x80
+POPUP native show 0
+POPUP ui frame serial 5
+POPUP ui state PopupState { serial: 6, x: 20, y: 60, visible: false }
+POPUP native show 1
+POPUP native size Some(Rect { x: 20, y: 60, width: 300, height: 80 })
+POPUP ui state PopupState { serial: 7, x: 20, y: 60, visible: true }
+POPUP ui state PopupState { serial: 7, x: 20, y: 60, visible: true }
+POPUP native paint 300x80
+POPUP ui frame serial 7
+POPUP native paint 300x80
+POPUP ui frame serial 7
+POPUP native show 0
+POPUP ui state PopupState { serial: 8, x: 20, y: 60, visible: false }
+POPUP native show 1
+POPUP native size Some(Rect { x: 20, y: 60, width: 300, height: 80 })
+POPUP ui state PopupState { serial: 9, x: 20, y: 60, visible: true }
+POPUP ui state PopupState { serial: 9, x: 20, y: 60, visible: true }
+POPUP native paint 300x80
+POPUP ui frame serial 9
+POPUP native paint 300x80
+POPUP ui frame serial 9
+POPUP native show 0
+POPUP ui state PopupState { serial: 10, x: 20, y: 60, visible: false }
+POPUP native show 1
+POPUP native size Some(Rect { x: 20, y: 60, width: 300, height: 80 })
+POPUP ui state PopupState { serial: 11, x: 20, y: 60, visible: true }
+POPUP ui state PopupState { serial: 11, x: 20, y: 60, visible: true }
+POPUP native paint 300x80
+POPUP ui frame serial 11
+POPUP native show 0
+POPUP ui state PopupState { serial: 12, x: 20, y: 60, visible: false }
+POPUP native show 1
+POPUP native size Some(Rect { x: 20, y: 60, width: 300, height: 80 })
+POPUP ui state PopupState { serial: 13, x: 20, y: 60, visible: true }
+POPUP ui state PopupState { serial: 13, x: 20, y: 60, visible: true }
+POPUP native paint 300x80
+POPUP ui frame serial 13
+POPUP native show 0
+POPUP ui state PopupState { serial: 14, x: 20, y: 60, visible: false }
+POPUP native show 1
+POPUP native size Some(Rect { x: 20, y: 60, width: 300, height: 80 })
+POPUP ui state PopupState { serial: 15, x: 20, y: 60, visible: true }
+POPUP ui state PopupState { serial: 15, x: 20, y: 60, visible: true }
+POPUP native paint 300x80
+POPUP ui frame serial 15
+POPUP native show 0
+POPUP ui state PopupState { serial: 16, x: 20, y: 60, visible: false }
+POPUP native show 1
+POPUP native size Some(Rect { x: 20, y: 60, width: 300, height: 80 })
+POPUP ui state PopupState { serial: 17, x: 20, y: 60, visible: true }
+POPUP ui state PopupState { serial: 17, x: 20, y: 60, visible: true }
+POPUP native paint 300x80
+POPUP ui frame serial 17
+POPUP native paint 300x80
+POPUP ui frame serial 17
+POPUP native show 0
+POPUP ui state PopupState { serial: 18, x: 20, y: 60, visible: false }
+POPUP native show 1
+POPUP native size Some(Rect { x: 20, y: 60, width: 300, height: 80 })
+POPUP ui state PopupState { serial: 19, x: 20, y: 60, visible: true }
+POPUP ui state PopupState { serial: 19, x: 20, y: 60, visible: true }
+POPUP native paint 300x80
+POPUP ui frame serial 19
+POPUP native paint 300x80
+POPUP ui frame serial 19
+POPUP native show 0
+POPUP ui state PopupState { serial: 20, x: 20, y: 60, visible: false }
+POPUP native show 1
+POPUP native size Some(Rect { x: 20, y: 60, width: 300, height: 80 })
+POPUP ui state PopupState { serial: 21, x: 20, y: 60, visible: true }
+POPUP ui state PopupState { serial: 21, x: 20, y: 60, visible: true }
+POPUP native paint 300x80
+POPUP ui frame serial 21
+POPUP native show 0
+POPUP ui state PopupState { serial: 22, x: 20, y: 60, visible: false }
+POPUP native show 1
+POPUP native size Some(Rect { x: 20, y: 60, width: 300, height: 80 })
+POPUP ui state PopupState { serial: 23, x: 20, y: 60, visible: true }
+POPUP ui state PopupState { serial: 23, x: 20, y: 60, visible: true }
+POPUP native paint 300x80
+POPUP ui frame serial 23
+POPUP native paint 300x80
+POPUP ui frame serial 23
+POPUP native show 0
+POPUP ui state PopupState { serial: 24, x: 20, y: 60, visible: false }
+POPUP native show 1
+POPUP native size Some(Rect { x: 20, y: 60, width: 300, height: 80 })
+POPUP ui state PopupState { serial: 25, x: 20, y: 60, visible: true }
+POPUP ui state PopupState { serial: 25, x: 20, y: 60, visible: true }
+POPUP native paint 300x80
+POPUP ui frame serial 25
+POPUP native paint 300x80
+POPUP ui frame serial 25
+POPUP native show 0
+POPUP ui state PopupState { serial: 26, x: 20, y: 60, visible: false }
+POPUP native show 1
+POPUP native size Some(Rect { x: 20, y: 60, width: 300, height: 80 })
+POPUP ui state PopupState { serial: 27, x: 20, y: 60, visible: true }
+POPUP ui state PopupState { serial: 27, x: 20, y: 60, visible: true }
+POPUP native paint 300x80
+POPUP ui frame serial 27
+POPUP native show 0
+POPUP ui state PopupState { serial: 28, x: 20, y: 60, visible: false }
+POPUP native show 1
+POPUP native size Some(Rect { x: 20, y: 60, width: 300, height: 80 })
+POPUP ui state PopupState { serial: 29, x: 20, y: 60, visible: true }
+POPUP ui state PopupState { serial: 29, x: 20, y: 60, visible: true }
+POPUP native paint 300x80
+POPUP ui frame serial 29
+POPUP native show 0
+POPUP ui state PopupState { serial: 30, x: 20, y: 60, visible: false }
+POPUP native show 1
+POPUP native size Some(Rect { x: 20, y: 60, width: 300, height: 80 })
+POPUP ui state PopupState { serial: 31, x: 20, y: 60, visible: true }
+POPUP ui state PopupState { serial: 31, x: 20, y: 60, visible: true }
+POPUP native paint 300x80
+POPUP ui frame serial 31
+POPUP native show 0
+POPUP ui state PopupState { serial: 32, x: 20, y: 60, visible: false }
+POPUP native show 1
+POPUP native size Some(Rect { x: 20, y: 60, width: 300, height: 80 })
+POPUP ui state PopupState { serial: 33, x: 20, y: 60, visible: true }
+POPUP ui state PopupState { serial: 33, x: 20, y: 60, visible: true }
+POPUP native paint 300x80
+POPUP ui frame serial 33
+POPUP native show 0
+POPUP ui state PopupState { serial: 34, x: 20, y: 60, visible: false }
+POPUP native show 1
+POPUP native size Some(Rect { x: 20, y: 60, width: 300, height: 80 })
+POPUP ui state PopupState { serial: 35, x: 20, y: 60, visible: true }
+POPUP ui state PopupState { serial: 35, x: 20, y: 60, visible: true }
+POPUP native paint 300x80
+POPUP ui frame serial 35
+POPUP native show 0
+POPUP ui state PopupState { serial: 36, x: 20, y: 60, visible: false }
+POPUP native show 1
+POPUP native size Some(Rect { x: 20, y: 60, width: 300, height: 80 })
+POPUP ui state PopupState { serial: 37, x: 20, y: 60, visible: true }
+POPUP ui state PopupState { serial: 37, x: 20, y: 60, visible: true }
+POPUP native paint 300x80
+POPUP ui frame serial 37
+POPUP native paint 300x80
+POPUP ui frame serial 37
+POPUP native show 0
+POPUP ui state PopupState { serial: 38, x: 20, y: 60, visible: false }
+POPUP native show 1
+POPUP native size Some(Rect { x: 20, y: 60, width: 300, height: 80 })
+POPUP ui state PopupState { serial: 39, x: 20, y: 60, visible: true }
+POPUP ui state PopupState { serial: 39, x: 20, y: 60, visible: true }
+POPUP native paint 300x80
+POPUP ui frame serial 39
+POPUP native paint 300x80
+POPUP ui frame serial 39
+POPUP native show 0
+POPUP ui state PopupState { serial: 40, x: 20, y: 60, visible: false }
+POPUP native show 1
+POPUP native size Some(Rect { x: 20, y: 60, width: 300, height: 80 })
+POPUP ui state PopupState { serial: 41, x: 20, y: 60, visible: true }
+POPUP ui state PopupState { serial: 41, x: 20, y: 60, visible: true }
+POPUP native paint 300x80
+POPUP ui frame serial 41
+POPUP native paint 300x80
+POPUP ui frame serial 41
+POPUP native show 0
+POPUP ui state PopupState { serial: 42, x: 20, y: 60, visible: false }
+CEF select popup: painted, Unicode option selected and 20 reopen/dismiss cycles passed

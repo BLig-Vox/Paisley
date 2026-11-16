@@ -1,0 +1,16 @@
+{
+  "limit_mib": 2048,
+  "swap_limit_mib": 0,
+  "running": false,
+  "command": [
+    "cargo",
+    "test",
+    "--manifest-path",
+    "Browny/engine/transport/Cargo.toml"
+  ],
+  "peak_mib": 109.56,
+  "reason": null,
+  "seconds": 1.3,
+  "exit_code": 0,
+  "memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0\n"
+}

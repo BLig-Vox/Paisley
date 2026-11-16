@@ -1,0 +1,12 @@
+[package]
+name = "paisley-engine-transport"
+version = "0.1.0-alpha.1"
+edition = "2024"
+license = "MIT"
+description = "Bounded process transport and inactive-tab residency policy for Paisley"
+repository = "https://github.com/BLig-Vox/Paisley"
+readme = "README.md"
+include = ["src/**", "Cargo.toml", "LICENSE", "README.md"]
+
+[dependencies]
+async-channel = "2.5"

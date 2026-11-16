@@ -1,0 +1,15 @@
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+[19416:19427:1116/210350.128636:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+[19416:19427:1116/210350.285434:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[19416:19427:1116/210350.285479:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[19416:19427:1116/210350.285502:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[19416:19427:1116/210350.351227:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[19416:19427:1116/210350.351267:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[19416:19416:1116/210350.353089:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.Properties.GetAll: object_path= /org/freedesktop/UPower/devices/DisplayDevice: unknown error type: 
+FILE_CHOOSER_READY select tests/fixtures/downloads/sample.txt on Bot Screen
+
+(process:19401): Gtk-WARNING **: 21:04:00.614: Attempting to add 'file:///home/recruas/Workspace/Alexander%20Vox/Browny/tests/fixtures/downloads/sample.txt' to the list of recently used resources, but no name of the application that is registering it was defined
+CEF file chooser: actual file input, selected text bytes and owner cancellation passed

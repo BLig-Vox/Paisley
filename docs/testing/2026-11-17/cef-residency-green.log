@@ -1,0 +1,44 @@
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+[3636:3646:1116/185714.982441:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[3636:3646:1116/185714.983977:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[3636:3646:1116/185714.984023:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[3636:3646:1116/185714.984050:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[3636:3646:1116/185715.106048:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[3636:3646:1116/185715.106105:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[3636:3636:1116/185715.109473:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.Properties.GetAll: object_path= /org/freedesktop/UPower/devices/DisplayDevice: unknown error type: 
+
+(process:3599): Gtk-CRITICAL **: 18:57:15.201: gtk_widget_measure: assertion 'for_size >= -1' failed
+
+(process:3599): Gtk-WARNING **: 18:57:15.201: gtk_widget_size_allocate(): attempt to allocate GtkImage image 0x564df14b38b0 with width 0 and height -9
+
+(process:3599): Gtk-CRITICAL **: 18:57:15.201: gtk_widget_measure: assertion 'for_size >= -1' failed
+
+(process:3599): Gtk-WARNING **: 18:57:15.201: gtk_widget_size_allocate(): attempt to allocate GtkImage image 0x564df14be9f0 with width 0 and height -9
+[3636:3636:1116/185715.276943:ERROR:mojo/public/cpp/bindings/lib/interface_endpoint_client.cc:652] Message 2 rejected by interface blink.mojom.Widget
+[3636:3636:1116/185719.454964:ERROR:mojo/public/cpp/bindings/lib/interface_endpoint_client.cc:652] Message 2 rejected by interface blink.mojom.Widget
+[3907:3917:1116/185719.730223:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+[3907:3917:1116/185720.086252:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[3907:3917:1116/185720.086320:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[3907:3917:1116/185720.086349:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[3907:3917:1116/185720.214957:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[3907:3917:1116/185720.215014:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[3907:3907:1116/185720.218319:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.Properties.GetAll: object_path= /org/freedesktop/UPower/devices/DisplayDevice: unknown error type: 
+
+(process:3599): Gtk-CRITICAL **: 18:57:20.392: gtk_widget_measure: assertion 'for_size >= -1' failed
+
+(process:3599): Gtk-WARNING **: 18:57:20.392: gtk_widget_size_allocate(): attempt to allocate GtkImage image 0x564df9ec8bf0 with width 0 and height -9
+
+(process:3599): Gtk-CRITICAL **: 18:57:20.392: gtk_widget_measure: assertion 'for_size >= -1' failed
+
+(process:3599): Gtk-WARNING **: 18:57:20.392: gtk_widget_size_allocate(): attempt to allocate GtkImage image 0x564df9ec9d50 with width 0 and height -9
+[3636:3636:1116/185721.493279:ERROR:mojo/public/cpp/bindings/lib/interface_endpoint_client.cc:652] Message 6 rejected by interface blink.mojom.WidgetHost
+[3636:3636:1116/185721.493355:ERROR:mojo/public/cpp/bindings/lib/interface_endpoint_client.cc:652] Message 7 rejected by interface blink.mojom.WidgetHost
+MEMORY STAGE eight resident tabs with 32 MiB each: 1094 MiB 17 processes (PSS)
+MEMORY STAGE after inactive tabs slept: 860 MiB 12 processes (PSS)
+Live tab residency: 5 tabs slept; restore and protected draft passed
+Native engine: 12 tab cycles, form retention, cookie sharing and private isolation passed

@@ -4,12 +4,40 @@ use std::rc::Rc;
 use gtk::prelude::*;
 use paisley::navigation;
 use webkit::prelude::*;
+#[cfg(feature = "cef")]
+type View = cef_gtk::WebView;
+#[cfg(not(feature = "cef"))]
+type View = webkit::WebView;
+
+#[cfg(feature = "cef")]
+trait EngineViewBridge {
+    fn inspector(&self) -> Option<webkit::WebInspector> {
+        None
+    }
+    fn estimated_load_progress(&self) -> f64;
+    fn load_uri(&self, uri: &str);
+}
+#[cfg(feature = "cef")]
+impl EngineViewBridge for View {
+    fn estimated_load_progress(&self) -> f64 {
+        if self.is_loading() { 0.1 } else { 1.0 }
+    }
+    fn load_uri(&self, uri: &str) {
+        self.load_url(uri);
+    }
+}
 
 #[derive(Clone)]
 struct Tab {
     id: u64,
+    #[cfg(feature = "cef")]
+    last_used: Rc<Cell<std::time::Instant>>,
+    #[cfg(feature = "cef")]
+    discarded: Rc<Cell<bool>>,
     page: gtk::Box,
-    view: webkit::WebView,
+    #[cfg(feature = "cef")]
+    split: gtk::Paned,
+    view: View,
     title: gtk::Label,
     spinner: gtk::Spinner,
     favicon: gtk::Image,
@@ -32,11 +60,16 @@ pub struct Browser {
     forward: gtk::Button,
     reload: gtk::Button,
     progress: gtk::ProgressBar,
+    #[cfg(not(feature = "cef"))]
     session: webkit::NetworkSession,
     tabs: RefCell<Vec<Tab>>,
     next_id: Cell<u64>,
     memory: RefCell<Option<paisley::memory::Usage>>,
     memory_at: Cell<Option<std::time::Instant>>,
+    #[cfg(feature = "cef")]
+    residency_epoch: Cell<std::time::Instant>,
+    #[cfg(feature = "cef")]
+    last_active_tab: Cell<Option<u64>>,
     profile: std::sync::Arc<paisley::profile::Profile>,
     profile_label: String,
     settings: RefCell<paisley::profile::Settings>,
@@ -52,6 +85,18 @@ pub struct Browser {
     status: gtk::Label,
     notifications: Rc<crate::notifications::Notifications>,
     notification_context: RefCell<Option<(Vec<String>, webkit::WebContext)>>,
+    #[cfg(feature = "cef")]
+    native_session: RefCell<Option<Rc<cef_gtk::ProfileSession>>>,
+    #[cfg(feature = "cef")]
+    native_owner: std::cell::OnceCell<std::rc::Weak<Self>>,
+    #[cfg(feature = "cef")]
+    native_generation: Cell<u64>,
+    #[cfg(feature = "cef")]
+    native_operation: Cell<u64>,
+    #[cfg(feature = "cef")]
+    native_privacy_ready: Cell<Option<bool>>,
+    #[cfg(feature = "cef")]
+    native_stats: Cell<Option<(u32, u64)>>,
 }
 
 impl Browser {
@@ -176,38 +221,42 @@ impl Browser {
         root.append(&status);
         window.set_child(Some(&root));
 
-        let session = if profile.private {
-            webkit::NetworkSession::new_ephemeral()
-        } else {
-            let data = profile.data_dir.join("webkit");
-            let session = webkit::NetworkSession::new(
-                Some(data.to_str().ok_or("Profile data path is not UTF-8")?),
-                Some(
-                    profile
-                        .cache_dir
-                        .to_str()
-                        .ok_or("Profile cache path is not UTF-8")?,
-                ),
-            );
-            if let Some(cookies) = session.cookie_manager() {
-                let path = profile.data_dir.join("cookies.sqlite");
-                cookies.set_persistent_storage(
-                    path.to_str().ok_or("Cookie path is not UTF-8")?,
-                    webkit::CookiePersistentStorage::Sqlite,
+        #[cfg(not(feature = "cef"))]
+        let session = {
+            let session = if profile.private {
+                webkit::NetworkSession::new_ephemeral()
+            } else {
+                let data = profile.data_dir.join("webkit");
+                let session = webkit::NetworkSession::new(
+                    Some(data.to_str().ok_or("Profile data path is not UTF-8")?),
+                    Some(
+                        profile
+                            .cache_dir
+                            .to_str()
+                            .ok_or("Profile cache path is not UTF-8")?,
+                    ),
                 );
+                if let Some(cookies) = session.cookie_manager() {
+                    let path = profile.data_dir.join("cookies.sqlite");
+                    cookies.set_persistent_storage(
+                        path.to_str().ok_or("Cookie path is not UTF-8")?,
+                        webkit::CookiePersistentStorage::Sqlite,
+                    );
+                }
+                session
+            };
+            if let Some(data) = session.website_data_manager() {
+                // WebKit owns icon fetching and the profile/ephemeral cache policy.
+                data.set_favicons_enabled(true);
+            }
+            session.set_itp_enabled(true);
+            if settings.strict_privacy
+                && let Some(cookies) = session.cookie_manager()
+            {
+                cookies.set_accept_policy(webkit::CookieAcceptPolicy::NoThirdParty);
             }
             session
         };
-        if let Some(data) = session.website_data_manager() {
-            // WebKit owns icon fetching and the profile/ephemeral cache policy.
-            data.set_favicons_enabled(true);
-        }
-        session.set_itp_enabled(true);
-        if settings.strict_privacy
-            && let Some(cookies) = session.cookie_manager()
-        {
-            cookies.set_accept_policy(webkit::CookieAcceptPolicy::NoThirdParty);
-        }
         let writer = crate::session_store::SessionWriter::new(std::sync::Arc::clone(&profile));
         let downloads =
             crate::downloads::Downloads::for_profile(&window, download_history, &profile);
@@ -216,10 +265,14 @@ impl Browser {
         }
         let menu = crate::menu_sheet::MenuSheet::new(&window);
         let blocker = crate::blocking::Blocker::new(&profile)?;
+        #[cfg(not(feature = "cef"))]
+        let favicon_database = session
+            .website_data_manager()
+            .and_then(|data| data.favicon_database());
+        #[cfg(feature = "cef")]
+        let favicon_database = None;
         let favicons = crate::favicons::Favicons::new(
-            session
-                .website_data_manager()
-                .and_then(|data| data.favicon_database()),
+            favicon_database,
             (!profile.private).then(|| profile.cache_dir.join("site-icons-v1")),
             library
                 .bookmarks
@@ -243,11 +296,16 @@ impl Browser {
             forward,
             reload,
             progress,
+            #[cfg(not(feature = "cef"))]
             session,
             tabs: RefCell::new(Vec::new()),
             next_id: Cell::new(0),
             memory: RefCell::new(None),
             memory_at: Cell::new(None),
+            #[cfg(feature = "cef")]
+            residency_epoch: Cell::new(std::time::Instant::now()),
+            #[cfg(feature = "cef")]
+            last_active_tab: Cell::new(None),
             profile,
             profile_label,
             settings: RefCell::new(settings),
@@ -263,7 +321,24 @@ impl Browser {
             status,
             notifications,
             notification_context: RefCell::new(None),
+            #[cfg(feature = "cef")]
+            native_session: RefCell::new(None),
+            #[cfg(feature = "cef")]
+            native_owner: std::cell::OnceCell::new(),
+            #[cfg(feature = "cef")]
+            native_generation: Cell::new(0),
+            #[cfg(feature = "cef")]
+            native_operation: Cell::new(0),
+            #[cfg(feature = "cef")]
+            native_privacy_ready: Cell::new(None),
+            #[cfg(feature = "cef")]
+            native_stats: Cell::new(None),
         });
+        #[cfg(feature = "cef")]
+        {
+            browser.native_owner.set(Rc::downgrade(&browser)).unwrap();
+            browser.start_native_session();
+        }
         let weak = Rc::downgrade(&browser);
         browser.notifications.on_open(move || {
             if let Some(browser) = weak.upgrade() {
@@ -338,7 +413,9 @@ impl Browser {
             self.add_tab(None, Some(uri));
         }
         self.window.present();
-        if let Some(tab) = self.active_tab() { tab.view.grab_focus(); }
+        if let Some(tab) = self.active_tab() {
+            tab.view.grab_focus();
+        }
     }
 
     fn snapshot_session(&self) -> paisley::profile::Session {
@@ -378,7 +455,11 @@ impl Browser {
     fn apply_settings(&self) {
         self.notifications
             .set_desktop(self.settings.borrow().desktop_notifications && !self.profile.private);
+        #[cfg(feature = "cef")]
+        self.send_native_privacy();
+        #[cfg(not(feature = "cef"))]
         let strict = self.settings.borrow().strict_privacy;
+        #[cfg(not(feature = "cef"))]
         if let Some(cookies) = self.session.cookie_manager() {
             cookies.set_accept_policy(if strict {
                 webkit::CookieAcceptPolicy::NoThirdParty
@@ -387,6 +468,7 @@ impl Browser {
             });
         }
         for tab in self.tabs.borrow().iter() {
+            #[cfg(not(feature = "cef"))]
             if let Some(settings) = webkit::prelude::WebViewExt::settings(&tab.view) {
                 settings.set_enable_webrtc(!strict);
             }
@@ -407,6 +489,7 @@ impl Browser {
                 .is_some_and(|origin| settings.blocking_exceptions.contains(&origin))
     }
 
+    #[cfg(not(feature = "cef"))]
     fn apply_site_blocking(&self, tab: &Tab, uri: Option<&str>) {
         if let Some(manager) = tab.view.user_content_manager()
             && let Some(filter) = self.blocker.filter()
@@ -418,7 +501,35 @@ impl Browser {
         }
     }
 
+    #[cfg(feature = "cef")]
+    fn apply_site_blocking(&self, tab: &Tab, uri: Option<&str>) {
+        let settings = self.settings.borrow();
+        tab.view.set_blocking(
+            settings.block_trackers,
+            settings.blocking_exceptions.clone(),
+        );
+        let _ = uri;
+    }
+
     fn activate_pending(&self, tab: &Tab) {
+        #[cfg(feature = "cef")]
+        {
+            if let Some(previous) = self
+                .last_active_tab
+                .replace(Some(tab.id))
+                .filter(|id| *id != tab.id)
+            {
+                if let Some(previous) = self.tab(previous) {
+                    previous.last_used.set(std::time::Instant::now());
+                }
+            }
+            tab.last_used.set(std::time::Instant::now());
+            if tab.discarded.replace(false) {
+                if let Some(uri) = tab.view.uri() {
+                    self.load_tab(tab, &uri);
+                }
+            }
+        }
         let pending = self.pending.borrow().get(&tab.id).cloned();
         if let Some(uri) = pending {
             self.load_tab(tab, &uri);
@@ -426,6 +537,12 @@ impl Browser {
     }
 
     fn load_tab(&self, tab: &Tab, uri: &str) {
+        #[cfg(feature = "cef")]
+        {
+            self.start_native_session();
+            tab.discarded.set(false);
+            tab.last_used.set(std::time::Instant::now());
+        }
         if uri == paisley::profile::NON_RESTORABLE_TAB {
             // Metadata sentinel only: never send it or the original transient
             // URL/payload through WebKit, search, network or script execution.
@@ -498,13 +615,62 @@ impl Browser {
         });
     }
 
+    #[cfg(feature = "cef")]
+    fn reclaim_idle_tabs(&self) {
+        let Some(usage) = self.memory.borrow().as_ref().cloned() else {
+            return;
+        };
+        let Some(available) = paisley::memory::available_mib() else {
+            return;
+        };
+        let now = self.residency_epoch.get().elapsed().as_secs();
+        let active = self.active_tab().map(|t| t.id);
+        let tabs = self.tabs.borrow();
+        let candidates: Vec<_> = tabs
+            .iter()
+            .filter(|t| t.view.has_renderer() && !t.discarded.get())
+            .map(|tab| paisley::tab_residency::Tab {
+                id: tab.id,
+                active: active == Some(tab.id),
+                last_used: tab
+                    .last_used
+                    .get()
+                    .checked_duration_since(self.residency_epoch.get())
+                    .unwrap_or_default()
+                    .as_secs(),
+                activity: tab.view.page_activity().map(|(at, protected)| {
+                    (
+                        at.checked_duration_since(self.residency_epoch.get())
+                            .unwrap_or_default()
+                            .as_secs(),
+                        protected,
+                    )
+                }),
+                reloadable: tab.view.uri().is_some_and(|s| {
+                    url::Url::parse(&s).is_ok_and(|u| matches!(u.scheme(), "http" | "https"))
+                }),
+                busy: tab.view.is_loading() || tab.split.end_child().is_some(),
+            })
+            .collect();
+        for id in paisley::tab_residency::victims(&candidates, now, available, usage.kib / 1024) {
+            if let Some(tab) = tabs.iter().find(|t| t.id == id) {
+                tab.discarded.set(true);
+                tab.view.shutdown();
+                tab.title
+                    .set_tooltip_text(Some("Sleeping tab — reloads when selected"));
+            }
+        }
+    }
+
     fn start_memory_monitor(self: &Rc<Self>) {
         // One replaceable slot: a busy UI can never build up old readings.
         let latest = std::sync::Arc::new(std::sync::Mutex::new(None));
         let worker = std::sync::Arc::downgrade(&latest);
         std::thread::spawn(move || {
             loop {
-                let Some(slot) = worker.upgrade() else { break; };
+                let Some(slot) = worker.upgrade() else {
+                    break;
+                };
                 let started = std::time::Instant::now();
                 let usage = paisley::memory::sample(std::process::id());
                 if let Ok(mut latest) = slot.lock() {
@@ -512,7 +678,9 @@ impl Browser {
                 }
                 drop(slot);
                 // /proc work stays off GTK; never overlap sampling passes.
-                std::thread::sleep(std::time::Duration::from_secs(1).saturating_sub(started.elapsed()));
+                std::thread::sleep(
+                    std::time::Duration::from_secs(1).saturating_sub(started.elapsed()),
+                );
             }
         });
         let weak = Rc::downgrade(self);
@@ -520,15 +688,21 @@ impl Browser {
             let Some(browser) = weak.upgrade() else {
                 return gtk::glib::ControlFlow::Break;
             };
-            if browser.closing.get() { return gtk::glib::ControlFlow::Break; }
+            if browser.closing.get() {
+                return gtk::glib::ControlFlow::Break;
+            }
             if let Ok(mut latest) = latest.try_lock()
                 && let Some((usage, sampled_at)) = latest.take()
             {
                 // Clear a failed sample instead of presenting an old number as current.
                 *browser.memory.borrow_mut() = usage;
                 browser.memory_at.set(Some(sampled_at));
+                #[cfg(feature = "cef")]
+                browser.reclaim_idle_tabs();
             }
-            if let Some(tab) = browser.active_tab() { browser.sync_status(&tab); }
+            if let Some(tab) = browser.active_tab() {
+                browser.sync_status(&tab);
+            }
             gtk::glib::ControlFlow::Continue
         });
     }
@@ -753,7 +927,9 @@ impl Browser {
             }
         });
 
+        #[cfg(not(feature = "cef"))]
         let weak = Rc::downgrade(self);
+        #[cfg(not(feature = "cef"))]
         self.session.connect_download_started(move |_, download| {
             if let Some(browser) = weak.upgrade() {
                 let downloads = browser.downloads.borrow().clone();
@@ -784,11 +960,17 @@ impl Browser {
                 }
                 let tabs = browser.tabs.replace(Vec::new());
                 for tab in tabs {
+                    #[cfg(feature = "cef")]
+                    Self::close_native_inspector(&tab);
                     if let Some(inspector) = tab.view.inspector() {
                         inspector.close();
                     }
                     tab.view.stop_loading();
+                    #[cfg(feature = "cef")]
+                    tab.view.shutdown();
                 }
+                #[cfg(feature = "cef")]
+                browser.native_session.borrow_mut().take();
             }
             gtk::glib::Propagation::Proceed
         });
@@ -941,13 +1123,22 @@ impl Browser {
                         .map(|s| s.to_string())
                         .unwrap_or_else(|| "Unavailable".into());
                     (
-                        if tab.as_ref().is_some_and(|t| t.insecure_content.get()) {
+                        if tab.as_ref().is_some_and(|t| {
+                            #[cfg(feature = "cef")]
+                            {
+                                t.view.has_insecure_content()
+                            }
+                            #[cfg(not(feature = "cef"))]
+                            {
+                                t.insecure_content.get()
+                            }
+                        }) {
                             "HTTPS with insecure content".into()
                         } else {
                             "Connection secure".into()
                         },
                         format!(
-                            "WebKit validated this HTTPS connection.
+                            "The browser engine validated this HTTPS connection.
 Subject: {}
 Issuer: {}
 This describes transport security, not the trustworthiness of the website.",
@@ -959,12 +1150,13 @@ This describes transport security, not the trustworthiness of the website.",
                 Some((_, errors)) => (
                     "Connection has certificate errors".into(),
                     format!(
-                        "WebKit reported certificate errors: {errors:?}. Paisley does not bypass these errors."
+                        "The browser engine reported certificate errors: {errors:?}. Paisley does not bypass these errors."
                     ),
                 ),
                 None => (
                     "Connection not yet verified".into(),
-                    "WebKit has not supplied validated TLS details for this page.".into(),
+                    "The browser engine has not supplied validated TLS details for this page."
+                        .into(),
                 ),
             }
         } else {
@@ -983,44 +1175,59 @@ This describes transport security, not the trustworthiness of the website.",
             let Some(browser) = weak.upgrade() else {
                 return;
             };
-            let Some(host) = parsed
-                .as_ref()
-                .and_then(|u| u.host_str())
-                .map(str::to_ascii_lowercase)
-            else {
-                return;
-            };
-            let Some(manager) = browser.session.website_data_manager() else {
-                return;
-            };
-            if browser.site_clear_pending.replace(true) {
-                return;
+            #[cfg(feature = "cef")]
+            {
+                if let Some(origin) = parsed
+                    .as_ref()
+                    .filter(|u| matches!(u.scheme(), "http" | "https"))
+                    .map(|u| u.origin().ascii_serialization())
+                {
+                    browser.confirm_native_clear(origin);
+                }
             }
-            let window = browser.window.downgrade();
-            let weak = Rc::downgrade(&browser);
-            gtk::glib::MainContext::default().spawn_local(async move {
-                let Some(window) = window.upgrade() else {
+            #[cfg(not(feature = "cef"))]
+            {
+                let Some(host) = parsed
+                    .as_ref()
+                    .and_then(|u| u.host_str())
+                    .map(str::to_ascii_lowercase)
+                else {
                     return;
                 };
-                let result = crate::site_info::clear_site_data(&window, &manager, &host).await;
-                if let Some(browser) = weak.upgrade() {
-                    browser.site_clear_pending.set(false);
-                    match result {
-                        Ok(message) => {
-                            browser
-                                .notifications
-                                .push("Site data", &message, "Paisley", None, None)
-                        }
-                        Err(error) => browser.notifications.push(
-                            "Couldn’t clear site data",
-                            &error,
-                            "Paisley",
-                            None,
-                            None,
-                        ),
-                    }
+                let Some(manager) = browser.session.website_data_manager() else {
+                    return;
+                };
+                if browser.site_clear_pending.replace(true) {
+                    return;
                 }
-            });
+                let window = browser.window.downgrade();
+                let weak = Rc::downgrade(&browser);
+                gtk::glib::MainContext::default().spawn_local(async move {
+                    let Some(window) = window.upgrade() else {
+                        return;
+                    };
+                    let result = crate::site_info::clear_site_data(&window, &manager, &host).await;
+                    if let Some(browser) = weak.upgrade() {
+                        browser.site_clear_pending.set(false);
+                        match result {
+                            Ok(message) => browser.notifications.push(
+                                "Site data",
+                                &message,
+                                "Paisley",
+                                None,
+                                None,
+                            ),
+                            Err(error) => browser.notifications.push(
+                                "Couldn’t clear site data",
+                                &error,
+                                "Paisley",
+                                None,
+                                None,
+                            ),
+                        }
+                    }
+                });
+            }
         });
         crate::site_info::content(
             crate::site_info::SiteInfo {
@@ -1117,6 +1324,12 @@ This describes transport security, not the trustworthiness of the website.",
             }
         });
         self.action("inspector", |browser| {
+            #[cfg(feature = "cef")]
+            {
+                browser.toggle_native_inspector();
+                return;
+            }
+            #[cfg(not(feature = "cef"))]
             if let Some(tab) = browser.active_tab()
                 && let Some(inspector) = tab.view.inspector()
             {
@@ -1152,6 +1365,8 @@ This describes transport security, not the trustworthiness of the website.",
                 && !tab.placeholder.is_visible()
             {
                 tab.error.set_visible(false);
+                #[cfg(feature = "cef")]
+                browser.start_native_session();
                 tab.view.reload();
             }
         });
@@ -1163,6 +1378,8 @@ This describes transport security, not the trustworthiness of the website.",
                     tab.view.stop_loading();
                 } else {
                     tab.error.set_visible(false);
+                    #[cfg(feature = "cef")]
+                    browser.start_native_session();
                     tab.view.reload();
                 }
             }
@@ -1274,13 +1491,8 @@ This describes transport security, not the trustworthiness of the website.",
         }
     }
 
-    fn add_tab(
-        self: &Rc<Self>,
-        related: Option<&webkit::WebView>,
-        initial: Option<&str>,
-    ) -> webkit::WebView {
-        let id = self.next_id.get();
-        self.next_id.set(id + 1);
+    #[cfg(not(feature = "cef"))]
+    fn create_view(&self, related: Option<&View>) -> (View, Vec<String>) {
         let manager = crate::site_styles::content_manager();
         // Page-created related views can navigate before load_tab is called.
         // Install protection on their content manager before returning the view.
@@ -1343,6 +1555,173 @@ This describes transport security, not the trustworthiness of the website.",
         {
             settings.set_enable_webrtc(false);
         }
+        (view, notification_origins)
+    }
+
+    #[cfg(feature = "cef")]
+    fn send_native_privacy(&self) {
+        self.native_privacy_ready.set(None);
+        if let Some(session) = self.native_session.borrow().as_ref() {
+            session.send(cef_gtk::proto_ipc::servo_action::Action::StrictPrivacy(
+                self.settings.borrow().strict_privacy,
+            ));
+        }
+    }
+    #[cfg(feature = "cef")]
+    fn request_native_clear(&self, page_id: u64, origin: String) {
+        self.start_native_session();
+        let id = self.native_operation.get().wrapping_add(1);
+        self.native_operation.set(id);
+        self.site_clear_pending.set(true);
+        if let Some(session) = self.native_session.borrow().as_ref() {
+            session.send(cef_gtk::proto_ipc::servo_action::Action::ClearSiteData(
+                cef_gtk::proto_ipc::ClearSiteData {
+                    request_id: id,
+                    page_id,
+                    origin,
+                },
+            ));
+        }
+    }
+    #[cfg(feature = "cef")]
+    fn confirm_native_clear(self: &Rc<Self>, origin: String) {
+        if self.site_clear_pending.replace(true) {
+            return;
+        }
+        let Some(tab) = self.active_tab() else {
+            self.site_clear_pending.set(false);
+            return;
+        };
+        let Some(page_id) = tab.view.page_id() else {
+            self.site_clear_pending.set(false);
+            return;
+        };
+        let parent = self.window.downgrade();
+        let weak = Rc::downgrade(self);
+        gtk::glib::spawn_future_local(async move {
+            let Some(parent) = parent.upgrade() else {
+                return;
+            };
+            let dialog=gtk::AlertDialog::builder().message(format!("Clear data for {origin}?"))
+                .detail("Cookies, site storage, caches and service workers for this origin will be removed in this profile. This may sign you out. Open tabs may recreate data.")
+                .buttons(["Cancel","Clear site data"]).cancel_button(0).default_button(0).modal(true).build();
+            let accepted = dialog.choose_future(Some(&parent)).await.ok() == Some(1);
+            if let Some(browser) = weak.upgrade() {
+                if accepted && !browser.closing.get() {
+                    browser.request_native_clear(page_id, origin);
+                } else {
+                    browser.site_clear_pending.set(false);
+                }
+            }
+        });
+    }
+
+    #[cfg(feature = "cef")]
+    fn engine_storage(&self) -> std::path::PathBuf {
+        if self.profile.private {
+            std::path::PathBuf::from(format!("private-window-{:p}", self))
+        } else {
+            self.profile.data_dir.join("cef")
+        }
+    }
+    #[cfg(feature = "cef")]
+    fn start_native_session(&self) {
+        if self.closing.get()
+            || self
+                .native_session
+                .borrow()
+                .as_ref()
+                .is_some_and(|session| !session.is_closed())
+        {
+            return;
+        }
+        let weak = self
+            .native_owner
+            .get()
+            .expect("browser owner initialized")
+            .clone();
+        let storage = self.engine_storage();
+        let generation = self.native_generation.get().wrapping_add(1);
+        self.native_generation.set(generation);
+        let session = Rc::new(cef_gtk::ProfileSession::new(
+            storage.to_str().expect("UTF-8 profile path"),
+            self.profile.private,
+            move |event| {
+                if let Some(browser) = weak.upgrade() {
+                    if browser.closing.get() || browser.native_generation.get() != generation {
+                        return;
+                    }
+                    match event.event {
+                        Some(cef_gtk::proto_ipc::servo_event::Event::EngineStats(stats)) => browser
+                            .native_stats
+                            .set(Some((stats.pages, stats.closed_pages))),
+                        Some(cef_gtk::proto_ipc::servo_event::Event::OperationResult(result)) => {
+                            if result.request_id == u64::MAX {
+                                browser.native_privacy_ready.set(Some(result.success));
+                                if !result.success {
+                                    browser.notifications.push(
+                                        "Privacy settings",
+                                        &result.message,
+                                        "Paisley",
+                                        None,
+                                        None,
+                                    );
+                                }
+                                return;
+                            }
+                            if result.request_id == browser.native_operation.get() {
+                                browser.site_clear_pending.set(false);
+                                browser.notifications.push(
+                                    if result.success {
+                                        "Site data"
+                                    } else {
+                                        "Couldn’t clear site data"
+                                    },
+                                    &result.message,
+                                    "Paisley",
+                                    None,
+                                    None,
+                                );
+                            }
+                        }
+                        Some(event) => browser.downloads.borrow().native_event(event),
+                        None => {
+                            browser.downloads.borrow().native_disconnected();
+                            if browser.site_clear_pending.replace(false) {
+                                browser.notifications.push(
+                                    "Couldn’t clear site data",
+                                    "The browser engine stopped. Reload the page and try again.",
+                                    "Paisley",
+                                    None,
+                                    None,
+                                );
+                            }
+                        }
+                    }
+                }
+            },
+        ));
+        self.downloads.borrow().bind_native(session.clone());
+        self.native_session.replace(Some(session));
+        self.send_native_privacy();
+    }
+
+    #[cfg(feature = "cef")]
+    fn create_view(&self, _related: Option<&View>) -> (View, Vec<String>) {
+        let storage = self.engine_storage();
+        let view = View::for_profile(
+            storage.to_str().expect("profile path is UTF-8"),
+            self.profile.private,
+        );
+        (view, self.settings.borrow().notification_origins.clone())
+    }
+
+    fn add_tab(self: &Rc<Self>, related: Option<&View>, initial: Option<&str>) -> View {
+        #[cfg(feature = "cef")]
+        self.start_native_session();
+        let id = self.next_id.get();
+        self.next_id.set(id + 1);
+        let (view, notification_origins) = self.create_view(related);
         view.set_hexpand(true);
         view.set_vexpand(true);
         let error = gtk::Label::builder()
@@ -1381,6 +1760,7 @@ This describes transport security, not the trustworthiness of the website.",
             .shrink_start_child(true)
             .shrink_end_child(true)
             .build();
+        #[cfg(not(feature = "cef"))]
         crate::inspector_dock::install(&view, &split);
         page.append(&split);
 
@@ -1428,7 +1808,13 @@ This describes transport security, not the trustworthiness of the website.",
 
         self.tabs.borrow_mut().push(Tab {
             id,
+            #[cfg(feature = "cef")]
+            last_used: Rc::new(Cell::new(std::time::Instant::now())),
+            #[cfg(feature = "cef")]
+            discarded: Rc::new(Cell::new(false)),
             page: page.clone(),
+            #[cfg(feature = "cef")]
+            split: split.clone(),
             view: view.clone(),
             title,
             spinner,
@@ -1451,6 +1837,43 @@ This describes transport security, not the trustworthiness of the website.",
         view
     }
 
+    #[cfg(feature = "cef")]
+    fn close_native_inspector(tab: &Tab) {
+        if let Some(frontend) = tab
+            .split
+            .end_child()
+            .and_then(|w| w.downcast::<View>().ok())
+        {
+            frontend.shutdown();
+        }
+        tab.split.set_end_child(gtk::Widget::NONE);
+    }
+    #[cfg(feature = "cef")]
+    fn toggle_native_inspector(&self) {
+        let Some(tab) = self.active_tab() else {
+            return;
+        };
+        if tab.split.end_child().is_some() {
+            Self::close_native_inspector(&tab);
+            return;
+        }
+        let Some(frontend) = View::inspector_for(&tab.view) else {
+            return;
+        };
+        frontend.set_hexpand(true);
+        frontend.set_vexpand(true);
+        let weak = tab.split.downgrade();
+        frontend.connect_renderer_terminated(move |_| {
+            if let Some(split) = weak.upgrade() {
+                split.set_end_child(gtk::Widget::NONE);
+            }
+        });
+        tab.split.set_end_child(Some(&frontend));
+        let width = tab.split.width().max(1);
+        let tools = (width * 2 / 5).clamp(320, 600).min(width / 2);
+        tab.split.set_position(width - tools);
+    }
+
     fn close_tab(self: &Rc<Self>, id: u64) {
         let closing_active = self.active_tab().is_some_and(|tab| tab.id == id);
         let removed = {
@@ -1460,6 +1883,10 @@ This describes transport security, not the trustworthiness of the website.",
                 .map(|index| tabs.remove(index))
         };
         if let Some(tab) = removed {
+            #[cfg(feature = "cef")]
+            Self::close_native_inspector(&tab);
+            #[cfg(feature = "cef")]
+            tab.view.shutdown();
             self.pending.borrow_mut().remove(&id);
             self.dirty.set(true);
             if let Some(inspector) = tab.view.inspector() {
@@ -1555,17 +1982,28 @@ This describes transport security, not the trustworthiness of the website.",
         let suffix = if !self.settings.borrow().show_memory {
             String::new()
         } else if let Some(usage) = memory.as_ref() {
-            format!(" · Paisley ≈ {:.1} MiB ({}; {} processes{}{})",
-                usage.kib as f64 / 1024.0, usage.metric, usage.processes,
+            format!(
+                " · Paisley total ≈ {:.1} MiB ({}; {} processes{}{})",
+                usage.kib as f64 / 1024.0,
+                usage.metric,
+                usage.processes,
                 if usage.partial { "; partial tree" } else { "" },
-                if stale { "; stale" } else { "" })
+                if stale { "; stale" } else { "" }
+            )
         } else if age.is_some() {
             " · Paisley memory unavailable".into()
         } else {
             " · Measuring Paisley memory…".into()
         };
-        let window_title = format!("{title} — Paisley · {}{}{suffix}",
-            self.profile_label, if self.profile.private { " (private)" } else { "" });
+        let window_title = format!(
+            "{title} — Paisley · {}{}{suffix}",
+            self.profile_label,
+            if self.profile.private {
+                " (private)"
+            } else {
+                ""
+            }
+        );
         if self.window.title().as_deref() != Some(window_title.as_str()) {
             self.window.set_title(Some(&window_title));
         }
@@ -1592,11 +2030,13 @@ This describes transport security, not the trustworthiness of the website.",
                 ""
             }
         );
-        if self.status.text().as_str() != status { self.status.set_text(&status); }
-        let freshness = age.map(|age| format!("Last sample started {:.1} seconds ago.", age.as_secs_f64()))
+        if self.status.text().as_str() != status {
+            self.status.set_text(&status);
+        }
+        let freshness = age
+            .map(|age| format!("Last sample started {:.1} seconds ago.", age.as_secs_f64()))
             .unwrap_or_else(|| "Waiting for the first sample.".into());
         self.status.set_tooltip_text(Some(&format!("Paisley memory is sampled about once per second on a background thread. {freshness} Readings older than three seconds are marked stale; unavailable readings are cleared. PSS proportionally counts shared pages; an unreadable process uses RSS instead, which can overcount shared memory. Sandboxed or reparented processes may be missing. This estimates Paisley's Linux-visible process tree, not total system RAM. Starter blocking rules are not Brave/uBlock-equivalent protection.")));
-
     }
 
     fn record_visit(&self, tab: &Tab) {
@@ -1654,6 +2094,79 @@ This describes transport security, not the trustworthiness of the website.",
         }
     }
 
+    #[cfg(feature = "cef")]
+    fn connect_view(self: &Rc<Self>, id: u64, view: &View) {
+        let weak = Rc::downgrade(self);
+        view.connect_page_error(move |_, message| {
+            if let Some(browser) = weak.upgrade() {
+                if let Some(tab) = browser.tab(id) {
+                    tab.committed.set(false);
+                    show_error(&tab, message);
+                    browser.update_tab(id);
+                }
+            }
+        });
+        for property in [
+            "title",
+            "uri",
+            "is-loading",
+            "can-go-back",
+            "can-go-forward",
+            "favicon",
+        ] {
+            let weak = Rc::downgrade(self);
+            view.connect_notify_local(Some(property), move |view, _| {
+                if let Some(browser) = weak.upgrade() {
+                    if property == "favicon" {
+                        if let (Some(uri), Some(texture)) = (view.uri(), view.favicon()) {
+                            browser.favicons.capture(&uri, texture);
+                        }
+                    }
+                    browser.update_tab(id);
+                }
+            });
+        }
+        let weak = Rc::downgrade(self);
+        view.connect_load_changed(move |_, event| {
+            if let Some(browser) = weak.upgrade()
+                && let Some(tab) = browser.tab(id)
+            {
+                match event {
+                    cef_gtk::LoadEvent::Started => {
+                        tab.committed.set(false);
+                        tab.error.set_visible(false);
+                        tab.generation.set(tab.generation.get().wrapping_add(1));
+                    }
+                    cef_gtk::LoadEvent::Committed | cef_gtk::LoadEvent::Finished => {
+                        if !tab.error.is_visible() {
+                            tab.committed.set(true);
+                            browser.record_visit(&tab);
+                        }
+                    }
+                }
+                browser.update_tab(id);
+            }
+        });
+        let weak = Rc::downgrade(self);
+        view.connect_create_web_view(move |_, uri| {
+            if let Some(browser) = weak.upgrade()
+                && super::external_link(uri).is_some()
+            {
+                browser.add_tab(None, Some(uri));
+            }
+        });
+        let weak = Rc::downgrade(self);
+        view.connect_renderer_terminated(move |_| {
+            if let Some(browser) = weak.upgrade()
+                && let Some(tab) = browser.tab(id)
+            {
+                show_error(&tab, "The page process stopped. Reload to reopen it.");
+                browser.update_tab(id);
+            }
+        });
+    }
+
+    #[cfg(not(feature = "cef"))]
     fn connect_view(self: &Rc<Self>, id: u64, view: &webkit::WebView) {
         let weak = Rc::downgrade(self);
         view.connect_permission_request(move |_, request| {
@@ -1929,6 +2442,10 @@ fn show_error(tab: &Tab, message: &str) {
     tab.error.set_visible(true);
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(feature = "cef")))]
 #[path = "browser_tests.rs"]
 mod tests;
+
+#[cfg(all(test, feature = "cef-test-support"))]
+#[path = "cef_browser_tests.rs"]
+pub(crate) mod engine_tests;

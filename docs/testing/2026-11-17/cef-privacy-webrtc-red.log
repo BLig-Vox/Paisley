@@ -1,0 +1,23 @@
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+[11019:11030:1116/201941.226801:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+[11019:11030:1116/201941.383040:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[11019:11030:1116/201941.383101:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[11019:11030:1116/201941.383129:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[11019:11030:1116/201941.484431:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[11019:11030:1116/201941.484480:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[11019:11019:1116/201941.486253:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.Properties.GetAll: object_path= /org/freedesktop/UPower/devices/DisplayDevice: unknown error type: 
+
+(process:11003): Gtk-CRITICAL **: 20:19:41.924: gtk_widget_measure: assertion 'for_size >= -1' failed
+
+(process:11003): Gtk-WARNING **: 20:19:41.924: gtk_widget_size_allocate(): attempt to allocate GtkImage image 0x56170cbd3ea0 with width 0 and height -9
+
+(process:11003): Gtk-CRITICAL **: 20:19:41.924: gtk_widget_measure: assertion 'for_size >= -1' failed
+
+(process:11003): Gtk-WARNING **: 20:19:41.924: gtk_widget_size_allocate(): attempt to allocate GtkImage image 0x56170cbdefd0 with width 0 and height -9
+
+thread 'main' (11003) panicked at tests/../src/cef_browser_tests.rs:23:9:
+timed out: strict WebRTC API policy in parent and child
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

@@ -134,6 +134,9 @@ impl Favicons {
         stack.upcast()
     }
 
+    #[cfg(feature="cef")]
+    pub fn capture(self:&Rc<Self>,uri:&str,texture:gtk::gdk::Texture){if let Some(origin)=site(uri){self.remember(&origin,texture,true);}}
+
     pub fn revisit(self: &Rc<Self>, uri: &str) {
         self.request(uri, true);
     }

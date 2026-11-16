@@ -127,3 +127,6 @@ mod tests {
         assert!(descendants(200, &processes).is_empty());
     }
 }
+
+/// System memory headroom in MiB, sampled outside page rendering.
+pub fn available_mib()->Option<u64>{let text=std::fs::read_to_string("/proc/meminfo").ok()?;Some(field(&text,"MemAvailable:")?.parse::<u64>().ok()?/1024)}

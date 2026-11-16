@@ -1,0 +1,49 @@
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+[4891:4906:1116/193349.284206:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[4891:4906:1116/193349.285184:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[4891:4906:1116/193349.285232:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[4891:4906:1116/193349.285259:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[4891:4906:1116/193349.388667:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[4891:4906:1116/193349.388721:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[4891:4891:1116/193349.391327:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.Properties.GetAll: object_path= /org/freedesktop/UPower/devices/DisplayDevice: unknown error type: 
+[4891:4891:1116/193349.577936:ERROR:mojo/public/cpp/bindings/lib/interface_endpoint_client.cc:652] Message 6 rejected by interface blink.mojom.WidgetHost
+[4891:4891:1116/193349.577989:ERROR:mojo/public/cpp/bindings/lib/interface_endpoint_client.cc:652] Message 7 rejected by interface blink.mojom.WidgetHost
+
+(process:4871): Gtk-CRITICAL **: 19:33:50.984: gtk_widget_measure: assertion 'for_size >= -1' failed
+
+(process:4871): Gtk-WARNING **: 19:33:50.984: gtk_widget_size_allocate(): attempt to allocate GtkImage image 0x55569b36bcb0 with width 0 and height -9
+
+(process:4871): Gtk-CRITICAL **: 19:33:50.984: gtk_widget_measure: assertion 'for_size >= -1' failed
+
+(process:4871): Gtk-WARNING **: 19:33:50.984: gtk_widget_size_allocate(): attempt to allocate GtkImage image 0x55569b376df0 with width 0 and height -9
+[5175:5195:1116/193354.604531:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+[5175:5195:1116/193354.925227:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[5175:5195:1116/193354.925286:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[5175:5195:1116/193354.925315:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[5175:5195:1116/193355.075247:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[5175:5195:1116/193355.075299:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[5175:5175:1116/193355.077509:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.Properties.GetAll: object_path= /org/freedesktop/UPower/devices/DisplayDevice: unknown error type: 
+
+(process:4871): Gtk-CRITICAL **: 19:33:55.193: gtk_widget_measure: assertion 'for_size >= -1' failed
+
+(process:4871): Gtk-WARNING **: 19:33:55.193: gtk_widget_size_allocate(): attempt to allocate GtkImage image 0x5556a48803a0 with width 0 and height -9
+
+(process:4871): Gtk-CRITICAL **: 19:33:55.193: gtk_widget_measure: assertion 'for_size >= -1' failed
+
+(process:4871): Gtk-WARNING **: 19:33:55.193: gtk_widget_size_allocate(): attempt to allocate GtkImage image 0x5556a3e72200 with width 0 and height -9
+MEMORY STAGE eight resident tabs with 32 MiB each: 1077 MiB 17 processes (PSS)
+MEMORY STAGE after inactive tabs slept: 848 MiB 12 processes (PSS)
+Live tab residency: 5 tabs slept; restore and protected draft passed
+TRANSFER 1 bytes=0 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=0 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=155648 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=155648 paused=true complete=false cancelled=false interrupted=false reason=0
+
+thread 'main' (4871) panicked at tests/../src/cef_browser_tests.rs:23:9:
+timed out: download completes after source tab close
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

@@ -1,0 +1,33 @@
+[package]
+name = "paisley-cef-gtk"
+version = "0.1.0-alpha.1"
+edition = "2024"
+license = "MPL-2.0"
+readme = "README.md"
+include = ["src/**", "proto/**", "build.rs", "Cargo.toml", "README.md", "LICENSE", "UPSTREAM.md"]
+description = "Paisley's GTK4 CEF adapter with bounded transport"
+repository = "https://github.com/BLig-Vox/Paisley"
+
+[lib]
+name = "cef_gtk"
+path = "src/lib.rs"
+
+[features]
+default = []
+test-support = []
+
+[dependencies]
+cef = { version = "=156.6.0", default-features = false, features = ["sandbox"] }
+libc = "0.2"
+paisley-engine-transport = { path = "../transport", version = "=0.1.0-alpha.1" }
+gio = "0.22"
+glib = { version = "0.22", features = ["v2_74", "log_macros"] }
+gtk = { package = "gtk4", version = "0.11", features = ["v4_12"] }
+url = "2.5"
+async-channel = "2.5"
+log = "0.4"
+prost = "0.14"
+tungstenite = { version = "=0.30.0", default-features = false, features = ["handshake"] }
+
+[build-dependencies]
+prost-build = "0.14"

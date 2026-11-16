@@ -1,0 +1,507 @@
+{
+  "source_baseline": "5626c9f",
+  "local_fix": "Cancel pending bookmark confirmations when their sheet unmaps",
+  "published": false,
+  "measurement": "owned process-group PSS; 2-second sampling; partially overlapping idle runs; not an equivalent-content cross-engine benchmark",
+  "tests": {
+    "rust_library": 49,
+    "rust_binary": 21,
+    "rust_integration": 1,
+    "python_mcp": 20,
+    "python_package": 7,
+    "gtk_smoke": {
+      "passed": true,
+      "seconds": 30.53
+    },
+    "gtk_restart_stress": {
+      "passed": true,
+      "cycles": 8,
+      "seconds": 10.48
+    },
+    "clippy": "blocked by toolchain mismatch",
+    "isolated_blocking_boundaries": {
+      "passed": true,
+      "seconds": 2.37
+    }
+  },
+  "runs": {
+    "live": {
+      "running": false,
+      "exit_code": 0,
+      "stop_reason": null,
+      "duration_seconds": 1749.2,
+      "peak_pss_mib": 2362.74,
+      "last_running_pss_mib": 789.6,
+      "peak_swap_mib": 0.0,
+      "minimum_available_mib": 3494,
+      "phases": {
+        "baseline": {
+          "seconds": 18.1,
+          "first_pss_mib": 0.65,
+          "last_pss_mib": 525.54,
+          "peak_pss_mib": 558.25
+        },
+        "fixture-video": {
+          "seconds": 48.1,
+          "first_pss_mib": 576.72,
+          "last_pss_mib": 480.72,
+          "peak_pss_mib": 576.72
+        },
+        "example": {
+          "seconds": 28.2,
+          "first_pss_mib": 686.18,
+          "last_pss_mib": 663.75,
+          "peak_pss_mib": 688.24
+        },
+        "rust-docs": {
+          "seconds": 26.2,
+          "first_pss_mib": 798.28,
+          "last_pss_mib": 1106.13,
+          "peak_pss_mib": 1106.13
+        },
+        "google-search": {
+          "seconds": 16.1,
+          "first_pss_mib": 1414.39,
+          "last_pss_mib": 1325.7,
+          "peak_pss_mib": 1414.39
+        },
+        "github-public": {
+          "seconds": 20.2,
+          "first_pss_mib": 1326.18,
+          "last_pss_mib": 1691.06,
+          "peak_pss_mib": 1691.06
+        },
+        "youtube-idle": {
+          "seconds": 68.9,
+          "first_pss_mib": 2143.46,
+          "last_pss_mib": 2305.93,
+          "peak_pss_mib": 2362.74
+        },
+        "six-tabs-idle": {
+          "seconds": 325.9,
+          "first_pss_mib": 2317.19,
+          "last_pss_mib": 1666.78,
+          "peak_pss_mib": 2320.36
+        },
+        "post-close-idle": {
+          "seconds": 117.5,
+          "first_pss_mib": 1240.34,
+          "last_pss_mib": 1076.26,
+          "peak_pss_mib": 1240.34
+        },
+        "post-close+servo-example": {
+          "seconds": 132.1,
+          "first_pss_mib": 1076.26,
+          "last_pss_mib": 1074.41,
+          "peak_pss_mib": 1076.29
+        },
+        "post-close+servo-docs": {
+          "seconds": 30.4,
+          "first_pss_mib": 1074.81,
+          "last_pss_mib": 1074.19,
+          "peak_pss_mib": 1074.81
+        },
+        "post-close+servo-google": {
+          "seconds": 95.0,
+          "first_pss_mib": 1074.19,
+          "last_pss_mib": 552.64,
+          "peak_pss_mib": 1074.19
+        },
+        "paisley-base+servo-github": {
+          "seconds": 40.5,
+          "first_pss_mib": 552.56,
+          "last_pss_mib": 552.58,
+          "peak_pss_mib": 552.58
+        },
+        "paisley-base+servo-six-tabs-idle": {
+          "seconds": 40.4,
+          "first_pss_mib": 552.58,
+          "last_pss_mib": 552.46,
+          "peak_pss_mib": 552.58
+        },
+        "paisley-cycle1-open+servo-six-tabs-idle": {
+          "seconds": 32.6,
+          "first_pss_mib": 552.48,
+          "last_pss_mib": 1280.42,
+          "peak_pss_mib": 1868.66
+        },
+        "paisley-cycle1-closed+servo-six-tabs-idle": {
+          "seconds": 12.2,
+          "first_pss_mib": 717.75,
+          "last_pss_mib": 732.03,
+          "peak_pss_mib": 732.03
+        },
+        "paisley-allocation48+servo-six-tabs-idle": {
+          "seconds": 16.2,
+          "first_pss_mib": 728.18,
+          "last_pss_mib": 730.37,
+          "peak_pss_mib": 730.37
+        },
+        "paisley-cycle2-open+servo-six-tabs-idle": {
+          "seconds": 59.2,
+          "first_pss_mib": 1942.38,
+          "last_pss_mib": 874.17,
+          "peak_pss_mib": 1942.38
+        },
+        "paisley-cycle2-closed+servo-six-tabs-idle": {
+          "seconds": 16.2,
+          "first_pss_mib": 833.47,
+          "last_pss_mib": 743.7,
+          "peak_pss_mib": 833.47
+        },
+        "paisley-cycle3-open+servo-six-tabs-idle": {
+          "seconds": 53.1,
+          "first_pss_mib": 1155.21,
+          "last_pss_mib": 892.55,
+          "peak_pss_mib": 1979.87
+        },
+        "paisley-youtube-video+servo-six-tabs-idle": {
+          "seconds": 16.4,
+          "first_pss_mib": 980.4,
+          "last_pss_mib": 1663.58,
+          "peak_pss_mib": 1745.7
+        },
+        "paisley-youtube-playing+servo-six-tabs-idle": {
+          "seconds": 37.3,
+          "first_pss_mib": 1710.3,
+          "last_pss_mib": 1571.84,
+          "peak_pss_mib": 1710.3
+        },
+        "paisley-final-recovery+servo-six-tabs-idle": {
+          "seconds": 40.6,
+          "first_pss_mib": 821.38,
+          "last_pss_mib": 961.85,
+          "peak_pss_mib": 961.85
+        },
+        "paisley-final-recovery+servo-post-close": {
+          "seconds": 32.5,
+          "first_pss_mib": 1129.99,
+          "last_pss_mib": 945.55,
+          "peak_pss_mib": 1129.99
+        },
+        "paisley-final-recovery-reset+servo-post-close-real": {
+          "seconds": 376.2,
+          "first_pss_mib": 947.15,
+          "last_pss_mib": 789.6,
+          "peak_pss_mib": 947.15
+        }
+      }
+    },
+    "servo": {
+      "running": false,
+      "exit_code": 0,
+      "stop_reason": null,
+      "duration_seconds": 1750.3,
+      "peak_pss_mib": 2048.12,
+      "last_running_pss_mib": 1450.1,
+      "peak_swap_mib": 393.59,
+      "minimum_available_mib": 3543,
+      "phases": {
+        "post-close-idle": {
+          "seconds": 48.1,
+          "first_pss_mib": 0.01,
+          "last_pss_mib": 509.02,
+          "peak_pss_mib": 509.16
+        },
+        "post-close+servo-example": {
+          "seconds": 134.5,
+          "first_pss_mib": 508.97,
+          "last_pss_mib": 521.19,
+          "peak_pss_mib": 521.2
+        },
+        "post-close+servo-docs": {
+          "seconds": 30.1,
+          "first_pss_mib": 565.38,
+          "last_pss_mib": 568.35,
+          "peak_pss_mib": 568.35
+        },
+        "post-close+servo-google": {
+          "seconds": 92.4,
+          "first_pss_mib": 607.7,
+          "last_pss_mib": 876.18,
+          "peak_pss_mib": 883.65
+        },
+        "paisley-base+servo-github": {
+          "seconds": 42.2,
+          "first_pss_mib": 887.5,
+          "last_pss_mib": 1006.5,
+          "peak_pss_mib": 1020.06
+        },
+        "paisley-base+servo-six-tabs-idle": {
+          "seconds": 42.2,
+          "first_pss_mib": 1007.59,
+          "last_pss_mib": 1007.72,
+          "peak_pss_mib": 1007.77
+        },
+        "paisley-cycle1-open+servo-six-tabs-idle": {
+          "seconds": 30.2,
+          "first_pss_mib": 995.73,
+          "last_pss_mib": 997.38,
+          "peak_pss_mib": 997.38
+        },
+        "paisley-cycle1-closed+servo-six-tabs-idle": {
+          "seconds": 12.1,
+          "first_pss_mib": 1003.31,
+          "last_pss_mib": 1003.96,
+          "peak_pss_mib": 1003.96
+        },
+        "paisley-allocation48+servo-six-tabs-idle": {
+          "seconds": 16.1,
+          "first_pss_mib": 1003.89,
+          "last_pss_mib": 1003.89,
+          "peak_pss_mib": 1003.89
+        },
+        "paisley-cycle2-open+servo-six-tabs-idle": {
+          "seconds": 60.3,
+          "first_pss_mib": 1003.81,
+          "last_pss_mib": 1003.15,
+          "peak_pss_mib": 1003.81
+        },
+        "paisley-cycle2-closed+servo-six-tabs-idle": {
+          "seconds": 16.1,
+          "first_pss_mib": 1003.15,
+          "last_pss_mib": 1003.81,
+          "peak_pss_mib": 1003.81
+        },
+        "paisley-cycle3-open+servo-six-tabs-idle": {
+          "seconds": 52.3,
+          "first_pss_mib": 1002.27,
+          "last_pss_mib": 999.3,
+          "peak_pss_mib": 1002.27
+        },
+        "paisley-youtube-video+servo-six-tabs-idle": {
+          "seconds": 18.1,
+          "first_pss_mib": 1003.57,
+          "last_pss_mib": 1001.36,
+          "peak_pss_mib": 1003.57
+        },
+        "paisley-youtube-playing+servo-six-tabs-idle": {
+          "seconds": 36.3,
+          "first_pss_mib": 1001.3,
+          "last_pss_mib": 1001.48,
+          "peak_pss_mib": 1001.49
+        },
+        "paisley-final-recovery+servo-six-tabs-idle": {
+          "seconds": 40.2,
+          "first_pss_mib": 1003.49,
+          "last_pss_mib": 1003.49,
+          "peak_pss_mib": 1003.49
+        },
+        "paisley-final-recovery+servo-post-close": {
+          "seconds": 34.2,
+          "first_pss_mib": 1000.4,
+          "last_pss_mib": 890.86,
+          "peak_pss_mib": 1001.51
+        },
+        "paisley-final-recovery-reset+servo-post-close-real": {
+          "seconds": 392.7,
+          "first_pss_mib": 875.17,
+          "last_pss_mib": 891.42,
+          "peak_pss_mib": 891.42
+        },
+        "servo-cycle-control": {
+          "seconds": 36.3,
+          "first_pss_mib": 895.85,
+          "last_pss_mib": 965.2,
+          "peak_pss_mib": 966.54
+        },
+        "servo-cycle1-open": {
+          "seconds": 56.7,
+          "first_pss_mib": 1018.02,
+          "last_pss_mib": 1250.0,
+          "peak_pss_mib": 1268.91
+        },
+        "servo-cycle2-open": {
+          "seconds": 81.1,
+          "first_pss_mib": 1300.71,
+          "last_pss_mib": 1666.17,
+          "peak_pss_mib": 1666.17
+        },
+        "servo-cycle3-open": {
+          "seconds": 87.3,
+          "first_pss_mib": 1753.94,
+          "last_pss_mib": 2047.03,
+          "peak_pss_mib": 2048.12
+        },
+        "servo-final-recovery": {
+          "seconds": 348.5,
+          "first_pss_mib": 2043.45,
+          "last_pss_mib": 0.0,
+          "peak_pss_mib": 2043.45
+        }
+      }
+    },
+    "firefox": {
+      "running": false,
+      "exit_code": 0,
+      "stop_reason": null,
+      "duration_seconds": 76.8,
+      "peak_pss_mib": 1234.83,
+      "last_running_pss_mib": 900.37,
+      "peak_swap_mib": 0.0,
+      "minimum_available_mib": 4301,
+      "phases": {
+        "paisley-final-recovery-reset+servo-post-close-real": {
+          "seconds": 76.8,
+          "first_pss_mib": 0.24,
+          "last_pss_mib": 900.37,
+          "peak_pss_mib": 1234.83
+        }
+      }
+    },
+    "servo-features": {
+      "running": false,
+      "exit_code": 0,
+      "stop_reason": null,
+      "duration_seconds": 442.0,
+      "peak_pss_mib": 523.29,
+      "last_running_pss_mib": 440.38,
+      "peak_swap_mib": 45.87,
+      "minimum_available_mib": 3663,
+      "phases": {
+        "servo-final-recovery": {
+          "seconds": 442.0,
+          "first_pss_mib": 0.19,
+          "last_pss_mib": 440.38,
+          "peak_pss_mib": 523.29
+        }
+      }
+    },
+    "smoke": {
+      "running": false,
+      "exit_code": 0,
+      "stop_reason": null,
+      "duration_seconds": 30.4,
+      "peak_pss_mib": 1553.95,
+      "last_running_pss_mib": 1061.48,
+      "peak_swap_mib": 0.0,
+      "minimum_available_mib": 5963,
+      "phases": {
+        "servo-final-recovery": {
+          "seconds": 30.4,
+          "first_pss_mib": 1.51,
+          "last_pss_mib": 1061.48,
+          "peak_pss_mib": 1553.95
+        }
+      }
+    },
+    "restart": {
+      "running": false,
+      "exit_code": 0,
+      "stop_reason": null,
+      "duration_seconds": 10.0,
+      "peak_pss_mib": 425.22,
+      "last_running_pss_mib": 301.26,
+      "peak_swap_mib": 0.0,
+      "minimum_available_mib": 6336,
+      "phases": {
+        "paisley-base+servo-github": {
+          "seconds": 10.0,
+          "first_pss_mib": 0.58,
+          "last_pss_mib": 301.26,
+          "peak_pss_mib": 425.22
+        }
+      }
+    },
+    "boundaries": {
+      "running": false,
+      "exit_code": 0,
+      "stop_reason": null,
+      "duration_seconds": 2.0,
+      "peak_pss_mib": 695.27,
+      "last_running_pss_mib": 695.27,
+      "peak_swap_mib": 0.0,
+      "minimum_available_mib": 7122,
+      "phases": {
+        "servo-final-recovery": {
+          "seconds": 2.0,
+          "first_pss_mib": 0.24,
+          "last_pss_mib": 695.27,
+          "peak_pss_mib": 695.27
+        }
+      }
+    }
+  },
+  "fixture_cycle_page_counts": {
+    "cycle": {
+      "1": 8,
+      "2": 8,
+      "3": 8
+    },
+    "servoCycle": {
+      "1": 8,
+      "2": 8,
+      "3": 8
+    }
+  },
+  "latest_feature_results": {
+    "paisley": {
+      "DOM": "PASS",
+      "CSS_grid": "PASS",
+      "localStorage": "PASS",
+      "fetch": "PASS",
+      "crypto_SHA256": "PASS",
+      "canvas2D": "PASS",
+      "WebAssembly": "PASS",
+      "worker": "PASS",
+      "IndexedDB": "PASS",
+      "serviceWorker": "PASS",
+      "MP4_support": "probably"
+    },
+    "servo_default": {
+      "DOM": "PASS",
+      "CSS_grid": "PASS",
+      "localStorage": "PASS",
+      "fetch": "PASS",
+      "crypto_SHA256": "PASS",
+      "canvas2D": "PASS",
+      "WebAssembly": "PASS",
+      "worker": "PASS",
+      "IndexedDB": "FAIL: indexedDB is not defined",
+      "serviceWorker": "FAIL: can't access property \"register\", navigator.serviceWorker is undefined",
+      "MP4_support": "probably"
+    },
+    "servo_experimental": {
+      "DOM": "PASS",
+      "CSS_grid": "PASS",
+      "localStorage": "PASS",
+      "fetch": "PASS",
+      "crypto_SHA256": "PASS",
+      "canvas2D": "PASS",
+      "WebAssembly": "PASS",
+      "worker": "PASS",
+      "IndexedDB": "PASS",
+      "serviceWorker": "PASS",
+      "MP4_support": "probably"
+    }
+  },
+  "youtube": {
+    "paisley": "Playback progressed to approximately 0:37, then Something went wrong",
+    "firefox_control": "Same public video initially played, then same error in fresh profile",
+    "servo_default": "Homepage client error (SendRequest) on initial load and reload",
+    "conclusion": "Not an unconditional streaming pass; not specific to WebKit; exact cause unresolved"
+  },
+  "reliability_findings": [
+    "Intermittent cross-origin history/load timeouts in full GTK repeats; latest full and isolated boundary runs passed; not fully explained",
+    "Original background Gmail page process terminated; reason not logged; reloaded successfully",
+    "YouTube playback failed in both Paisley and fresh Firefox; exact cause unresolved",
+    "GTK layout critical warnings remain"
+  ],
+  "container_memory": {
+    "memory.max": "max\n",
+    "memory.current": "1732239360\n",
+    "memory.peak": "6465511424\n",
+    "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 300\n",
+    "memory.events.local": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 300\n",
+    "memory.swap.max": "max\n",
+    "memory.swap.current": "1206661120\n",
+    "memory.pressure": "some avg10=0.00 avg60=0.00 avg300=0.00 total=226150\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=221243\n",
+    "self_cgroup": "0::/\n"
+  },
+  "installed_binary_sha256": "1ceaf394480ffa9f75846c7e8fd036a908db73a3216949b1f76f5ed46f89efc2",
+  "cleanup": {
+    "remaining_owned_processes": [],
+    "server_stopped": true,
+    "closed_test_terminal_count": 20
+  }
+}

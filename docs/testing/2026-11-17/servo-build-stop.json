@@ -1,0 +1,35 @@
+{
+  "recorded_utc": "2026-11-16T17:14:00.050202+00:00",
+  "adapter_revision": "c78c94079337803173fd40e69f5f7cd62347cac7",
+  "servo_revision": "aac43a3f31a259f04a574f5ec4e959c943ad7cc7",
+  "build_command": "CARGO_BUILD_JOBS=1 CARGO_PROFILE_DEV_DEBUG=0 cargo check --lib",
+  "outcome": "Watchdog terminated owned build tree: global MemAvailable below 2 GiB. No executable built or installed.",
+  "watchdog_last_rss_kib": 204628,
+  "watchdog_mem_available_kib": 2003620,
+  "meminfo_after_stop": {
+    "MemTotal": "16047492 kB",
+    "MemAvailable": "1362964 kB",
+    "SwapTotal": "4194300 kB",
+    "SwapFree": "63176 kB",
+    "Shmem": "10058592 kB"
+  },
+  "compatibility_launch": {
+    "samples": [
+      {
+        "seconds": 0.0,
+        "pss_mib": 0.3,
+        "available_mib": 1843
+      }
+    ],
+    "running": false,
+    "reason": "memory/time safety cutoff",
+    "exit_code": -15
+  },
+  "tests": {
+    "rust_passed": 71,
+    "closed_tab_ownership_cycles_passed": 12,
+    "closed_tab_test_seconds": 3.47
+  },
+  "production_backend": "WebKit unchanged",
+  "ram_retention_fixed": false
+}

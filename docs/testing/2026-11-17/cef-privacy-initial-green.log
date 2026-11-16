@@ -1,0 +1,49 @@
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+[11752:11764:1116/202600.630410:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+[11752:11764:1116/202601.146566:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[11752:11764:1116/202601.146653:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[11752:11764:1116/202601.146697:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[11752:11764:1116/202601.581011:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[11752:11764:1116/202601.581105:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[11752:11752:1116/202601.584485:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.Properties.GetAll: object_path= /org/freedesktop/UPower/devices/DisplayDevice: unknown error type: 
+
+(process:11737): Gtk-CRITICAL **: 20:26:01.753: gtk_widget_measure: assertion 'for_size >= -1' failed
+
+(process:11737): Gtk-WARNING **: 20:26:01.755: gtk_widget_size_allocate(): attempt to allocate GtkImage image 0x55b5fb3fd970 with width 0 and height -9
+
+(process:11737): Gtk-CRITICAL **: 20:26:01.755: gtk_widget_measure: assertion 'for_size >= -1' failed
+
+(process:11737): Gtk-WARNING **: 20:26:01.755: gtk_widget_size_allocate(): attempt to allocate GtkImage image 0x55b5fb408ab0 with width 0 and height -9
+CEF renderer created 1 strict=false
+CEF context strict=false browser=1 main=1
+CEF renderer created 1 strict=false
+CEF context strict=false browser=1 main=1
+[11752:11752:1116/202601.970289:ERROR:mojo/public/cpp/bindings/lib/interface_endpoint_client.cc:652] Message 2 rejected by interface blink.mojom.Widget
+CEF renderer created 1 strict=false
+CEF context strict=false browser=1 main=1
+CEF renderer created 1 strict=false
+CEF context strict=false browser=1 main=1
+CEF renderer created 1 strict=false
+CEF context strict=false browser=1 main=0
+CEF renderer created 1 strict=false
+CEF context strict=false browser=1 main=1
+CEF renderer created 1 strict=false
+CEF context strict=false browser=1 main=0
+CEF renderer created 1 strict=false
+CEF context strict=false browser=1 main=1
+CEF renderer created 2 strict=true
+CEF context strict=true browser=2 main=1
+CEF strict bootstrap result=1 error=
+CEF renderer created 2 strict=true
+CEF context strict=true browser=2 main=1
+CEF strict bootstrap result=1 error=
+CEF context strict=true browser=2 main=0
+CEF strict bootstrap result=1 error=
+CEF renderer created 3 strict=false
+CEF context strict=false browser=3 main=1
+CEF renderer created 3 strict=false
+CEF context strict=false browser=3 main=1
+CEF privacy: cookie preference verified; WebRTC disabled in fresh parent/child frames and available again in normal mode

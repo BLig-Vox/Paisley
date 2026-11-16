@@ -1,0 +1,22 @@
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+[12021:12032:1116/203032.616575:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+[12021:12032:1116/203033.158438:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[12021:12032:1116/203033.158513:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[12021:12032:1116/203033.158555:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[12021:12032:1116/203033.623257:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[12021:12032:1116/203033.623306:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[12021:12021:1116/203033.628308:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.Properties.GetAll: object_path= /org/freedesktop/UPower/devices/DisplayDevice: unknown error type: 
+
+(process:12005): Gtk-CRITICAL **: 20:30:33.983: gtk_widget_measure: assertion 'for_size >= -1' failed
+
+(process:12005): Gtk-WARNING **: 20:30:33.983: gtk_widget_size_allocate(): attempt to allocate GtkImage image 0x55b4bad63d80 with width 0 and height -9
+
+(process:12005): Gtk-CRITICAL **: 20:30:33.983: gtk_widget_measure: assertion 'for_size >= -1' failed
+
+(process:12005): Gtk-WARNING **: 20:30:33.983: gtk_widget_size_allocate(): attempt to allocate GtkImage image 0x55b4bad6eec0 with width 0 and height -9
+[12021:12021:1116/203034.106761:ERROR:mojo/public/cpp/bindings/lib/interface_endpoint_client.cc:652] Message 2 rejected by interface blink.mojom.Widget
+[12021:12021:1116/203040.380953:ERROR:mojo/public/cpp/bindings/lib/interface_endpoint_client.cc:652] Message 2 rejected by interface blink.mojom.Widget
+CEF privacy: third-party cookie sending/saving blocked; WebRTC disabled in fresh parent/child frames and available again in normal mode

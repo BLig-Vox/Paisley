@@ -1,0 +1,43 @@
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+[16177:16189:1116/204810.548309:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+[16177:16189:1116/204810.806518:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[16177:16189:1116/204810.806578:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[16177:16189:1116/204810.806605:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[16177:16189:1116/204810.932924:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[16177:16189:1116/204810.932981:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[16177:16177:1116/204810.935228:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.Properties.GetAll: object_path= /org/freedesktop/UPower/devices/DisplayDevice: unknown error type: 
+[16177:16177:1116/204810.998627:ERROR:mojo/public/cpp/bindings/lib/interface_endpoint_client.cc:652] Message 2 rejected by interface blink.mojom.Widget
+
+(process:16162): Gtk-CRITICAL **: 20:48:11.506: gtk_widget_measure: assertion 'for_size >= -1' failed
+
+(process:16162): Gtk-WARNING **: 20:48:11.506: gtk_widget_size_allocate(): attempt to allocate GtkImage image 0x556ca74b8600 with width 0 and height -9
+
+(process:16162): Gtk-CRITICAL **: 20:48:11.506: gtk_widget_measure: assertion 'for_size >= -1' failed
+
+(process:16162): Gtk-WARNING **: 20:48:11.506: gtk_widget_size_allocate(): attempt to allocate GtkImage image 0x556ca74c3740 with width 0 and height -9
+[16219:16219:1116/204813.232801:ERROR:gpu/command_buffer/service/context_group.cc:140] ContextResult::kFatalFailure: WebGL1 blocklisted
+[16219:16219:1116/204813.234129:ERROR:gpu/command_buffer/service/context_group.cc:140] ContextResult::kFatalFailure: WebGL1 blocklisted
+PUBLIC_SITE https://github.com/ title=Some("GitHub · Change is constant. GitHub keeps you ahead. · GitHub · GitHub")
+MEMORY STAGE public sites loaded: 1: 838 MiB 9 processes (PSS)
+PUBLIC_SITE https://mail.google.com/ title=Some("Gmail")
+MEMORY STAGE public sites loaded: 2: 965 MiB 13 processes (PSS)
+PUBLIC_SITE https://www.google.com/ title=Some("Google")
+MEMORY STAGE public sites loaded: 3: 1031 MiB 14 processes (PSS)
+PUBLIC_SITE https://www.youtube.com/ title=Some("YouTube")
+MEMORY STAGE public sites loaded: 4: 1233 MiB 15 processes (PSS)
+[16219:16219:1116/204820.591415:ERROR:gpu/command_buffer/service/context_group.cc:140] ContextResult::kFatalFailure: WebGL1 blocklisted
+PUBLIC_SITE https://www.rust-lang.org/ title=Some("Rust Programming Language")
+MEMORY STAGE public sites loaded: 5: 1537 MiB 16 processes (PSS)
+PUBLIC_SITE https://en.wikipedia.org/wiki/Rust_(programming_language) title=Some("Rust (programming language) - Wikipedia")
+MEMORY STAGE public sites loaded: 6: 1563 MiB 17 processes (PSS)
+PUBLIC_SITE https://docs.rs/ title=Some("Docs.rs")
+MEMORY STAGE public sites loaded: 7: 1608 MiB 18 processes (PSS)
+PUBLIC_SITE https://example.com/ title=Some("Example Domain")
+MEMORY STAGE public sites loaded: 8: 1602 MiB 18 processes (PSS)
+MEMORY STAGE eight public sites before sleep: 1642 MiB 18 processes (PSS)
+MEMORY STAGE public sites after idle reclamation: 1142 MiB 13 processes (PSS)
+MEMORY STAGE public sites returned to one tab: 1023 MiB 11 processes (PSS)
+PUBLIC_SITE residency: 5 inactive tabs slept; active page protected

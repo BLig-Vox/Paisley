@@ -353,6 +353,14 @@ fn browser_smoke() {
         return;
     }
     let site = LocalSite::start();
+    if std::env::var_os("PAISLEY_TAB_LIFETIME").is_some() {
+        check_closed_tab_lifetime(&app, &site);
+        return;
+    }
+    if std::env::var_os("PAISLEY_BLOCKING_BOUNDARIES").is_some() {
+        check_blocking_navigation_boundaries(&app, &site);
+        return;
+    }
     if std::env::var_os("PAISLEY_INSPECTOR_LIFECYCLE").is_some()
         || std::env::var_os("PAISLEY_INSPECTOR_OPEN_CLOSE").is_some()
     {
@@ -449,11 +457,11 @@ fn browser_smoke() {
     wait_until("owned-process RAM sample", || {
         browser.memory.borrow().is_some()
     });
-    assert!(browser.window.title().unwrap().contains("RAM ≈"));
-    assert!(browser.status.text().contains("RAM ≈"));
+    assert!(browser.window.title().unwrap().contains("Paisley ≈"));
+    assert!(browser.status.text().contains("Paisley ≈"));
     browser.settings.borrow_mut().show_memory = false;
     browser.apply_settings();
-    assert!(!browser.window.title().unwrap().contains("RAM ≈"));
+    assert!(!browser.window.title().unwrap().contains("Paisley ≈"));
     browser.settings.borrow_mut().show_memory = true;
     browser.apply_settings();
     capture_window(&browser.window);
@@ -622,7 +630,9 @@ fn browser_smoke() {
     checks.borrow_mut().clear();
     std::fs::remove_dir_all(download_dir).unwrap();
 
-    browser.navigate("http://127.0.0.1:1/");
+    // Use an owned server that closes the connection before a response. Unsafe
+    // port 1 can be converted to about:blank by this WebKit version instead.
+    browser.navigate(&format!("{}/abort", site.base));
     wait_until("network failure", || {
         first.error.is_visible() && first.error.text().contains("Could not load")
     });
@@ -814,15 +824,14 @@ fn check_bookmark_transfer_ui(app: &gtk::Application, site: &LocalSite) {
             .unwrap();
         browser.dirty.set(true);
         let editor = browser.show_library(true);
-        let manager = gtk::Window::list_toplevels()
-            .into_iter()
-            .filter_map(|w| w.downcast::<gtk::Window>().ok())
-            .find(|w| {
-                w.title().as_deref() == Some("Paisley bookmarks")
-                    && w.transient_for().as_ref() == Some(browser.window.upcast_ref())
+        let manager: gtk::Window = browser.window.clone().upcast();
+        wait_until("bookmark sheet mapped", || {
+            library_widgets(manager.upcast_ref()).iter().any(|w| {
+                w.downcast_ref::<gtk::SearchEntry>()
+                    .is_some_and(|w| w.is_mapped())
             })
-            .unwrap();
-        for label in ["Import bookmarks…", "Export bookmarks…"] {
+        });
+        for label in ["Import…", "Export…"] {
             assert!(
                 library_widgets(manager.upcast_ref()).iter().any(|w| w
                     .downcast_ref::<gtk::Button>()
@@ -897,7 +906,7 @@ fn check_bookmark_transfer_ui(app: &gtk::Application, site: &LocalSite) {
         library_widgets(manager.upcast_ref())
             .into_iter()
             .filter_map(|w| w.downcast::<gtk::Button>().ok())
-            .find(|button| button.label().as_deref() == Some("Export bookmarks…"))
+            .find(|button| button.label().as_deref() == Some("Export…"))
             .unwrap()
             .emit_clicked();
         let dialog = bookmark_confirmation(&manager);
@@ -939,22 +948,39 @@ fn check_bookmark_transfer_ui(app: &gtk::Application, site: &LocalSite) {
         std::fs::write(&input, valid).unwrap();
         editor.import_file(&input).unwrap();
         let dialog = bookmark_confirmation(&manager);
-        manager.close();
+        browser.menu.dismiss();
         // A held callback/controller must not make a closed manager writable.
         assert!(editor.import_file(&input).is_err());
         assert!(editor.export_file(&base.join("late-export.json")).is_err());
         wait_until("closed parent dismisses consent", || !dialog.is_visible());
         assert_eq!(*browser.library.borrow(), imported);
         let parent_editor = browser.show_library(true);
-        let parent_manager = gtk::Window::list_toplevels()
-            .into_iter()
-            .filter_map(|w| w.downcast::<gtk::Window>().ok())
-            .find(|w| {
-                w.is_visible()
-                    && w.title().as_deref() == Some("Paisley bookmarks")
-                    && w.transient_for().as_ref() == Some(browser.window.upcast_ref())
-            })
-            .unwrap();
+        let parent_manager: gtk::Window = browser.window.clone().upcast();
+        wait_until("reopened bookmark sheet mapped", || {
+            library_widgets(parent_manager.upcast_ref())
+                .iter()
+                .any(|w| {
+                    w.downcast_ref::<gtk::SearchEntry>()
+                        .is_some_and(|w| w.is_mapped())
+                })
+        });
+        // Minimizing is not closing the sheet: its editor must still work
+        // after restoring the owner, despite the new unmap cancellation hook.
+        browser.window.minimize();
+        let minimized_at = Instant::now();
+        wait_until("allow window-manager minimize", || {
+            minimized_at.elapsed() >= Duration::from_millis(250)
+        });
+        browser.window.unminimize();
+        browser.present();
+        wait_until("restored bookmark sheet mapped", || {
+            library_widgets(parent_manager.upcast_ref())
+                .iter()
+                .any(|w| {
+                    w.downcast_ref::<gtk::SearchEntry>()
+                        .is_some_and(|w| w.is_mapped())
+                })
+        });
         parent_editor.import_file(&input).unwrap();
         let pending = bookmark_confirmation(&parent_manager);
         browser.window.close();
@@ -1012,6 +1038,14 @@ fn check_settings_preferences(app: &gtk::Application, site: &LocalSite) {
                 && window.transient_for().as_ref() == Some(parent.upcast_ref())
         })
         .unwrap();
+    // GtkExpander does not parent its collapsed content into the widget tree.
+    // Follow the user action before inspecting the advanced controls.
+    library_widgets(window.upcast_ref())
+        .into_iter()
+        .filter_map(|widget| widget.downcast::<gtk::Expander>().ok())
+        .find(|expander| expander.label().as_deref() == Some("Advanced"))
+        .expect("Advanced settings section")
+        .set_expanded(true);
     for label in ["Import preferences…", "Export preferences…", "Reset draft…"] {
         assert!(
             library_widgets(window.upcast_ref())
@@ -1164,7 +1198,7 @@ fn check_settings_preferences(app: &gtk::Application, site: &LocalSite) {
     library_widgets(manager.upcast_ref())
         .into_iter()
         .filter_map(|widget| widget.downcast::<gtk::Button>().ok())
-        .find(|button| button.label().as_deref() == Some("Rename"))
+        .find(|button| button.label().as_deref() == Some("Save name"))
         .unwrap()
         .emit_clicked();
     assert_eq!(
@@ -1176,7 +1210,7 @@ fn check_settings_preferences(app: &gtk::Application, site: &LocalSite) {
         library_widgets(manager.upcast_ref())
             .into_iter()
             .filter_map(|widget| widget.downcast::<gtk::Button>().ok())
-            .find(|button| button.label().as_deref() == Some("Delete…"))
+            .find(|button| button.label().as_deref() == Some("Delete profile…"))
             .unwrap()
             .emit_clicked();
         let mut dialog = None;
@@ -1329,13 +1363,10 @@ fn check_download_io_failures(app: &gtk::Application, site: &LocalSite) {
             w.downcast_ref::<gtk::ProgressBar>()
                 .is_some_and(|p| p.text().as_deref() == Some("Failed"))
         }));
-        assert!(
-            !widgets
-                .iter()
-                .any(|w| w.downcast_ref::<gtk::Button>().is_some_and(
-                    |b| b.is_visible() && b.label().as_deref() == Some("Reveal in folder")
-                ))
-        );
+        assert!(!widgets.iter().any(|w| {
+            w.downcast_ref::<gtk::Button>()
+                .is_some_and(|b| b.is_visible() && b.label().as_deref() == Some("Show in folder"))
+        }));
         wait_until("failed download metadata persisted", || {
             browser
                 .profile
@@ -1503,7 +1534,9 @@ fn check_download_records(app: &gtk::Application, site: &LocalSite) {
             assert!(
                 library_widgets(manager.upcast_ref()).iter().any(|w| w
                     .downcast_ref::<gtk::Label>()
-                    .is_some_and(|l| l.text().contains(path.to_str().unwrap()))),
+                    .is_some_and(|l| l
+                        .tooltip_text()
+                        .is_some_and(|text| text.contains(path.to_str().unwrap())))),
                 "restored metadata should be visible without redownloading"
             );
             capture_native_window(&manager, "PAISLEY_DOWNLOADS_SCREENSHOT");
@@ -1511,7 +1544,7 @@ fn check_download_records(app: &gtk::Application, site: &LocalSite) {
             let reveal = library_widgets(manager.upcast_ref())
                 .into_iter()
                 .filter_map(|w| w.downcast::<gtk::Button>().ok())
-                .find(|b| b.label().as_deref() == Some("Reveal in folder"))
+                .find(|b| b.label().as_deref() == Some("Show in folder"))
                 .unwrap();
             reveal.emit_clicked(); // Missing-file validation must stop before any external launcher.
             wait_until("missing saved download explained", || {
@@ -1525,7 +1558,7 @@ fn check_download_records(app: &gtk::Application, site: &LocalSite) {
                 let clear = library_widgets(manager.upcast_ref())
                     .into_iter()
                     .filter_map(|w| w.downcast::<gtk::Button>().ok())
-                    .find(|b| b.label().as_deref() == Some("Clear download records…"))
+                    .find(|b| b.label().as_deref() == Some("Clear history…"))
                     .unwrap();
                 clear.emit_clicked();
                 let mut dialog = None;
@@ -1690,58 +1723,81 @@ fn check_browser_library(app: &gtk::Application, site: &LocalSite) {
     });
     gtk::prelude::WidgetExt::activate_action(&browser.window, "win.bookmark-current", None)
         .expect("bookmark action");
+    save_bookmark_draft(&browser);
     browser.navigate(&format!("{}/two", site.base));
     wait_until("library second page", || {
         view.title().as_deref() == Some("Two") && !view.is_loading()
     });
     for (action, title, page_title) in [
-        ("win.bookmarks", "Paisley bookmarks", "One"),
-        ("win.history", "Paisley history", "Two"),
+        ("win.bookmarks", "Bookmarks", "One"),
+        ("win.history", "History", "Two"),
     ] {
         gtk::prelude::WidgetExt::activate_action(&browser.window, action, None).unwrap();
-        let manager = gtk::Window::list_toplevels()
-            .into_iter()
-            .filter_map(|w| w.downcast::<gtk::Window>().ok())
-            .find(|w| w.title().as_deref() == Some(title))
-            .expect("library manager window");
+        let manager: gtk::Window = browser.window.clone().upcast();
+        assert!(library_widgets(manager.upcast_ref()).iter().any(|w| {
+            w.downcast_ref::<gtk::Label>()
+                .is_some_and(|l| l.text() == title)
+        }));
+        wait_until("library sheet mapped", || {
+            library_widgets(&library_sheet_panel(&browser))
+                .iter()
+                .any(|w| {
+                    w.downcast_ref::<gtk::SearchEntry>()
+                        .is_some_and(|w| w.is_mapped())
+                })
+        });
         wait_until("library manager visible", || manager.is_visible());
-        let widgets = library_widgets(manager.upcast_ref());
+        let widgets = library_widgets(&library_sheet_panel(&browser));
         let search = widgets
             .into_iter()
             .find_map(|w| w.downcast::<gtk::SearchEntry>().ok())
             .unwrap();
         search.set_text("no-such-title-in-this-fixture");
         wait_until("library search hides nonmatches", || {
-            library_widgets(manager.upcast_ref()).iter().any(|w| {
-                w.downcast_ref::<gtk::Label>()
-                    .is_some_and(|l| l.text().starts_with("0 matches"))
-            })
+            library_widgets(&library_sheet_panel(&browser))
+                .iter()
+                .any(|w| {
+                    w.downcast_ref::<gtk::Label>()
+                        .is_some_and(|l| l.text().starts_with("0 results"))
+                })
         });
-        assert!(!library_widgets(manager.upcast_ref()).iter().any(|w| {
-            w.downcast_ref::<gtk::Label>()
-                .is_some_and(|l| l.text() == page_title)
-        }));
+        assert!(
+            !library_widgets(&library_sheet_panel(&browser))
+                .iter()
+                .any(|w| {
+                    w.downcast_ref::<gtk::Label>()
+                        .is_some_and(|l| l.text() == page_title)
+                })
+        );
         search.set_text(page_title);
         wait_until("library search shows matches", || {
-            library_widgets(manager.upcast_ref()).iter().any(|w| {
-                w.downcast_ref::<gtk::Label>()
-                    .is_some_and(|l| l.text() == page_title)
-            })
+            library_widgets(&library_sheet_panel(&browser))
+                .iter()
+                .any(|w| {
+                    w.downcast_ref::<gtk::Label>()
+                        .is_some_and(|l| l.text() == page_title)
+                })
         });
         wait_until("library filtered count", || {
-            library_widgets(manager.upcast_ref()).iter().any(|w| {
-                w.downcast_ref::<gtk::Label>()
-                    .is_some_and(|l| l.text().starts_with("1 matches"))
-            })
+            library_widgets(&library_sheet_panel(&browser))
+                .iter()
+                .any(|w| {
+                    w.downcast_ref::<gtk::Label>()
+                        .is_some_and(|l| l.text().starts_with("1 result"))
+                })
         });
         if action == "win.history" {
-            assert!(!library_widgets(manager.upcast_ref()).iter().any(|w| {
-                w.downcast_ref::<gtk::Label>()
-                    .is_some_and(|l| l.text() == "One")
-            }));
+            assert!(
+                !library_widgets(&library_sheet_panel(&browser))
+                    .iter()
+                    .any(|w| {
+                        w.downcast_ref::<gtk::Label>()
+                            .is_some_and(|l| l.text() == "One")
+                    })
+            );
             capture_native_window(&manager, "PAISLEY_LIBRARY_SCREENSHOT");
         }
-        manager.close();
+        browser.menu.dismiss();
     }
     for relative in ["/two?route=spa", "/two?route=spa#section", "/two"] {
         javascript(
@@ -1818,6 +1874,7 @@ fn check_browser_library(app: &gtk::Application, site: &LocalSite) {
         assert!(browser.library.borrow().history.is_empty());
         gtk::prelude::WidgetExt::activate_action(&browser.window, "win.bookmark-current", None)
             .unwrap();
+        save_bookmark_draft(&browser);
         assert_eq!(browser.library.borrow().bookmarks.len(), 1);
         browser.window.close();
         drop(browser);
@@ -1849,6 +1906,7 @@ fn check_browser_library(app: &gtk::Application, site: &LocalSite) {
     std::fs::write(&path, "{").unwrap();
     gtk::prelude::WidgetExt::activate_action(&browser.window, "win.bookmark-current", None)
         .unwrap();
+    save_bookmark_draft(&browser);
     wait_until("background save error reported", || {
         tab.error.text().contains("Could not save")
     });
@@ -1867,17 +1925,42 @@ fn check_browser_library(app: &gtk::Application, site: &LocalSite) {
             && !browser.dirty.get()
     });
     for (action, title, button) in [
-        ("win.bookmarks", "Paisley bookmarks", "Remove"),
-        ("win.history", "Paisley history", "Clear history…"),
+        ("win.bookmarks", "Bookmarks", "Remove"),
+        ("win.history", "History", "Clear history…"),
     ] {
         gtk::prelude::WidgetExt::activate_action(&browser.window, action, None).unwrap();
-        let manager = gtk::Window::list_toplevels()
-            .into_iter()
-            .filter_map(|w| w.downcast::<gtk::Window>().ok())
-            .find(|w| w.title().as_deref() == Some(title))
-            .unwrap();
+        let manager: gtk::Window = browser.window.clone().upcast();
+        assert!(library_widgets(manager.upcast_ref()).iter().any(|w| {
+            w.downcast_ref::<gtk::Label>()
+                .is_some_and(|l| l.text() == title)
+        }));
+        wait_until("library sheet mapped", || {
+            library_widgets(&library_sheet_panel(&browser))
+                .iter()
+                .any(|w| {
+                    w.downcast_ref::<gtk::SearchEntry>()
+                        .is_some_and(|w| w.is_mapped())
+                })
+        });
+        if action == "win.bookmarks" {
+            library_widgets(&library_sheet_panel(&browser))
+                .into_iter()
+                .filter_map(|w| w.downcast::<gtk::ToggleButton>().ok())
+                .find(|b| b.tooltip_text().as_deref() == Some("Edit bookmark"))
+                .unwrap()
+                .set_active(true);
+            library_widgets(&library_sheet_panel(&browser))
+                .into_iter()
+                .filter_map(|w| w.downcast::<gtk::Button>().ok())
+                .find(|b| b.label().as_deref() == Some("Remove"))
+                .unwrap()
+                .emit_clicked();
+            assert!(browser.library.borrow().bookmarks.is_empty());
+            browser.menu.dismiss();
+            continue;
+        }
         for confirm in [false, true] {
-            let trigger = library_widgets(manager.upcast_ref())
+            let trigger = library_widgets(&library_sheet_panel(&browser))
                 .into_iter()
                 .filter_map(|w| w.downcast::<gtk::Button>().ok())
                 .find(|b| b.label().as_deref() == Some(button))
@@ -1914,7 +1997,7 @@ fn check_browser_library(app: &gtk::Application, site: &LocalSite) {
                 assert!(!empty(), "Cancel must preserve library data");
             }
         }
-        manager.close();
+        browser.menu.dismiss();
     }
     browser.window.close();
     drop(browser);
@@ -2023,15 +2106,43 @@ fn check_blocking_navigation_boundaries(app: &gtk::Application, site: &LocalSite
         .blocking_exceptions
         .push(a.clone());
     browser.apply_settings();
-    browser.navigate(&format!("{a}/blocking?from=exception"));
+    let exception = format!("{a}/blocking?from=exception");
+    browser.navigate(&exception);
     wait_until("exception allows tracker", || {
         site.trackers.load(Ordering::Relaxed) > before
+            && !related.is_loading()
+            && related
+                .back_forward_list()
+                .and_then(|list| list.current_item())
+                .is_some_and(|item| item.uri().as_deref() == Some(exception.as_str()))
     });
     let allowed = site.trackers.load(Ordering::Relaxed);
     let target = format!("{b}/blocking?from=link");
     related.load_uri(&target); // Engine-driven navigation, bypassing address-bar helper.
+    let navigation_started = Instant::now();
+    let dumped = Cell::new(false);
     wait_until("cross-origin destination loaded", || {
-        related.uri().as_deref() == Some(target.as_str()) && !related.is_loading()
+        if navigation_started.elapsed() > Duration::from_secs(19) && !dumped.replace(true) {
+            let list = related.back_forward_list();
+            eprintln!(
+                "boundary diagnostic uri={:?} loading={} current={:?} back={:?} error={:?}",
+                related.uri(),
+                related.is_loading(),
+                list.as_ref()
+                    .and_then(|l| l.current_item())
+                    .and_then(|i| i.uri()),
+                list.as_ref()
+                    .and_then(|l| l.back_item())
+                    .and_then(|i| i.uri()),
+                browser.active_tab().map(|t| t.error.text())
+            );
+        }
+        related.uri().as_deref() == Some(target.as_str())
+            && !related.is_loading()
+            && related
+                .back_forward_list()
+                .and_then(|list| list.current_item())
+                .is_some_and(|item| item.uri().as_deref() == Some(target.as_str()))
     });
     assert_eq!(
         site.trackers.load(Ordering::Relaxed),
@@ -2660,4 +2771,43 @@ for path in itertools.islice(root.rglob('*'), 128):
     drop(tab);
     drop(isolated);
     defer_engine_fixture_cleanup_until_process_exit(&base);
+}
+
+fn save_bookmark_draft(browser: &Rc<Browser>) {
+    library_widgets(browser.window.upcast_ref())
+        .into_iter()
+        .filter_map(|w| w.downcast::<gtk::Button>().ok())
+        .find(|b| b.label().as_deref() == Some("Save bookmark"))
+        .expect("bookmark draft save")
+        .emit_clicked();
+    browser.menu.dismiss();
+}
+
+fn library_sheet_panel(browser: &Rc<Browser>) -> gtk::Widget {
+    library_widgets(browser.window.upcast_ref())
+        .into_iter()
+        .filter_map(|w| w.downcast::<gtk::Stack>().ok())
+        .find_map(|stack| stack.child_by_name("secondary"))
+        .expect("secondary library sheet")
+}
+
+// Closed tabs must release their native widget and content-manager ownership;
+// engine allocator/cache retention is a separate measurement.
+fn check_closed_tab_lifetime(app: &gtk::Application, site: &LocalSite) {
+    let browser = Browser::new(app);
+    browser.present();
+    for cycle in 0..12 {
+        let view = browser.add_tab(None, Some(&format!("{}/one?lifetime={cycle}", site.base)));
+        wait_until("lifetime page loaded", || !view.is_loading() && view.title().is_some());
+        let id = browser.active_tab().unwrap().id;
+        let weak_view = view.downgrade();
+        let weak_manager = view.user_content_manager().unwrap().downgrade();
+        drop(view);
+        browser.close_tab(id);
+        wait_until("closed tab WebView released", || weak_view.upgrade().is_none());
+        wait_until("closed tab content manager released", || weak_manager.upgrade().is_none());
+        assert_eq!(browser.notebook.n_pages(), 1);
+        eprintln!("closed-tab ownership cycle {}/12 released", cycle + 1);
+    }
+    browser.window.close();
 }

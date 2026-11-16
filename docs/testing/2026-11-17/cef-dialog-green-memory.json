@@ -1,0 +1,88 @@
+{
+  "binary": "/home/recruas/Workspace/Alexander Vox/Servo-preview/servo-gtk/target/debug/build/vox-paisley/73c43310f230ba8f/out/cef_native-73c43310f230ba8f",
+  "sha256": "eb4a1c9bc6686a3f5f23cc0ff761d6bafce978700e73ddc86109dcf458780985",
+  "temporary_no_sandbox": true,
+  "samples": [
+    {
+      "seconds": 0.0,
+      "mib": 3.52,
+      "metric": "PSS",
+      "pids": [
+        15687
+      ],
+      "available_mib": 9993
+    },
+    {
+      "seconds": 0.52,
+      "mib": 418.49,
+      "metric": "PSS",
+      "pids": [
+        15687,
+        15702,
+        15705,
+        15706,
+        15735,
+        15739
+      ],
+      "available_mib": 9779
+    },
+    {
+      "seconds": 1.04,
+      "mib": 683.71,
+      "metric": "PSS",
+      "pids": [
+        15687,
+        15702,
+        15705,
+        15706,
+        15735,
+        15739,
+        15771,
+        15789,
+        15791,
+        15812
+      ],
+      "available_mib": 9606
+    },
+    {
+      "seconds": 1.56,
+      "mib": 723.99,
+      "metric": "PSS",
+      "pids": [
+        15687,
+        15702,
+        15705,
+        15706,
+        15735,
+        15739,
+        15771,
+        15789,
+        15791,
+        15812
+      ],
+      "available_mib": 9560
+    },
+    {
+      "seconds": 2.1,
+      "mib": 728.76,
+      "metric": "PSS",
+      "pids": [
+        15687,
+        15702,
+        15705,
+        15706,
+        15735,
+        15739,
+        15771,
+        15789,
+        15791,
+        15812
+      ],
+      "available_mib": 9534
+    }
+  ],
+  "running": false,
+  "owned_processes_after_exit": [],
+  "exit_code": 0,
+  "reason": null
+}

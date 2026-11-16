@@ -1,3 +1,5 @@
+#[cfg(feature="cef")]
+mod cef_downloads;
 mod automation_runtime;
 mod blocking;
 mod browser;
@@ -6,8 +8,8 @@ mod desktop_install;
 mod desktop_notifications;
 mod download_ui;
 mod downloads;
-mod favicons;
 mod engine_memory;
+mod favicons;
 mod inspector_dock;
 mod library_ui;
 mod managed_ui;
@@ -21,6 +23,14 @@ mod site_styles;
 use gtk::prelude::*;
 
 fn main() -> gtk::glib::ExitCode {
+    #[cfg(feature = "cef")]
+    cef_gtk::run_as_runner_if_requested();
+    #[cfg(all(test, feature = "cef-test-support"))]
+    if std::env::var_os("PAISLEY_SERVO_NATIVE").is_some() {
+        let result = browser::engine_tests::run();
+        cef_gtk::finish_shutdown();
+        return result;
+    }
     if std::env::args().any(|arg| arg == "--mcp") {
         return paisley::mcp::run_stdio();
     }
@@ -142,6 +152,8 @@ fn main() -> gtk::glib::ExitCode {
     let mut launch_args = vec!["paisley".to_owned()];
     launch_args.extend(links);
     let result = app.run_with_args(&launch_args);
+    #[cfg(feature = "cef")]
+    cef_gtk::finish_shutdown();
     if failed.get() {
         gtk::glib::ExitCode::FAILURE
     } else {

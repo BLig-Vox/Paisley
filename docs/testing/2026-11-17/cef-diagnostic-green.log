@@ -1,0 +1,314 @@
+Build cap: 2048 MiB RAM, no swap, one build job
+   Compiling fonts-rs-lucide v0.5.0
+   Compiling vox-paisley v0.1.1 (/home/recruas/Workspace/Alexander Vox/Browny)
+warning: unused imports: `Path` and `Weak`
+  --> src/cef_downloads.rs:13:12
+   |
+13 |     path::{Path, PathBuf},
+   |            ^^^^
+14 |     rc::{Rc, Weak},
+   |              ^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: use of deprecated function `gtk4::gdk4::pixbuf_get_from_texture`: Since 4.12
+   --> src/favicons.rs:328:23
+    |
+328 |     let pixbuf = gdk::pixbuf_get_from_texture(&texture)?;
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(deprecated)]` on by default
+
+warning: use of deprecated method `gtk4::CssProvider::load_from_data`: Since 4.12
+  --> src/download_ui.rs:68:14
+   |
+68 |     provider.load_from_data(include_str!("../assets/downloads.css"));
+   |              ^^^^^^^^^^^^^^
+
+warning: unused import: `webkit::prelude`
+ --> src/browser.rs:6:5
+  |
+6 | use webkit::prelude::*;
+  |     ^^^^^^^^^^^^^^^
+
+warning: field `label` is never read
+  --> src/cef_downloads.rs:25:5
+   |
+23 | struct Row {
+   |        --- field in this struct
+24 |     widget: gtk::Box,
+25 |     label: gtk::Label,
+   |     ^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: methods `set_directory`, `test_control`, `snapshots`, and `completed_paths` are never used
+   --> src/cef_downloads.rs:90:12
+    |
+ 53 | impl Manager {
+    | ------------ methods in this implementation
+...
+ 90 |     pub fn set_directory(&self, path: PathBuf) {
+    |            ^^^^^^^^^^^^^
+...
+ 94 |     pub fn test_control(&self, id: u32, operation: &str) {
+    |            ^^^^^^^^^^^^
+...
+ 98 |     pub fn snapshots(&self) -> Vec<(u32, u64, bool, bool)> {
+    |            ^^^^^^^^^
+...
+106 |     pub fn completed_paths(&self) -> Vec<PathBuf> {
+    |            ^^^^^^^^^^^^^^^
+
+warning: function `check_native_grants` is never used
+   --> src/automation_runtime.rs:815:15
+    |
+815 | pub(crate) fn check_native_grants(app: &gtk::Application, capture: impl Fn(&gtk::Window, &str)) {
+    |               ^^^^^^^^^^^^^^^^^^^
+
+warning: field `notification_origins` is never read
+  --> src/browser.rs:48:5
+   |
+31 | struct Tab {
+   |        --- field in this struct
+...
+48 |     notification_origins: Vec<String>,
+   |     ^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `Tab` has a derived impl for the trait `Clone`, but this is intentionally ignored during dead code analysis
+
+warning: field `notification_context` is never read
+  --> src/browser.rs:87:5
+   |
+52 | pub struct Browser {
+   |            ------- field in this struct
+...
+87 |     notification_context: RefCell<Option<(Vec<String>, webkit::WebContext)>>,
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: associated function `new` is never used
+   --> src/browser.rs:104:12
+    |
+102 | impl Browser {
+    | ------------ associated function in this implementation
+103 |     #[cfg(test)]
+104 |     pub fn new(app: &gtk::Application) -> Rc<Self> {
+    |            ^^^
+
+warning: multiple fields are never read
+  --> src/downloads.rs:24:5
+   |
+22 | struct Item {
+   |        ---- fields in this struct
+23 |     row: gtk::Box,
+24 |     reveal: gtk::Button,
+   |     ^^^^^^
+25 |     received: u64,
+26 |     label: gtk::Label,
+   |     ^^^^^
+27 |     detail: gtk::Label,
+28 |     icon: gtk::Image,
+   |     ^^^^
+29 |     size_cell: gtk::Label,
+   |     ^^^^^^^^^
+...
+34 |     retry: gtk::Button,
+   |     ^^^^^
+...
+37 |     source_view: Option<gtk::glib::WeakRef<webkit::WebView>>,
+   |     ^^^^^^^^^^^
+38 |     path: Option<PathBuf>,
+39 |     partial: Option<PathBuf>,
+   |     ^^^^^^^
+
+warning: fields `errors` and `test_directory` are never read
+  --> src/downloads.rs:71:5
+   |
+44 | pub struct Downloads {
+   |            --------- fields in this struct
+...
+71 |     errors: RefCell<Vec<String>>,
+   |     ^^^^^^
+72 |     test_directory: Option<PathBuf>,
+   |     ^^^^^^^^^^^^^^
+
+warning: multiple associated items are never used
+    --> src/downloads.rs:78:12
+     |
+  76 | impl Downloads {
+     | -------------- associated items in this implementation
+  77 |     #[cfg(test)]
+  78 |     pub fn new(parent: &gtk::ApplicationWindow) -> Rc<Self> {
+     |            ^^^
+...
+ 183 |     pub fn native_test_manager(&self) -> Rc<crate::cef_downloads::Manager> {
+     |            ^^^^^^^^^^^^^^^^^^^
+...
+ 202 |     pub fn with_directory(parent: &gtk::ApplicationWindow, path: PathBuf) -> Rc<Self> {
+     |            ^^^^^^^^^^^^^^
+...
+ 207 |     pub fn with_directory_history(
+     |            ^^^^^^^^^^^^^^^^^^^^^^
+...
+ 638 |     pub fn completed_paths(&self) -> Vec<PathBuf> {
+     |            ^^^^^^^^^^^^^^^
+...
+ 642 |     pub fn errors(&self) -> Vec<String> {
+     |            ^^^^^^
+...
+ 646 |     pub fn active_count(&self) -> usize {
+     |            ^^^^^^^^^^^^
+...
+ 664 |     fn prepare(self: &Rc<Self>, download: &webkit::Download) -> (usize, String) {
+     |        ^^^^^^^
+...
+ 799 |     pub fn start(self: &Rc<Self>, download: &webkit::Download) {
+     |            ^^^^^
+...
+ 830 |     fn choose_destination(
+     |        ^^^^^^^^^^^^^^^^^^
+...
+ 902 |     fn waiting_for_destination(&self, index: usize, download: &webkit::Download) -> bool {
+     |        ^^^^^^^^^^^^^^^^^^^^^^^
+...
+ 908 |     fn set_destination(&self, index: usize, download: &webkit::Download, path: PathBuf) {
+     |        ^^^^^^^^^^^^^^^
+...
+ 964 |     fn update_progress(&self, index: usize, download: &webkit::Download) {
+     |        ^^^^^^^^^^^^^^^
+...
+ 984 |     fn finish(&self, index: usize) {
+     |        ^^^^^^
+...
+1046 |     fn fail(&self, index: usize, message: String) {
+     |        ^^^^
+...
+1125 |     fn retry_item(self: &Rc<Self>, index: usize) {
+     |        ^^^^^^^^^^
+
+warning: struct `PendingChoice` is never constructed
+    --> src/downloads.rs:1275:19
+     |
+1275 | pub(crate) struct PendingChoice {
+     |                   ^^^^^^^^^^^^^
+
+warning: associated items `new`, `cancel_row`, `interrupt_transfer`, `status`, `records`, and `accept_late_path` are never used
+    --> src/downloads.rs:1281:12
+     |
+1280 | impl PendingChoice {
+     | ------------------ associated items in this implementation
+1281 |     pub fn new(parent: &gtk::ApplicationWindow, download: &webkit::Download) -> Self {
+     |            ^^^
+...
+1291 |     pub fn cancel_row(&self) {
+     |            ^^^^^^^^^^
+...
+1294 |     pub fn interrupt_transfer(&self) {
+     |            ^^^^^^^^^^^^^^^^^^
+...
+1297 |     pub fn status(&self) -> String {
+     |            ^^^^^^
+...
+1300 |     pub fn records(&self) -> DownloadHistory {
+     |            ^^^^^^^
+...
+1303 |     pub fn accept_late_path(&self, path: PathBuf) {
+     |            ^^^^^^^^^^^^^^^^
+
+warning: function `context` is never used
+  --> src/engine_memory.rs:16:8
+   |
+16 | pub fn context() -> webkit::WebContext {
+   |        ^^^^^^^
+
+warning: method `revisit` is never used
+   --> src/favicons.rs:140:12
+    |
+ 45 | impl Favicons {
+    | ------------- method in this implementation
+...
+140 |     pub fn revisit(self: &Rc<Self>, uri: &str) {
+    |            ^^^^^^^
+
+warning: function `install` is never used
+ --> src/inspector_dock.rs:5:8
+  |
+5 | pub fn install(view: &webkit::WebView, split: &gtk::Paned) {
+  |        ^^^^^^^
+
+warning: function `show` is never used
+   --> src/library_ui.rs:361:15
+    |
+361 | pub(crate) fn show(
+    |               ^^^^
+
+warning: function `show` is never used
+  --> src/settings_ui.rs:77:15
+   |
+77 | pub(crate) fn show(
+   |               ^^^^
+
+warning: function `profiles` is never used
+   --> src/settings_ui.rs:361:8
+    |
+361 | pub fn profiles(parent: &gtk::ApplicationWindow, current: &str, is_private: bool) {
+    |        ^^^^^^^^
+
+warning: function `profiles_with_catalog` is never used
+   --> src/settings_ui.rs:391:15
+    |
+391 | pub(crate) fn profiles_with_catalog(
+    |               ^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `clear_site_data` is never used
+   --> src/site_info.rs:169:14
+    |
+169 | pub async fn clear_site_data(
+    |              ^^^^^^^^^^^^^^^
+
+warning: function `content_manager` is never used
+ --> src/site_styles.rs:3:8
+  |
+3 | pub fn content_manager() -> webkit::UserContentManager {
+  |        ^^^^^^^^^^^^^^^
+
+warning: `vox-paisley` (bin "paisley" test) generated 24 warnings (run `cargo fix --bin "paisley" -p vox-paisley --tests` to apply 1 suggestion)
+    Finished `test` profile [unoptimized] target(s) in 2.18s
+     Running unittests src/main.rs (Servo-preview/servo-gtk/target/debug/build/vox-paisley/e6a7135ba27fddc5/out/paisley-e6a7135ba27fddc5)
+
+running 12 tests
+test automation_runtime::tests::grant_expiry_and_revocation_are_fail_closed ... ok
+test downloads::tests::duplicate_name_preserves_extension ... ok
+test automation_runtime::tests::navigation_requires_exact_origin_without_credentials ... ok
+test session_store::tests::invalid_session_does_not_prevent_library_save_or_history_deletion ... ok
+test automation_runtime::tests::stop_diagnostics_are_fixed_bounded_cause_codes ... ok
+test downloads::tests::diagnostic_history_retains_only_the_latest_200_entries ... ok
+test downloads::tests::suggested_names_cannot_escape_or_select_special_paths ... ok
+test downloads::tests::reveal_requires_an_existing_absolute_regular_file_not_a_symlink ... ok
+test automation_runtime::tests::canonical_origins_and_fixture_scope ... ok
+test downloads::tests::automated_destination_uses_create_new_and_allocates_collisions ... ok
+test session_store::tests::writes_download_records_even_when_session_and_library_fail ... ok
+test automation_runtime::tests::idle_control_timeout_does_not_revoke_a_live_connection ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+{
+  "limit_mib": 2048,
+  "swap_limit_mib": 0,
+  "running": false,
+  "command": [
+    "cargo",
+    "test",
+    "--manifest-path",
+    "Browny/Cargo.toml",
+    "--features",
+    "cef",
+    "--bin",
+    "paisley"
+  ],
+  "peak_mib": 433.32,
+  "reason": null,
+  "seconds": 2.5,
+  "exit_code": 0,
+  "memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0\n"
+}

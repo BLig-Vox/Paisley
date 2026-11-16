@@ -1,0 +1,117 @@
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+[20601:20612:1116/212021.150300:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+[20601:20612:1116/212021.315370:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[20601:20612:1116/212021.315429:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[20601:20612:1116/212021.315453:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[20601:20612:1116/212021.372281:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[20601:20612:1116/212021.372329:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[20601:20601:1116/212021.373139:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.Properties.GetAll: object_path= /org/freedesktop/UPower/devices/DisplayDevice: unknown error type: 
+CYCLE_MEMORY after 12 closed tabs: 674 MiB 9 processes (PSS)
+
+(process:20585): Gtk-CRITICAL **: 21:20:25.766: gtk_widget_measure: assertion 'for_size >= -1' failed
+
+(process:20585): Gtk-WARNING **: 21:20:25.766: gtk_widget_size_allocate(): attempt to allocate GtkImage image 0x558a3fa14c50 with width 0 and height -9
+
+(process:20585): Gtk-CRITICAL **: 21:20:25.766: gtk_widget_measure: assertion 'for_size >= -1' failed
+
+(process:20585): Gtk-WARNING **: 21:20:25.766: gtk_widget_size_allocate(): attempt to allocate GtkImage image 0x558a3fa1fd90 with width 0 and height -9
+CYCLE_MEMORY after 24 closed tabs: 682 MiB 9 processes (PSS)
+CYCLE_MEMORY after 36 closed tabs: 669 MiB 9 processes (PSS)
+CYCLE_MEMORY after 48 closed tabs: 683 MiB 9 processes (PSS)
+CYCLE_MEMORY after 60 closed tabs: 683 MiB 9 processes (PSS)
+[21514:21534:1116/212039.277251:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+[21514:21534:1116/212039.439098:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[21514:21534:1116/212039.439144:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[21514:21534:1116/212039.439179:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[21514:21534:1116/212039.529285:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[21514:21534:1116/212039.529334:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[21514:21514:1116/212039.530221:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.Properties.GetAll: object_path= /org/freedesktop/UPower/devices/DisplayDevice: unknown error type: 
+MEMORY STAGE eight resident tabs with 32 MiB each: 1106 MiB 16 processes (PSS)
+MEMORY STAGE after inactive tabs slept: 875 MiB 11 processes (PSS)
+Live tab residency: 5 tabs slept; restore and protected draft passed
+TRANSFER 1 bytes=0 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=0 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=102400 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=204800 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=204800 paused=true complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=204800 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=315392 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=417792 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=520192 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=618496 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=720896 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=823296 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=925696 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=1024000 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=1126400 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=1228800 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=1331200 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=1433600 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=1536000 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=1634304 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=1736704 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=1839104 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=1941504 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=2043904 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=2097152 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=2097152 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=2097152 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=2097152 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 1 bytes=2097152 paused=false complete=true cancelled=false interrupted=false reason=0
+TRANSFER 2 bytes=0 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 2 bytes=70 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 2 bytes=70 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 2 bytes=70 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 2 bytes=70 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 2 bytes=70 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 2 bytes=70 paused=false complete=true cancelled=false interrupted=false reason=0
+TRANSFER 3 bytes=0 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 3 bytes=167 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 3 bytes=167 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 3 bytes=167 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 3 bytes=167 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 3 bytes=167 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 3 bytes=167 paused=false complete=true cancelled=false interrupted=false reason=0
+TRANSFER 4 bytes=0 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 4 bytes=51 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 4 bytes=51 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 4 bytes=51 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 4 bytes=51 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 4 bytes=51 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 4 bytes=51 paused=false complete=true cancelled=false interrupted=false reason=0
+TRANSFER 5 bytes=0 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 5 bytes=599 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 5 bytes=599 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 5 bytes=599 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 5 bytes=599 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 5 bytes=599 paused=false complete=false cancelled=false interrupted=false reason=0
+TRANSFER 5 bytes=599 paused=false complete=true cancelled=false interrupted=false reason=0
+Native downloads: authenticated bytes, pause/resume, closed source tab, PNG/ZIP/PDF/TXT and atomic publication passed
+Native navigation failure: visible error instead of an unexplained blank page
+CEF site data: HttpOnly cookie and local storage cleared in the correct engine
+CEF privacy: third-party cookie sending/saving blocked; WebRTC disabled in fresh parent/child frames and available again in normal mode
+[20642:20642:1116/212104.603259:ERROR:gpu/command_buffer/service/context_group.cc:140] ContextResult::kFatalFailure: WebGL1 blocklisted
+CEF inspector: loaded in right pane and closed without retained native handle
+CEF dialogs: alert, confirm cancellation, Unicode prompt and owner cleanup passed
+[20601:20601:1116/212106.224650:ERROR:cef/libcef/browser/javascript_dialog_manager.cc:331] Default dialog implementation requires a parent window handle; canceling the JS dialog
+[20601:20601:1116/212106.224710:ERROR:cef/libcef/browser/javascript_dialog_manager.cc:331] Default dialog implementation requires a parent window handle; canceling the JS dialog
+CEF authentication: HTTP Basic challenge, credentials and owner cleanup passed
+CEF select popup: painted, Unicode option selected and 20 reopen/dismiss cycles passed
+CEF file chooser: 12 immediate owner-close cycles released their windows
+[22203:22213:1116/212117.607147:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+[22203:22213:1116/212117.747300:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[22203:22213:1116/212117.747325:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[22203:22213:1116/212117.747332:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[22203:22213:1116/212117.800909:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[22203:22213:1116/212117.800937:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[22203:22203:1116/212117.801953:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.Properties.GetAll: object_path= /org/freedesktop/UPower/devices/DisplayDevice: unknown error type: 
+[22203:22203:1116/212117.874448:ERROR:mojo/public/cpp/bindings/lib/interface_endpoint_client.cc:652] Message 2 rejected by interface blink.mojom.Widget
+Engine crash recovery: page and profile services reconnected
+Native engine: 60 tab cycles, form retention, cookie sharing and private isolation passed

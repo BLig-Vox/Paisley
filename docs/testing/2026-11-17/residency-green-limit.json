@@ -1,0 +1,15 @@
+{
+  "limit_mib": 2048,
+  "swap_limit_mib": 0,
+  "running": false,
+  "command": [
+    "python3",
+    "-c",
+    "import subprocess,sys; subprocess.run([\"rustc\",\"--edition=2024\",\"--test\",\"Browny/engine/servo-transport/src/residency.rs\",\"-o\",\"Browny/target/residency-tests\"],check=True); sys.exit(subprocess.run([\"Browny/target/residency-tests\"]).returncode)"
+  ],
+  "peak_mib": 68.5,
+  "reason": null,
+  "seconds": 0.3,
+  "exit_code": 0,
+  "memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0\n"
+}
