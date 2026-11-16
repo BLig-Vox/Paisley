@@ -1,0 +1,23 @@
+{
+  "requested_limit_bytes": 3000000000,
+  "limit_bytes": 2999996416,
+  "cargo_jobs": 1,
+  "limit_mib": 2861.02,
+  "swap_limit_mib": 0,
+  "running": false,
+  "command": [
+    "cargo",
+    "rustc",
+    "--test",
+    "wayland_identity",
+    "--message-format=json",
+    "--",
+    "-C",
+    "linker=/home/recruas/Workspace/Alexander Vox/Browny/target/servo-platform/ubuntu-linker.py"
+  ],
+  "peak_mib": 478.27,
+  "reason": null,
+  "seconds": 4.0,
+  "exit_code": 0,
+  "memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0\n"
+}

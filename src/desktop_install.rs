@@ -1,9 +1,38 @@
 //! User-local desktop integration, available even from a Cargo-installed binary.
+use gtk::prelude::*;
 use std::{env, fs, io, path::PathBuf};
 
-pub const ICON_NAME: &str = "site.blig.Paisley";
+pub const DESKTOP_ID: &str = "site.blig.Paisley";
+pub const ICON_NAME: &str = DESKTOP_ID;
 const ICON: &[u8] = include_bytes!("../assets/branding/paisley-logo-stand.png");
 const ENTRY: &str = include_str!("../packaging/site.blig.Paisley.desktop");
+
+/// GApplication IDs remain profile-specific for D-Bus routing. The compositor
+/// needs the installed desktop-file ID instead, for every normal/private window.
+pub fn configure_application(app: &gtk::Application) {
+    app.connect_window_added(|_, window| {
+        window.set_icon_name(Some(ICON_NAME));
+        // GDK ignores set_application_id before the native Wayland toplevel
+        // exists. GtkWindow's default map handler creates it; run afterwards,
+        // before the first rendered buffer, and again on every remap.
+        window.connect_map(apply_window_identity);
+        if window.is_mapped() {
+            apply_window_identity(window);
+        }
+    });
+}
+
+fn apply_window_identity(window: &gtk::Window) {
+    #[cfg(target_os = "linux")]
+    if let Some(toplevel) = window
+        .surface()
+        .and_then(|surface| surface.downcast::<gdk_wayland::WaylandToplevel>().ok())
+    {
+        toplevel.set_application_id(DESKTOP_ID);
+    }
+    #[cfg(not(target_os = "linux"))]
+    let _ = window;
+}
 
 pub fn install() -> io::Result<()> {
     let data = env::var_os("XDG_DATA_HOME")
@@ -30,8 +59,8 @@ pub fn install() -> io::Result<()> {
     let icons = data.join("icons/hicolor/256x256/apps");
     fs::create_dir_all(&applications)?;
     fs::create_dir_all(&icons)?;
-    fs::write(icons.join("site.blig.Paisley.png"), ICON)?;
-    fs::write(applications.join("site.blig.Paisley.desktop"), entry)?;
+    fs::write(icons.join(format!("{ICON_NAME}.png")), ICON)?;
+    fs::write(applications.join(format!("{DESKTOP_ID}.desktop")), entry)?;
     // Optional cache tools: launchers can also discover files without these.
     let _ = std::process::Command::new("gtk-update-icon-cache")
         .args(["-f", "-t"])
@@ -42,4 +71,23 @@ pub fn install() -> io::Result<()> {
         .output();
     println!("Installed Paisley launcher and logo in {}", data.display());
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn desktop_template_matches_window_and_icon_identity() {
+        assert_eq!(DESKTOP_ID, "site.blig.Paisley");
+        assert!(
+            ENTRY
+                .lines()
+                .any(|line| line == format!("Icon={ICON_NAME}"))
+        );
+        assert!(ENTRY.lines().any(|line| line == "Exec=paisley %U"));
+        // Profile routing is handled by the CLI, not a shared D-Bus activator.
+        assert!(!ENTRY.lines().any(|line| line == "DBusActivatable=true"));
+        assert!(ICON.starts_with(b"\x89PNG\r\n\x1a\n"));
+    }
 }

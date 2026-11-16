@@ -1,6 +1,6 @@
 [package]
 name = "vox-paisley"
-version = "0.2.0-alpha.1"
+version = "0.2.0-alpha.2"
 edition = "2024"
 rust-version = "1.92"
 description = "A Linux browser built with Rust and GTK4, with WebKitGTK and an optional CEF backend."
@@ -39,6 +39,9 @@ tokio = { version = "1", features = ["rt", "time", "net", "macros"] }
 sha2 = "0.10"
 libc = "0.2"
 bytes = "1"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+gdk-wayland = { package = "gdk4-wayland", version = "0.11" }
 
 [[test]]
 name = "cef-native"

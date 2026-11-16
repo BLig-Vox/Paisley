@@ -53,6 +53,8 @@ License files were taken from the exact downloaded crate sources. Where a crate 
 | gdk-pixbuf-sys | 0.22.9 | MIT |
 | gdk4 | 0.11.5 | MIT |
 | gdk4-sys | 0.11.5 | MIT |
+| gdk4-wayland | 0.11.5 | MIT |
+| gdk4-wayland-sys | 0.11.5 | MIT |
 | generic-array | 0.14.7 | MIT |
 | getrandom | 0.2.17 | MIT OR Apache-2.0 |
 | getrandom | 0.4.3 | MIT OR Apache-2.0 |

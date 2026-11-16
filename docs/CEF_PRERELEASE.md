@@ -1,4 +1,4 @@
-# CEF prerelease: 0.2.0-alpha.1
+# CEF prerelease: 0.2.0-alpha.2
 
 ## Backend selection
 
@@ -19,7 +19,7 @@ export LD_LIBRARY_PATH="$PAISLEY_CEF_RUNTIME${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH
 ./target/debug/paisley --profile cef-preview
 ```
 
-For registry installation, the corresponding command is `cargo install vox-paisley --version 0.2.0-alpha.1 --locked --features cef`; supply `CEF_PATH` while building and the same two runtime variables when launching. Run that command through `scripts/build-limited.py --` to enforce the build cap. If using a versioned parent as `CEF_PATH`, set `PAISLEY_CEF_RUNTIME` to the actual child directory containing `libcef.so`, not the parent. Persist runtime variables in a separate user launcher if adding a CEF build to the application menu; `--install-desktop` does not configure the CEF runtime.
+For registry installation, the corresponding command is `cargo install vox-paisley --version 0.2.0-alpha.2 --locked --features cef`; supply `CEF_PATH` while building and the same two runtime variables when launching. Run that command through `scripts/build-limited.py --` to enforce the build cap. If using a versioned parent as `CEF_PATH`, set `PAISLEY_CEF_RUNTIME` to the actual child directory containing `libcef.so`, not the parent. Persist runtime variables in a separate user launcher if adding a CEF build to the application menu; `--install-desktop` does not configure the CEF runtime.
 
 Run as an ordinary desktop user with Chromium's sandbox available. Follow CEF's Linux sandbox installation requirements for the exact distribution and operating system. Production builds do not accept the test-only sandbox override. The root Bot Screen tests used an explicit debug/test-support exception; that is not evidence of a validated secure non-root installation. No CEF binary archive or automatic runtime installer is provided in this prerelease.
 

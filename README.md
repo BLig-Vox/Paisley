@@ -13,14 +13,14 @@ A Linux-first web browser written in **Rust**, with **GTK4** for the native
 interface and **WebKitGTK** for rendering and JavaScript. Default window:
 **1280 × 800**.
 
-## 0.2.0-alpha.1 release
+## 0.2.0-alpha.2 release
 
 This prerelease includes the CEF migration source and bounded inactive-tab residency policy. **WebKitGTK remains the default backend and the backend in the prebuilt binary.** The optional CEF backend requires a matching separately installed runtime; it is not ready to replace your default browser. See [CEF setup, test evidence and known gaps](docs/CEF_PRERELEASE.md). CEF website permissions/notifications, IME, display scaling and opener-preserving popups are unfinished.
 
 ## Install
 
 ```sh
-cargo install vox-paisley --version 0.2.0-alpha.1 --locked
+cargo install vox-paisley --version 0.2.0-alpha.2 --locked
 paisley --install-desktop
 ```
 

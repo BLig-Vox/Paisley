@@ -19,3 +19,14 @@ The existing Paisley WebKit binary compiled successfully through the supervisor,
 ## CEF build and regression checkpoint
 
 The CEF native fixture executable also built successfully through the same limit. The latest cached relink peaked at 564.96 MiB (5.5 seconds, exit 0); an earlier initial CEF native build peaked around 1747 MiB. The root library regression build/run peaked at 1793.8 MiB (125.1 seconds), with zero OOM kills and 54 passing tests. Neither is a clean-build benchmark. Exact supervisor reports and runtime measurements are in `testing/2026-11-17/`; runtime PSS figures are separate from build cgroup peaks.
+
+
+## Hard decimal 3 GB cap
+
+For a task requiring at most 3 GB (not 3 GiB):
+
+```sh
+python3 scripts/build-limited.py --limit-mb 3000 -- cargo build
+```
+
+This requests `MemoryMax=3000000000`, zero build swap and one Cargo job. Linux rounds the limit down to its page size (2,999,996,416 bytes with 4 KiB pages). The worker verifies that exact rounded limit and swap limit before launching Cargo. Reports include both requested and actual limit bytes and the job count. The existing default remains 2 GiB; `--limit-gib 1` remains available.

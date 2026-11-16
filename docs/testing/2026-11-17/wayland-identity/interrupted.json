@@ -1,0 +1,7 @@
+{
+  "binary_sha256": "3763e633fc76745c2e3a32a117fbf923e1a3fb3b3342e5762c05a673fe20f0e6",
+  "passed": false,
+  "error": "143",
+  "interrupted": true,
+  "owned_processes_after_exit": []
+}

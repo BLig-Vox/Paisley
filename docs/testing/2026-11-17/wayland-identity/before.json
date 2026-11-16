@@ -1,0 +1,32 @@
+{
+  "binary_sha256": "9b0f75389449105b5cbfd3d8c0588deb00d8aaeff3b0413605eb0776d8aaa109",
+  "passed": false,
+  "toplevels": {
+    "normal-a": {
+      "27": "site.blig.Paisley.p6964656e746974795f61"
+    },
+    "normal-b": {
+      "27": "site.blig.Paisley.p6964656e746974795f62"
+    },
+    "private-a": {
+      "27": "site.blig.Paisley.p6964656e746974795f61.Private"
+    },
+    "private-a-second": {
+      "27": "site.blig.Paisley.p6964656e746974795f61.Private"
+    },
+    "private-b": {
+      "27": "site.blig.Paisley.p6964656e746974795f62.Private"
+    }
+  },
+  "profile_cookie_checks": {
+    "normal-a": "identity=A",
+    "normal-b": "identity=B",
+    "forward-A": "identity=A",
+    "forward-B": "identity=B",
+    "private-a": "identity=PA",
+    "private-a-second": "",
+    "private-b": "identity=PB"
+  },
+  "error": "{'normal-a': {'27': 'site.blig.Paisley.p6964656e746974795f61'}, 'normal-b': {'27': 'site.blig.Paisley.p6964656e746974795f62'}, 'private-a': {'27': 'site.blig.Paisley.p6964656e746974795f61.Private'}, 'private-a-second': {'27': 'site.blig.Paisley.p6964656e746974795f61.Private'}, 'private-b': {'27': 'site.blig.Paisley.p6964656e746974795f62.Private'}}",
+  "owned_processes_after_exit": []
+}

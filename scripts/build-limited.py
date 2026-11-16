@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run a build inside a kernel-enforced 1/2 GiB cgroup; never silently fall back."""
+"""Run a build inside a kernel-enforced memory cgroup; never silently fall back."""
 import argparse
 import json
 import os
@@ -42,12 +42,20 @@ def stop(process):
         process.wait()
 
 
+def configured_limit(args):
+    # --limit-mb is decimal: 3000 MB is 3,000,000,000 bytes, not 3 GiB.
+    return args.limit_mb * 1_000_000 if args.limit_mb is not None else args.limit_gib * 1024 * MIB
+
+
 def worker(args, command):
     group = cgroup_directory()
-    limit = args.limit_gib * 1024 * MIB
+    limit = configured_limit(args)
     actual = (group / 'memory.max').read_text().strip()
     swap = (group / 'memory.swap.max').read_text().strip()
-    if actual != str(limit) or swap != '0':
+    # The kernel rounds memory.max down to a whole page. Never accept a
+    # larger value or an arbitrary smaller limit as proof of this cap.
+    expected = limit // os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PAGE_SIZE')
+    if actual != str(expected) or swap != '0':
         raise RuntimeError(f'Unsafe build limits: memory.max={actual}, swap.max={swap}')
     if available_bytes() < 2048 * MIB:
         raise RuntimeError('Less than 2 GiB system memory available; build was not started')
@@ -57,7 +65,7 @@ def worker(args, command):
                CARGO_PROFILE_RELEASE_LTO='false', CARGO_PROFILE_RELEASE_CODEGEN_UNITS='256',
                CMAKE_BUILD_PARALLEL_LEVEL='1', NUM_JOBS='1', RAYON_NUM_THREADS='1')
     # Cargo propagates its one-job jobserver to native build tools.
-    report = {'limit_mib': limit // MIB, 'swap_limit_mib': 0, 'running': True,
+    report = {'requested_limit_bytes': limit, 'limit_bytes': int(actual), 'cargo_jobs': 1, 'limit_mib': round(int(actual) / MIB, 2), 'swap_limit_mib': 0, 'running': True,
               'command': command, 'peak_mib': 0, 'reason': None}
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(json.dumps(report, indent=2))
@@ -95,7 +103,9 @@ def worker(args, command):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--limit-gib', type=int, choices=(1, 2), default=2)
+    limits = parser.add_mutually_exclusive_group()
+    limits.add_argument('--limit-gib', type=int, choices=(1, 2), default=2)
+    limits.add_argument('--limit-mb', type=int, choices=(3000,), help='Hard decimal 3 GB cap (3,000,000,000 bytes)')
     parser.add_argument('--report', type=Path,
                         default=Path(__file__).resolve().parents[1] / 'target/build-limited.json')
     parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
@@ -110,12 +120,14 @@ def main():
     # A scope inherits this shell's environment (CEF_PATH, Cargo target dir,
     # toolchain and linker settings) while limiting every build descendant.
     unit = 'paisley-build-' + uuid.uuid4().hex[:12]
+    limit = configured_limit(args)
+    limit_args = ['--limit-mb', str(args.limit_mb)] if args.limit_mb is not None else ['--limit-gib', str(args.limit_gib)]
     runner = ['systemd-run', '--user', '--scope', '--quiet',
               '--unit=' + unit,
-              f'--property=MemoryMax={args.limit_gib}G',
-              f'--property=MemoryHigh={args.limit_gib * 896}M',
+              f'--property=MemoryMax={limit}',
+              f'--property=MemoryHigh={limit * 7 // 8}',
               '--property=MemorySwapMax=0', '--', sys.executable,
-              str(Path(__file__).resolve()), '--worker', '--limit-gib', str(args.limit_gib),
+              str(Path(__file__).resolve()), '--worker', *limit_args,
               '--report', str(args.report), '--', *command]
     process = subprocess.Popen(runner)
     try:

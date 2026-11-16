@@ -1,0 +1,49 @@
+{
+  "binary_sha256": "3763e633fc76745c2e3a32a117fbf923e1a3fb3b3342e5762c05a673fe20f0e6",
+  "passed": true,
+  "toplevels": {
+    "normal-a": {
+      "27": "site.blig.Paisley"
+    },
+    "normal-b": {
+      "27": "site.blig.Paisley"
+    },
+    "private-a": {
+      "27": "site.blig.Paisley"
+    },
+    "private-a-second": {
+      "27": "site.blig.Paisley"
+    },
+    "private-b": {
+      "27": "site.blig.Paisley"
+    }
+  },
+  "profile_cookie_checks": {
+    "normal-a": "identity=A",
+    "normal-b": "identity=B",
+    "forward-A": "identity=A",
+    "forward-B": "identity=B",
+    "private-a": "identity=PA",
+    "private-a-second": "",
+    "private-b": "identity=PB"
+  },
+  "first_painted_ids": {
+    "normal-a": "site.blig.Paisley",
+    "normal-b": "site.blig.Paisley",
+    "private-a": "site.blig.Paisley",
+    "private-a-second": "site.blig.Paisley",
+    "private-b": "site.blig.Paisley"
+  },
+  "profile_error_toplevels": {
+    "22": "site.blig.Paisley"
+  },
+  "desktop_lookup": {
+    "desktop": "/tmp/paisley-wayland-identity-u889cdcn/xdg_data_home/applications/site.blig.Paisley.desktop",
+    "icon": "/tmp/paisley-wayland-identity-u889cdcn/xdg_data_home/icons/hicolor/256x256/apps/site.blig.Paisley.png"
+  },
+  "recreated_surfaces": {
+    "22": "site.blig.Paisley",
+    "26": "site.blig.Paisley"
+  },
+  "owned_processes_after_exit": []
+}

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.0-alpha.2 — Wayland desktop identity
+
+- Running Wayland windows use the installed Paisley desktop identity and pink icon across profiles and private instances, while keeping profile-specific application routing.
+- Optional hard decimal 3 GB build limit, zero build swap and one Cargo job, with kernel limit verification.
+
 ## 0.2.0-alpha.1 — CEF migration preview
 
 - Optional CEF 156.0.30 backend, one engine per profile, bounded IPC and latest-frame queues.

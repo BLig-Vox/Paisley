@@ -104,6 +104,7 @@ fn main() -> gtk::glib::ExitCode {
                 },
         )
         .build();
+    desktop_install::configure_application(&app);
     let failed = std::rc::Rc::new(std::cell::Cell::new(false));
     let output = std::rc::Rc::clone(&failed);
     let controller = std::rc::Rc::new(std::cell::RefCell::new(
