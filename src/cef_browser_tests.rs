@@ -172,6 +172,9 @@ impl Fixture {
                         let mut body = format!(
                             "<!doctype html><meta charset=utf-8><link rel=icon href=/favicon.png><title>{title}</title><style>body{{background:#182030;color:#fff;font:24px sans-serif}}</style><h1>日本語 中文 🦋</h1><input id=draft value='keep me'>"
                         );
+                        if path == "/keyboard" {
+                            body.push_str("<input id=email type=email><textarea id=area></textarea><script>for(let id of ['draft','email','area']){let el=document.getElementById(id);el.addEventListener('input',()=>document.title='Typed:'+id+':'+el.value)}</script>");
+                        }
                         if path == "/cross" || path == "/cross-write" {
                             body.push_str(&format!("<script>addEventListener('message',e=>{{if(e.origin==='{cross_base}'&&typeof e.data==='string'&&e.data.startsWith('Cross '))document.title=e.data}})</script><iframe src='{cross_base}/cross-read{}'></iframe>",if path=="/cross-write"{"?set=changed"}else{""}));
                         }
@@ -249,6 +252,11 @@ pub(crate) fn run() -> gtk::glib::ExitCode {
         browser.native_privacy_ready.get().is_some()
     });
     assert_eq!(browser.native_privacy_ready.get(), Some(true));
+    if std::env::var_os("PAISLEY_NATIVE_KEYBOARD").is_some() {
+        keyboard_lifecycle(&browser, &fixture);
+        browser.window.close();
+        return gtk::glib::ExitCode::SUCCESS;
+    }
     if std::env::var_os("PAISLEY_NATIVE_POPUP").is_some() {
         select_popup_lifecycle(&browser, &fixture);
         browser.window.close();
@@ -708,6 +716,21 @@ fn inspector_lifecycle(browser: &Rc<Browser>, fixture: &Fixture) {
         }
         false
     });
+    // The old 64-message relay disconnected and destroyed the pane here.
+    tab.view.evaluate_javascript("for(let i=0;i<2000;i++)console.log('Inspector burst',i);document.title='Inspector burst sent'");
+    wait_until("inspector burst generated", || {
+        tab.view.title().as_deref() == Some("Inspector burst sent")
+    });
+    let settle = Instant::now() + Duration::from_secs(3);
+    while Instant::now() < settle {
+        pump();
+        std::thread::sleep(Duration::from_millis(5));
+        assert!(
+            split.end_child().is_some(),
+            "DevTools closed during a normal protocol burst"
+        );
+    }
+    assert!(frontend.has_renderer());
     if std::env::var_os("PAISLEY_NATIVE_TOOLS").is_some() {
         let until = Instant::now() + Duration::from_secs(15);
         while Instant::now() < until {
@@ -1124,4 +1147,35 @@ fn file_cancellation_lifecycle(browser: &Rc<Browser>, fixture: &Fixture) {
         });
     }
     eprintln!("CEF file chooser: 12 immediate owner-close cycles released their windows");
+}
+
+#[cfg(feature = "cef")]
+fn keyboard_lifecycle(browser: &Rc<Browser>, fixture: &Fixture) {
+    let view = browser.add_tab(None, Some(&format!("{}/keyboard", fixture.base)));
+    wait_until("keyboard fixture painted", || view.input_surface_ready());
+    for id in ["draft", "email", "area"] {
+        view.evaluate_javascript(&format!("{{let el=document.getElementById('{id}');el.value='';el.focus();document.title='Ready:{id}'}}"));
+        wait_until("input focused", || {
+            view.title().as_deref() == Some(&format!("Ready:{id}"))
+        });
+        for (key, code) in [("a", 38), (".", 60), ("b", 56)] {
+            view.test_named_key(key, code);
+        }
+        wait_until("period inserted rather than Delete", || {
+            view.title().as_deref() == Some(&format!("Typed:{id}:a.b"))
+        });
+        view.test_named_key("ArrowLeft", 113);
+        view.test_named_key("Delete", 119);
+        wait_until("Delete still removes next character", || {
+            view.title().as_deref() == Some(&format!("Typed:{id}:a."))
+        });
+        view.test_named_key("Backspace", 22);
+        wait_until("Backspace still removes period", || {
+            view.title().as_deref() == Some(&format!("Typed:{id}:a"))
+        });
+    }
+    browser.close_tab(browser.active_tab().unwrap().id);
+    eprintln!(
+        "CEF keyboard: literal period, real Delete and Backspace passed in text, email and textarea"
+    );
 }

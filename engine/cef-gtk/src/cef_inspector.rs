@@ -2,7 +2,6 @@
 //! CEF's ShowDevTools creates a native Chrome window even for OSR clients.
 use cef::*;
 use std::{
-    collections::VecDeque,
     io::Read,
     net::TcpListener,
     sync::{
@@ -17,32 +16,14 @@ use tungstenite::{
     handshake::server::{ErrorResponse, Request, Response},
     protocol::WebSocketConfig,
 };
-const BUDGET: usize = 4 * 1024 * 1024;
-#[derive(Default)]
-struct Queue {
-    items: VecDeque<Vec<u8>>,
-    bytes: usize,
-}
-impl Queue {
-    fn push(&mut self, value: &[u8]) -> bool {
-        if self.items.len() >= 64 || value.len() > BUDGET.saturating_sub(self.bytes) {
-            return false;
-        }
-        self.bytes += value.len();
-        self.items.push_back(value.to_vec());
-        true
-    }
-    fn pop(&mut self) -> Option<Vec<u8>> {
-        let value = self.items.pop_front()?;
-        self.bytes -= value.len();
-        Some(value)
-    }
-}
+#[path = "cef_inspector_queue.rs"]
+mod queue;
+use queue::{BUDGET, Queue};
 wrap_dev_tools_message_observer! {
  struct Observer{output:Arc<Mutex<Queue>>,stop:Arc<AtomicBool>}
  impl DevToolsMessageObserver{
   fn on_dev_tools_message(&self,_browser:Option<&mut Browser>,message:Option<&[u8]>)->i32{
-   if let Some(message)=message{if !self.output.lock().unwrap().push(message){self.stop.store(true,Ordering::Release);}}1
+   if let Some(message)=message{if !self.output.lock().unwrap().push(message){eprintln!("Paisley DevTools relay output exceeded its bounded queue");self.stop.store(true,Ordering::Release);}}1
   }
   fn on_dev_tools_agent_detached(&self,_browser:Option<&mut Browser>){self.stop.store(true,Ordering::Release);}
  }
@@ -132,6 +113,7 @@ impl Bridge {
                     match socket.read() {
                         Ok(Message::Text(text)) => {
                             if !worker_input.lock().unwrap().push(text.as_bytes()) {
+                                eprintln!("Paisley DevTools relay input exceeded its bounded queue");
                                 worker_stop.store(true, Ordering::Release);
                             }
                         }

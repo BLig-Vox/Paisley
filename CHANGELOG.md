@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0-alpha.4 — Keyboard and inspector stability
+
+- Fix period being interpreted as Delete in CEF inputs. Map punctuation and shifted digits to Chromium virtual keys, preserving separate Unicode text events.
+- Raise the inspector relay message-count ceiling from 64 to 4096 while retaining the 4 MiB payload limit per queue, preventing ordinary startup/console bursts from closing DevTools.
+- Regressions for text/email/textarea input, Delete and Backspace, punctuation, burst ordering and queue bounds.
+
 ## 0.2.0-alpha.3 — CEF by default
 
 - Make CEF the default backend; deprecate WebKit behind explicit `legacy-webkit`.

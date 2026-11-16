@@ -8,6 +8,8 @@ mod dialogs;
 mod inspector;
 #[path = "cef_services.rs"]
 mod services;
+#[path = "cef_keyboard.rs"]
+mod keyboard;
 #[path = "cef_strings.rs"]
 mod strings;
 use std::{
@@ -883,32 +885,7 @@ fn publish_tls(browser: &Browser, events: &Events) {
     }));
 }
 fn key_event(page: &Page, key: &str, code: u32, modifiers: u32, release: bool) {
-    let vk = match key {
-        "Backspace" => 8,
-        "Tab" => 9,
-        "Enter" => 13,
-        "Shift" => 16,
-        "Control" => 17,
-        "Alt" => 18,
-        "Escape" => 27,
-        " " => 32,
-        "PageUp" => 33,
-        "PageDown" => 34,
-        "End" => 35,
-        "Home" => 36,
-        "ArrowLeft" => 37,
-        "ArrowUp" => 38,
-        "ArrowRight" => 39,
-        "ArrowDown" => 40,
-        "Insert" => 45,
-        "Delete" => 46,
-        _ => key
-            .chars()
-            .next()
-            .filter(|_| key.chars().count() == 1)
-            .map(|c| c.to_ascii_uppercase() as i32)
-            .unwrap_or(0),
-    };
+    let vk = keyboard::windows_key_code(key);
     let flags = (if modifiers & 1 != 0 { 2 } else { 0 })
         | (if modifiers & 2 != 0 { 1 } else { 0 })
         | (modifiers & 12);

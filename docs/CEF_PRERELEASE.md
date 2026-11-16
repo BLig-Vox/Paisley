@@ -1,4 +1,4 @@
-# CEF backend status: 0.2.0-alpha.3
+# CEF backend status: 0.2.0-alpha.4
 
 ## Backend selection
 
@@ -64,4 +64,4 @@ Native tests cover shared/private cookies, text/PNG/ZIP/PDF downloads, pauses an
 
 ## Support crates
 
-`paisley-engine-transport` and `paisley-cef-gtk` are published as `0.1.0-alpha.1` so Cargo can resolve the CEF graph. Their APIs are internal and may change. The GTK adapter retains its MPL-2.0 upstream notices; transport and root application are MIT. See THIRD_PARTY_NOTICES.md and engine/cef-gtk/UPSTREAM.md in the source repository.
+`paisley-engine-transport` is published as `0.1.0-alpha.1` and `paisley-cef-gtk` as `0.1.0-alpha.2` so Cargo can resolve the CEF graph. Their APIs are internal and may change. The GTK adapter retains its MPL-2.0 upstream notices; transport and root application are MIT. See THIRD_PARTY_NOTICES.md and engine/cef-gtk/UPSTREAM.md in the source repository.
