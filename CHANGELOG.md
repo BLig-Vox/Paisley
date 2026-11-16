@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Memory counter sampled about once per second, with newest-only delivery, decimal MiB, stale markers and cleared unavailable readings.
+
 - HTTP/HTTPS command-line links and desktop scheme handling, forwarded into new tabs in the running profile.
 - URL-aware desktop launcher and documented default-browser setup.
 

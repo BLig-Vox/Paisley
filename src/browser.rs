@@ -36,6 +36,7 @@ pub struct Browser {
     tabs: RefCell<Vec<Tab>>,
     next_id: Cell<u64>,
     memory: RefCell<Option<paisley::memory::Usage>>,
+    memory_at: Cell<Option<std::time::Instant>>,
     profile: std::sync::Arc<paisley::profile::Profile>,
     profile_label: String,
     settings: RefCell<paisley::profile::Settings>,
@@ -246,6 +247,7 @@ impl Browser {
             tabs: RefCell::new(Vec::new()),
             next_id: Cell::new(0),
             memory: RefCell::new(None),
+            memory_at: Cell::new(None),
             profile,
             profile_label,
             settings: RefCell::new(settings),
@@ -497,27 +499,36 @@ impl Browser {
     }
 
     fn start_memory_monitor(self: &Rc<Self>) {
-        let (send, receive) = std::sync::mpsc::sync_channel(1);
+        // One replaceable slot: a busy UI can never build up old readings.
+        let latest = std::sync::Arc::new(std::sync::Mutex::new(None));
+        let worker = std::sync::Arc::downgrade(&latest);
         std::thread::spawn(move || {
             loop {
-                if send
-                    .send(paisley::memory::sample(std::process::id()))
-                    .is_err()
-                {
-                    break;
+                let Some(slot) = worker.upgrade() else { break; };
+                let started = std::time::Instant::now();
+                let usage = paisley::memory::sample(std::process::id());
+                if let Ok(mut latest) = slot.lock() {
+                    *latest = Some((usage, started));
                 }
-                std::thread::sleep(std::time::Duration::from_secs(10));
+                drop(slot);
+                // /proc work stays off GTK; never overlap sampling passes.
+                std::thread::sleep(std::time::Duration::from_secs(1).saturating_sub(started.elapsed()));
             }
         });
         let weak = Rc::downgrade(self);
-        gtk::glib::timeout_add_local(std::time::Duration::from_secs(2), move || {
+        gtk::glib::timeout_add_local(std::time::Duration::from_millis(250), move || {
             let Some(browser) = weak.upgrade() else {
                 return gtk::glib::ControlFlow::Break;
             };
-            if let Ok(Some(usage)) = receive.try_recv() {
-                *browser.memory.borrow_mut() = Some(usage);
-                browser.sync_active(false);
+            if browser.closing.get() { return gtk::glib::ControlFlow::Break; }
+            if let Ok(mut latest) = latest.try_lock()
+                && let Some((usage, sampled_at)) = latest.take()
+            {
+                // Clear a failed sample instead of presenting an old number as current.
+                *browser.memory.borrow_mut() = usage;
+                browser.memory_at.set(Some(sampled_at));
             }
+            if let Some(tab) = browser.active_tab() { browser.sync_status(&tab); }
             gtk::glib::ControlFlow::Continue
         });
     }
@@ -1523,6 +1534,10 @@ This describes transport security, not the trustworthiness of the website.",
         self.progress
             .set_fraction(tab.view.estimated_load_progress());
         self.progress.set_visible(loading);
+        self.sync_status(tab);
+    }
+
+    fn sync_status(&self, tab: &Tab) {
         let title = if tab.placeholder.is_visible() {
             "Not restored".into()
         } else {
@@ -1532,28 +1547,25 @@ This describes transport security, not the trustworthiness of the website.",
                 .unwrap_or_else(|| "New tab".into())
         };
         let memory = self.memory.borrow();
-        let suffix = memory
-            .as_ref()
-            .filter(|_| self.settings.borrow().show_memory)
-            .map(|usage| {
-                format!(
-                    " · Paisley ≈ {} MiB ({}; {} processes{})",
-                    usage.kib / 1024,
-                    usage.metric,
-                    usage.processes,
-                    if usage.partial { "; partial tree" } else { "" }
-                )
-            })
-            .unwrap_or_default();
-        self.window.set_title(Some(&format!(
-            "{title} — Paisley · {}{}{suffix}",
-            self.profile_label,
-            if self.profile.private {
-                " (private)"
-            } else {
-                ""
-            }
-        )));
+        let age = self.memory_at.get().map(|at| at.elapsed());
+        let stale = age.is_some_and(|age| age > std::time::Duration::from_secs(3));
+        let suffix = if !self.settings.borrow().show_memory {
+            String::new()
+        } else if let Some(usage) = memory.as_ref() {
+            format!(" · Paisley ≈ {:.1} MiB ({}; {} processes{}{})",
+                usage.kib as f64 / 1024.0, usage.metric, usage.processes,
+                if usage.partial { "; partial tree" } else { "" },
+                if stale { "; stale" } else { "" })
+        } else if age.is_some() {
+            " · Paisley memory unavailable".into()
+        } else {
+            " · Measuring Paisley memory…".into()
+        };
+        let window_title = format!("{title} — Paisley · {}{}{suffix}",
+            self.profile_label, if self.profile.private { " (private)" } else { "" });
+        if self.window.title().as_deref() != Some(window_title.as_str()) {
+            self.window.set_title(Some(&window_title));
+        }
         let protection = if !self.blocking_enabled(tab.view.uri().as_deref()) {
             "blocking off for this site"
         } else if self.blocker.error.borrow().is_some() {
@@ -1577,8 +1589,11 @@ This describes transport security, not the trustworthiness of the website.",
                 ""
             }
         );
-        self.status.set_text(&status);
-        self.status.set_tooltip_text(Some("Paisley memory is recalculated about every 10 seconds from the Linux-visible process tree. PSS proportionally counts shared pages; if a process PSS cannot be read, that process uses RSS instead, which can overcount shared memory. Sandboxed or reparented processes may be missing, so this is an estimate rather than total system RAM. Starter blocking rules are not Brave/uBlock-equivalent protection."));
+        if self.status.text().as_str() != status { self.status.set_text(&status); }
+        let freshness = age.map(|age| format!("Last sample started {:.1} seconds ago.", age.as_secs_f64()))
+            .unwrap_or_else(|| "Waiting for the first sample.".into());
+        self.status.set_tooltip_text(Some(&format!("Paisley memory is sampled about once per second on a background thread. {freshness} Readings older than three seconds are marked stale; unavailable readings are cleared. PSS proportionally counts shared pages; an unreadable process uses RSS instead, which can overcount shared memory. Sandboxed or reparented processes may be missing. This estimates Paisley's Linux-visible process tree, not total system RAM. Starter blocking rules are not Brave/uBlock-equivalent protection.")));
+
     }
 
     fn record_visit(&self, tab: &Tab) {
