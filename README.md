@@ -24,7 +24,7 @@ system fonts must also be installed on the machine running the browser; see
 those system packages.
 
 Prebuilt Linux assets are available from
-[GitHub Releases](https://github.com/BLig-Vox/Browny/releases). This first release
+[GitHub Releases](https://github.com/BLig-Vox/Paisley/releases). This first release
 is a prerelease; platform requirements and checksums accompany the binary.
 
 ## Current features
