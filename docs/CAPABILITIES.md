@@ -13,7 +13,7 @@ security audit, a threat-model substitute or LibreWolf/Brave parity claim.
 | WebRTC | Optional Strict disables WebRTC per view using engine settings. | Exposure/network behavior and site exception tests; not an anonymity guarantee. |
 | Native request blocking | Twelve-domain starter compiles before enabled navigation. Custom native fixture filters stop requests at the server; related views, exceptions, navigation and BFCache regressions pass. | Full maintained lists/translation, update validation/rollback, coverage/overhead, diagnostics and breakage reporting. No invented exact counters. |
 | DuckDuckGo promotions | Top-frame HTTPS-domain-restricted stylesheet, dynamic/scoping graphical fixtures. | Cosmetic cleanup only; not general ad/tracker request blocking. |
-| Permissions | Explicit deny for every permission-request signal, with a native explanation. Real geolocation fixture receives PERMISSION_DENIED and displays the reason. | Safe requesting-origin attribution, per-origin prompts/grants/revocation and camera/microphone/notification/clipboard fixtures are not implemented. See below. |
+| Permissions | Explicit deny for every permission-request signal, with a native explanation. Real geolocation fixture receives PERMISSION_DENIED and displays the reason. | Safe requesting-origin attribution, per-origin prompts/grants/revocation and camera/microphone/clipboard fixtures are not implemented. Notifications now have explicit native origin opt-in and fresh-context initialization; see [notifications](NOTIFICATIONS.md). See below. |
 | Hyperlink auditing / DNS prefetch | Installed engine exposes deprecated/ineffective setters; no functioning protection advertised. | Engine capability decision, not pretend toggles. |
 | Referrers / GPC / DNT | No separately verified Paisley controls. | Capability/behavior research and fixture verification; signals alone are not tracking prevention. |
 | Fingerprinting resistance | No verified anti-fingerprinting system. | Research engine coverage and compatibility; do not substitute spoofing-script claims for security. |
@@ -41,9 +41,12 @@ requesting access**. A page-provided script/message or an unrelated permissions
 query is not trusted evidence tying a later request to a principal. Paisley must
 not save or auto-apply a top-level-origin grant to a potentially different frame.
 
-Until that association is established, normal browsing explicitly denies all
-permission-request signals and shows why. Automation also denies them. There is
-no misleading Always Allow prompt, persistent grant or revocation promise. Camera,
+Normal browsing continues to deny unknown permission-request signals. For
+notifications only, users can explicitly select the current exact origin in the
+native Notifications sheet and reopen it with initialized WebKit permissions;
+this does not infer the origin of a later generic request. See [notification
+behavior and revocation limits](NOTIFICATIONS.md). Automation denies permission
+requests. Camera,
 microphone, geolocation and other sensitive workflows may therefore not work.
 
 The current engine choice remains WebKitGTK. Completing general per-origin grants

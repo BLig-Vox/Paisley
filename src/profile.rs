@@ -25,6 +25,8 @@ pub struct Settings {
     pub download_directory: Option<PathBuf>,
     pub agent_enabled: bool,
     pub blocking_exceptions: Vec<String>,
+    pub notification_origins: Vec<String>,
+    pub desktop_notifications: bool,
 }
 impl Default for Settings {
     fn default() -> Self {
@@ -38,6 +40,8 @@ impl Default for Settings {
             download_directory: None,
             agent_enabled: false,
             blocking_exceptions: Vec::new(),
+            notification_origins: Vec::new(),
+            desktop_notifications: true,
         }
     }
 }
@@ -88,6 +92,23 @@ pub(crate) fn valid_url(s: &str) -> bool {
 fn validate_settings(s: &Settings) -> Result<(), String> {
     if !valid_url(&s.homepage) {
         return Err("Homepage must be a credential-free HTTP or HTTPS URL".into());
+    }
+    if s.notification_origins.len() > 128 {
+        return Err("Too many notification sites (maximum 128)".into());
+    }
+    for origin in &s.notification_origins {
+        let parsed = url::Url::parse(origin).map_err(|_| "Invalid notification origin")?;
+        let local = matches!(parsed.host_str(), Some("localhost" | "127.0.0.1" | "[::1]"));
+        if !(parsed.scheme() == "https" || (parsed.scheme() == "http" && local))
+            || parsed.host_str().is_none()
+            || !parsed.username().is_empty()
+            || parsed.password().is_some()
+            || parsed.origin().ascii_serialization() != *origin
+        {
+            return Err(
+                "Notification sites must be canonical HTTPS origins (or local HTTP)".into(),
+            );
+        }
     }
     Ok(())
 }

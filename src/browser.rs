@@ -17,12 +17,17 @@ struct Tab {
     placeholder: gtk::Label,
     generation: Rc<Cell<u64>>,
     committed: Rc<Cell<bool>>,
+    notification_origins: Vec<String>,
+    insecure_content: Rc<Cell<bool>>,
 }
 
 pub struct Browser {
     window: gtk::ApplicationWindow,
     notebook: gtk::Notebook,
     address: gtk::Entry,
+    site_button: gtk::MenuButton,
+    site_popover: gtk::Popover,
+    site_clear_pending: Cell<bool>,
     back: gtk::Button,
     forward: gtk::Button,
     reload: gtk::Button,
@@ -44,6 +49,8 @@ pub struct Browser {
     blocker: Rc<crate::blocking::Blocker>,
     favicons: Rc<crate::favicons::Favicons>,
     status: gtk::Label,
+    notifications: Rc<crate::notifications::Notifications>,
+    notification_context: RefCell<Option<(Vec<String>, webkit::WebContext)>>,
 }
 
 impl Browser {
@@ -103,7 +110,20 @@ impl Browser {
         header.pack_start(&forward);
         header.pack_start(&reload);
         header.pack_start(&home);
-        header.set_title_widget(Some(&address));
+        let site_popover = gtk::Popover::builder()
+            .autohide(true)
+            .has_arrow(true)
+            .build();
+        let site_button = gtk::MenuButton::builder()
+            .icon_name("lucide-shield-symbolic")
+            .tooltip_text("Site information and protection")
+            .popover(&site_popover)
+            .build();
+        let address_bar = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        address_bar.add_css_class("linked");
+        address_bar.append(&site_button);
+        address_bar.append(&address);
+        header.set_title_widget(Some(&address_bar));
         header.pack_end(&icon_button(
             "lucide-download-symbolic",
             "Downloads (Ctrl+J)",
@@ -118,6 +138,8 @@ impl Browser {
         header.pack_end(&menu_button);
         // HeaderBar packs end children inward: add + last, beside the address.
         header.pack_end(&new_tab);
+        let bell = icon_button("lucide-bell-symbolic", "Notifications", "win.notifications");
+        header.pack_end(&bell);
         window.set_titlebar(Some(&header));
 
         let notebook = gtk::Notebook::builder()
@@ -132,7 +154,18 @@ impl Browser {
             .build();
         let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
         root.append(&progress);
-        root.append(&notebook);
+        let overlay = gtk::Overlay::builder()
+            .child(&notebook)
+            .hexpand(true)
+            .vexpand(true)
+            .build();
+        let notifications = crate::notifications::Notifications::new(
+            &overlay,
+            &bell,
+            &window,
+            settings.desktop_notifications && !profile.private,
+        );
+        root.append(&overlay);
         let status = gtk::Label::builder()
             .xalign(0.0)
             .ellipsize(gtk::pango::EllipsizeMode::End)
@@ -202,6 +235,9 @@ impl Browser {
             window,
             notebook,
             address,
+            site_button,
+            site_popover,
+            site_clear_pending: Cell::new(false),
             back,
             forward,
             reload,
@@ -223,9 +259,36 @@ impl Browser {
             blocker,
             favicons,
             status,
+            notifications,
+            notification_context: RefCell::new(None),
+        });
+        let weak = Rc::downgrade(&browser);
+        browser.notifications.on_open(move || {
+            if let Some(browser) = weak.upgrade() {
+                browser.show_notifications();
+            }
         });
         browser.install_actions(app);
         browser.track_download_changes();
+        let weak = Rc::downgrade(&browser);
+        browser.downloads.borrow().on_event(move |title, body| {
+            if let Some(browser) = weak.upgrade() {
+                let weak = Rc::downgrade(&browser);
+                browser.notifications.push(
+                    title,
+                    body,
+                    "Downloads",
+                    Some(Rc::new(move || {
+                        if let Some(browser) = weak.upgrade() {
+                            browser.window.present();
+                            browser.menu.dismiss();
+                            browser.downloads.borrow().show();
+                        }
+                    })),
+                    None,
+                );
+            }
+        });
         browser.connect_window();
         let weak = Rc::downgrade(&browser);
         browser
@@ -257,6 +320,7 @@ impl Browser {
                 browser.activate_pending(&tab);
             }
         }
+        browser.sync_active(true);
         browser.start_memory_monitor();
         browser.start_session_writer();
         Ok(browser)
@@ -302,6 +366,8 @@ impl Browser {
     }
 
     fn apply_settings(&self) {
+        self.notifications
+            .set_desktop(self.settings.borrow().desktop_notifications && !self.profile.private);
         let strict = self.settings.borrow().strict_privacy;
         if let Some(cookies) = self.session.cookie_manager() {
             cookies.set_accept_policy(if strict {
@@ -448,6 +514,176 @@ impl Browser {
         });
     }
 
+    fn show_notifications(self: &Rc<Self>) {
+        self.downloads.borrow().dismiss();
+        let content = gtk::Box::new(gtk::Orientation::Vertical, 14);
+        let heading = crate::download_ui::label("Website notifications", "downloads-section");
+        content.append(&heading);
+        let notice = gtk::Label::builder()
+            .label(if self.profile.private {
+                "Private window · App alerts are temporary. Website notifications are unavailable in private browsing."
+            } else {
+                "Alerts arrive while Paisley is running. Recent activity stays in memory."
+            })
+            .wrap(true)
+            .xalign(0.0)
+            .build();
+        notice.add_css_class("downloads-detail");
+        content.append(&notice);
+        let current = self
+            .active_tab()
+            .filter(|tab| !self.profile.private && tab.committed.get())
+            .and_then(|tab| tab.view.uri())
+            .map(|s| s.to_string());
+        if let Some((uri, origin)) =
+            current.and_then(|uri| crate::notifications::origin(&uri).map(|origin| (uri, origin)))
+        {
+            let site = gtk::Label::builder()
+                .label(&origin)
+                .wrap(true)
+                .xalign(0.0)
+                .selectable(true)
+                .build();
+            content.append(&site);
+            let allowed = self
+                .settings
+                .borrow()
+                .notification_origins
+                .contains(&origin);
+            let allow = gtk::Button::with_label(if allowed {
+                "Reopen with notifications"
+            } else {
+                "Allow & open in new tab"
+            });
+            allow.add_css_class("suggested-action");
+            let weak = Rc::downgrade(self);
+            allow.connect_clicked(move |_| {
+                if let Some(browser) = weak.upgrade() {
+                    let mut settings = browser.settings.borrow().clone();
+                    if !settings.notification_origins.contains(&origin) {settings.notification_origins.push(origin.clone());}
+                    if let Err(error) = browser.profile.save_settings(&settings) {
+                        browser.notifications.push("Couldn’t save notification permission", &error, "Paisley", None, None);return;
+                    }
+                    *browser.settings.borrow_mut()=settings;
+                    browser.menu.dismiss();browser.add_tab(None, Some(&uri));
+                    browser.notifications.push("Notifications enabled", &format!("Allowed {origin}. The new tab uses this permission; your original tab is unchanged."), "Paisley", None, None);
+                }
+            });
+            content.append(&allow);
+        } else {
+            let help = gtk::Label::builder()
+                .label(if self.profile.private {
+                    "Downloads and Paisley alerts still appear here."
+                } else {
+                    "Visit an HTTPS website to enable its notifications."
+                })
+                .wrap(true)
+                .xalign(0.0)
+                .build();
+            content.append(&help);
+        }
+        let origins = self.settings.borrow().notification_origins.clone();
+        if !origins.is_empty() {
+            content.append(&crate::download_ui::label(
+                "Allowed sites",
+                "downloads-section",
+            ));
+        }
+        for origin in origins {
+            let row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+            let site = crate::download_ui::label(&origin, "downloads-detail");
+            site.set_tooltip_text(Some(&origin));
+            row.append(&site);
+            let revoke = gtk::Button::with_label("Block");
+            revoke.add_css_class("flat");
+            row.append(&revoke);
+            let weak = Rc::downgrade(self);
+            revoke.connect_clicked(move |_|{if let Some(browser)=weak.upgrade(){
+                let mut settings=browser.settings.borrow().clone();settings.notification_origins.retain(|o|o!=&origin);
+                if let Err(error)=browser.profile.save_settings(&settings){browser.notifications.push("Couldn’t save permission",&error,"Paisley",None,None);return;}
+                *browser.settings.borrow_mut()=settings;
+                browser.notifications.push("Website notifications blocked", "Delivery from older notification contexts has stopped. Reopen tabs to refresh their permission state.", "Paisley", None, None);
+                browser.show_notifications();
+            }});
+            content.append(&row);
+        }
+        let row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+        row.append(&crate::download_ui::label(
+            "Desktop notifications",
+            "downloads-filename",
+        ));
+        let toggle = gtk::Switch::new();
+        toggle.set_valign(gtk::Align::Center);
+        toggle.set_active(self.settings.borrow().desktop_notifications && !self.profile.private);
+        toggle.set_sensitive(!self.profile.private);
+        row.append(&toggle);
+        content.append(&row);
+        let status = gtk::Label::builder()
+            .label(if self.profile.private {
+                "Desktop alerts are off in private windows.".into()
+            } else {
+                self.notifications.desktop_status()
+            })
+            .wrap(true)
+            .xalign(0.0)
+            .build();
+        status.add_css_class("downloads-detail");
+        content.append(&status);
+        let weak = Rc::downgrade(self);
+        toggle.connect_state_set(move |switch, enabled| {
+            if let Some(browser) = weak.upgrade() {
+                let mut settings = browser.settings.borrow().clone();
+                settings.desktop_notifications = enabled;
+                if let Err(error) = browser.profile.save_settings(&settings) {
+                    browser.notifications.push(
+                        "Couldn’t save notification settings",
+                        &error,
+                        "Paisley",
+                        None,
+                        None,
+                    );
+                    return gtk::glib::Propagation::Stop;
+                }
+                *browser.settings.borrow_mut() = settings;
+                browser
+                    .notifications
+                    .set_desktop(enabled && !browser.profile.private);
+                switch.set_state(enabled);
+            }
+            gtk::glib::Propagation::Stop
+        });
+        let system_preview = gtk::Button::with_label("Preview desktop notification");
+        system_preview.add_css_class("flat");
+        system_preview.set_sensitive(!self.profile.private && toggle.is_active());
+        toggle
+            .bind_property("active", &system_preview, "sensitive")
+            .sync_create()
+            .build();
+        let weak = Rc::downgrade(self);
+        system_preview.connect_clicked(move |_| {
+            if let Some(browser) = weak.upgrade() {
+                browser.notifications.desktop_preview();
+            }
+        });
+        content.append(&system_preview);
+        let preview = gtk::Button::with_label("Preview notification");
+        preview.add_css_class("flat");
+        let weak = Rc::downgrade(self);
+        preview.connect_clicked(move |_|{if let Some(browser)=weak.upgrade(){
+            browser.menu.dismiss();browser.notifications.push("You’re all set", "Paisley alerts appear here. Downloads and allowed websites can notify you without interrupting your work.","Paisley",None,None);
+        }});
+        content.append(&preview);
+        content.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
+        content.append(&self.notifications.panel());
+        let scroll = gtk::ScrolledWindow::builder()
+            .child(&content)
+            .vexpand(true)
+            .hexpand(true)
+            .hscrollbar_policy(gtk::PolicyType::Never)
+            .build();
+        self.menu.show_page("Notifications", &scroll, ());
+    }
+
     fn track_download_changes(self: &Rc<Self>) {
         let weak = Rc::downgrade(self);
         self.downloads.borrow().on_changed(move || {
@@ -459,6 +695,12 @@ impl Browser {
 
     fn connect_window(self: &Rc<Self>) {
         let weak = Rc::downgrade(self);
+        self.site_popover.connect_show(move |popup| {
+            if let Some(browser) = weak.upgrade() {
+                popup.set_child(Some(&browser.site_information()));
+            }
+        });
+        let weak = Rc::downgrade(self);
         self.address.connect_activate(move |entry| {
             if let Some(browser) = weak.upgrade() {
                 browser.navigate(entry.text().as_str());
@@ -468,6 +710,7 @@ impl Browser {
         let weak = Rc::downgrade(self);
         self.notebook.connect_switch_page(move |_, page, _| {
             if let Some(browser) = weak.upgrade() {
+                browser.site_popover.popdown();
                 // During switch-page emission current_page() may still refer
                 // to the previous page; use the signal's actual target.
                 let tab = browser
@@ -630,6 +873,152 @@ impl Browser {
         );
     }
 
+    fn set_site_protection(&self, site: &str, enabled: bool) -> Result<(), String> {
+        let mut settings = self.settings.borrow().clone();
+        if !settings.block_trackers {
+            return Err("Turn on blocking in Settings first".into());
+        }
+        settings.blocking_exceptions.retain(|item| item != site);
+        if !enabled {
+            settings.blocking_exceptions.push(site.to_owned());
+        }
+        self.profile.save_settings(&settings)?;
+        *self.settings.borrow_mut() = settings;
+        self.apply_settings();
+        Ok(())
+    }
+    fn site_information(self: &Rc<Self>) -> gtk::Box {
+        let tab = self.active_tab();
+        let uri = tab
+            .as_ref()
+            .and_then(|t| t.view.uri())
+            .map(|s| s.to_string())
+            .unwrap_or_default();
+        let parsed = url::Url::parse(&uri).ok();
+        let supported = tab.as_ref().is_some_and(|t| t.committed.get())
+            && parsed
+                .as_ref()
+                .is_some_and(|u| matches!(u.scheme(), "http" | "https"));
+        let site = origin(&uri);
+        let origin_label = if supported {
+            site.clone().unwrap_or_else(|| "This page".into())
+        } else {
+            "No committed website".into()
+        };
+        let (connection, certificate) = if !supported {
+            (
+                "Connection details unavailable".into(),
+                "Open a website to inspect its connection.".into(),
+            )
+        } else if parsed.as_ref().is_some_and(|u| u.scheme() == "https") {
+            match tab.as_ref().and_then(|t| t.view.tls_info()) {
+                Some((cert, errors)) if errors.is_empty() => {
+                    let subject = cert
+                        .subject_name()
+                        .map(|s| s.to_string())
+                        .unwrap_or_else(|| "Unavailable".into());
+                    let issuer = cert
+                        .issuer_name()
+                        .map(|s| s.to_string())
+                        .unwrap_or_else(|| "Unavailable".into());
+                    (
+                        if tab.as_ref().is_some_and(|t| t.insecure_content.get()) {
+                            "HTTPS with insecure content".into()
+                        } else {
+                            "Connection secure".into()
+                        },
+                        format!(
+                            "WebKit validated this HTTPS connection.
+Subject: {}
+Issuer: {}
+This describes transport security, not the trustworthiness of the website.",
+                            subject.chars().take(500).collect::<String>(),
+                            issuer.chars().take(500).collect::<String>()
+                        ),
+                    )
+                }
+                Some((_, errors)) => (
+                    "Connection has certificate errors".into(),
+                    format!(
+                        "WebKit reported certificate errors: {errors:?}. Paisley does not bypass these errors."
+                    ),
+                ),
+                None => (
+                    "Connection not yet verified".into(),
+                    "WebKit has not supplied validated TLS details for this page.".into(),
+                ),
+            }
+        } else {
+            (
+                "Connection not encrypted".into(),
+                "This page uses HTTP. Data exchanged with the site is not protected by TLS.".into(),
+            )
+        };
+        let weak = Rc::downgrade(self);
+        let toggle = Rc::new(move |enabled| {
+            let browser = weak.upgrade().ok_or("Browser closed")?;
+            browser.set_site_protection(site.as_deref().ok_or("Open a website first")?, enabled)
+        });
+        let weak = Rc::downgrade(self);
+        let clear = Rc::new(move || {
+            let Some(browser) = weak.upgrade() else {
+                return;
+            };
+            let Some(host) = parsed
+                .as_ref()
+                .and_then(|u| u.host_str())
+                .map(str::to_ascii_lowercase)
+            else {
+                return;
+            };
+            let Some(manager) = browser.session.website_data_manager() else {
+                return;
+            };
+            if browser.site_clear_pending.replace(true) {
+                return;
+            }
+            let window = browser.window.downgrade();
+            let weak = Rc::downgrade(&browser);
+            gtk::glib::MainContext::default().spawn_local(async move {
+                let Some(window) = window.upgrade() else {
+                    return;
+                };
+                let result = crate::site_info::clear_site_data(&window, &manager, &host).await;
+                if let Some(browser) = weak.upgrade() {
+                    browser.site_clear_pending.set(false);
+                    match result {
+                        Ok(message) => {
+                            browser
+                                .notifications
+                                .push("Site data", &message, "Paisley", None, None)
+                        }
+                        Err(error) => browser.notifications.push(
+                            "Couldn’t clear site data",
+                            &error,
+                            "Paisley",
+                            None,
+                            None,
+                        ),
+                    }
+                }
+            });
+        });
+        crate::site_info::content(
+            crate::site_info::SiteInfo {
+                origin: origin_label,
+                connection,
+                certificate,
+                supported,
+                enabled: self.blocking_enabled(Some(&uri)),
+                available: self.blocker.ready.get() && self.blocker.filter().is_some(),
+                global: self.settings.borrow().block_trackers,
+            },
+            toggle,
+            clear,
+            &self.site_popover,
+        )
+    }
+
     fn show_protection(self: &Rc<Self>) {
         let Some(tab) = self.active_tab() else {
             return;
@@ -640,18 +1029,7 @@ impl Browser {
         let update = Rc::new(move |enabled: bool| {
             let browser = weak.upgrade().ok_or("Browser has closed")?;
             let site = site.as_ref().ok_or("Open a website to change protection")?;
-            let mut settings = browser.settings.borrow().clone();
-            if !settings.block_trackers {
-                return Err("Turn on blocking in Settings first".into());
-            }
-            settings.blocking_exceptions.retain(|item| item != site);
-            if !enabled {
-                settings.blocking_exceptions.push(site.clone());
-            }
-            browser.profile.save_settings(&settings)?;
-            *browser.settings.borrow_mut() = settings;
-            browser.apply_settings();
-            Ok(())
+            browser.set_site_protection(site, enabled)
         });
         self.downloads.borrow().dismiss();
         crate::browsing_ui::protection(
@@ -698,6 +1076,7 @@ impl Browser {
             )
         });
         self.action("site-blocking", |browser| browser.show_protection());
+        self.action("notifications", |browser| browser.show_notifications());
         self.action("new-tab", |browser| {
             browser.add_tab(None, Some("paisley:home"));
             browser.focus_address();
@@ -852,6 +1231,7 @@ impl Browser {
     }
 
     fn navigate(&self, input: &str) {
+        self.site_popover.popdown();
         if let Some(tab) = self.active_tab() {
             match navigation::resolve(input) {
                 Ok(target) => {
@@ -891,9 +1271,45 @@ impl Browser {
             manager.add_filter(&filter);
         }
         let builder = webkit::WebView::builder().user_content_manager(&manager);
+        let notification_origins = related
+            .and_then(|source| {
+                self.tabs
+                    .borrow()
+                    .iter()
+                    .find(|tab| tab.view == *source)
+                    .map(|tab| tab.notification_origins.clone())
+            })
+            .unwrap_or_else(|| self.settings.borrow().notification_origins.clone());
         let view = match related {
             Some(source) => builder.related_view(source).build(),
-            None => builder.network_session(&self.session).build(),
+            None => {
+                let mut cached = self.notification_context.borrow_mut();
+                if cached
+                    .as_ref()
+                    .is_none_or(|(grants, _)| *grants != notification_origins)
+                {
+                    let context = webkit::WebContext::new();
+                    let origins: Vec<_> = notification_origins
+                        .iter()
+                        .map(|uri| webkit::SecurityOrigin::for_uri(uri))
+                        .collect();
+                    context.initialize_notification_permissions(
+                        &origins.iter().collect::<Vec<_>>(),
+                        &[],
+                    );
+                    context.connect_initialize_notification_permissions(move |context| {
+                        context.initialize_notification_permissions(
+                            &origins.iter().collect::<Vec<_>>(),
+                            &[],
+                        );
+                    });
+                    *cached = Some((notification_origins.clone(), context));
+                }
+                builder
+                    .network_session(&self.session)
+                    .web_context(&cached.as_ref().unwrap().1)
+                    .build()
+            }
         };
         if let Some(settings) = webkit::prelude::WebViewExt::settings(&view) {
             settings.set_enable_developer_extras(true);
@@ -999,6 +1415,8 @@ impl Browser {
             placeholder,
             generation: Rc::new(Cell::new(0)),
             committed: Rc::new(Cell::new(false)),
+            notification_origins,
+            insecure_content: Rc::new(Cell::new(false)),
         });
         self.connect_view(id, &view);
         let index = self.notebook.append_page(&page, Some(&label));
@@ -1067,6 +1485,19 @@ impl Browser {
                 },
             );
         }
+        let uri = tab.view.uri().unwrap_or_default();
+        let secure = !tab.insecure_content.get()
+            && tab.committed.get()
+            && uri.starts_with("https:")
+            && tab
+                .view
+                .tls_info()
+                .is_some_and(|(_, errors)| errors.is_empty());
+        self.site_button.set_icon_name(if secure {
+            "lucide-shield-check-symbolic"
+        } else {
+            "lucide-shield-symbolic"
+        });
         self.reload.set_sensitive(!tab.placeholder.is_visible());
         self.back.set_sensitive(tab.view.can_go_back());
         self.forward.set_sensitive(tab.view.can_go_forward());
@@ -1200,19 +1631,81 @@ impl Browser {
     fn connect_view(self: &Rc<Self>, id: u64, view: &webkit::WebView) {
         let weak = Rc::downgrade(self);
         view.connect_permission_request(move |_, request| {
-            // Most public request types expose no requesting-frame origin.
-            // A WebView's top-level URI is not authority for a nested frame.
-            // Fail closed rather than silently granting the wrong principal.
+            // Generic requests cannot establish a requesting-frame origin.
+            // Website grants come only from explicit native origin selection
+            // and WebKit context initialization, never a top-frame inference.
             request.deny();
+            if let Some(browser) = weak.upgrade() {
+                if request.is::<webkit::NotificationPermissionRequest>() {
+                    browser.notifications.push("Website notifications are off", "Open Notifications to explicitly allow a site, then reopen it in a fresh tab.", "Paisley", None, None);
+                } else if let Some(tab) = browser.tab(id) {
+                    show_error(&tab, &format!("Permission request blocked ({}): Paisley cannot verify the requesting origin for this permission. No access was allowed.", request.type_().name()));
+                }
+            }
+            true
+        });
+        let weak = Rc::downgrade(self);
+        view.connect_show_notification(move |_, notification| {
+            let Some(browser) = weak.upgrade() else {
+                notification.close();
+                return true;
+            };
+            let Some(tab) = browser.tab(id) else {
+                notification.close();
+                return true;
+            };
+            // Notification objects expose no authenticated sending origin.
+            // After revocation, reject older contexts with a broader grant set.
+            let permitted = !browser.closing.get()
+                && !tab.notification_origins.is_empty()
+                && tab.notification_origins.iter().all(|origin| {
+                    browser
+                        .settings
+                        .borrow()
+                        .notification_origins
+                        .contains(origin)
+                });
+            if !permitted {
+                notification.close();
+                return true;
+            }
+            let clicked = notification.clone();
+            let weak = Rc::downgrade(&browser);
+            browser.notifications.push(
+                notification
+                    .title()
+                    .as_deref()
+                    .unwrap_or("Website notification"),
+                notification.body().as_deref().unwrap_or(""),
+                "Website notification",
+                Some(Rc::new(move || {
+                    if let Some(browser) = weak.upgrade()
+                        && let Some(tab) = browser.tab(id)
+                    {
+                        browser.window.present();
+                        browser.menu.dismiss();
+                        if let Some(index) = browser.notebook.page_num(&tab.page) {
+                            browser.notebook.set_current_page(Some(index));
+                        }
+                        tab.view.grab_focus();
+                        clicked.clicked();
+                    }
+                })),
+                Some(notification.clone()),
+            );
+            true
+        });
+        let weak = Rc::downgrade(self);
+        view.connect_insecure_content_detected(move |_, _| {
             if let Some(browser) = weak.upgrade()
                 && let Some(tab) = browser.tab(id)
             {
-                show_error(&tab, &format!(
-                    "Permission request blocked ({}): Paisley cannot verify the requesting origin for this permission. Per-origin grants are unavailable; no access was allowed.",
-                    request.type_().name()
-                ));
+                tab.insecure_content.set(true);
+                browser.site_popover.popdown();
+                if browser.active_tab().is_some_and(|t| t.id == id) {
+                    browser.sync_controls(&tab, false);
+                }
             }
-            true
         });
         for property in [
             "title",
@@ -1270,9 +1763,11 @@ impl Browser {
                 if event == webkit::LoadEvent::Started
                     && let Some(tab) = browser.tab(id)
                 {
+                    browser.site_popover.popdown();
                     tab.error.set_visible(false);
                     tab.generation.set(tab.generation.get().wrapping_add(1));
                     tab.committed.set(false);
+                    tab.insecure_content.set(false);
                 }
                 if matches!(
                     event,
@@ -1323,6 +1818,13 @@ impl Browser {
                 && let Some(tab) = browser.tab(id)
             {
                 show_error(&tab, "The page process stopped. Press Reload to try again.");
+                browser.notifications.push(
+                    "This tab stopped responding",
+                    "Reload the page to try again. Other tabs are still available.",
+                    "Paisley",
+                    None,
+                    None,
+                );
                 browser.update_tab(id);
             }
         });

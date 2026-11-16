@@ -53,6 +53,7 @@ pub struct Downloads {
     history: RefCell<DownloadHistory>,
     previous: RefCell<Vec<DownloadRecord>>,
     changed: RefCell<Option<Box<dyn Fn()>>>,
+    event: RefCell<Option<Box<dyn Fn(&str, &str)>>>,
     items: RefCell<Vec<Item>>,
     completed: RefCell<Vec<PathBuf>>,
     errors: RefCell<Vec<String>>,
@@ -82,10 +83,22 @@ impl Downloads {
                     this.refresh_summary();
                 }
             });
+            let weak = Rc::downgrade(&this);
+            managed.on_event(move |title, body| {
+                if let Some(this) = weak.upgrade()
+                    && let Some(callback) = this.event.borrow().as_ref()
+                {
+                    callback(title, body);
+                }
+            });
             *this.managed.borrow_mut() = Some(managed);
             this.refresh_summary();
         }
         this
+    }
+
+    pub fn on_event(&self, event: impl Fn(&str, &str) + 'static) {
+        *self.event.borrow_mut() = Some(Box::new(event));
     }
 
     pub fn on_changed(&self, changed: impl Fn() + 'static) {
@@ -240,6 +253,7 @@ impl Downloads {
             previous: RefCell::new(history.records.clone()),
             history: RefCell::new(history),
             changed: RefCell::new(None),
+            event: RefCell::new(None),
             items: RefCell::new(Vec::new()),
             completed: RefCell::new(Vec::new()),
             errors: RefCell::new(Vec::new()),
@@ -404,6 +418,24 @@ impl Downloads {
     }
 
     fn record_terminal(&self, index: usize, outcome: Outcome) {
+        if outcome != Outcome::Cancelled
+            && let Some(callback) = self.event.borrow().as_ref()
+        {
+            let name = self.items.borrow()[index]
+                .path
+                .as_ref()
+                .and_then(|p| p.file_name())
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_else(|| "File".into());
+            callback(
+                if outcome == Outcome::Completed {
+                    "Download complete"
+                } else {
+                    "Download interrupted"
+                },
+                &name,
+            );
+        }
         let changed = {
             let items = self.items.borrow();
             let item = &items[index];

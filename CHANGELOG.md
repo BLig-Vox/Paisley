@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.1 — Logo, desktop integration and notifications
+
+- Pink Paisley logo in the repository, desktop launcher and packaged assets.
+- Bundled `paisley --install-desktop` command for user-local application-menu integration after Cargo installation.
+- Native notification bell, recent activity, download alerts and optional Linux desktop notifications.
+- Explicit website notification origin permissions in normal profiles; private windows keep notifications in the app.
+- Address-bar site information, TLS certificate details, per-site protection and confirmed domain-scoped cookie/storage clearing.
+- Preserved existing profiles and session storage paths.
+
+See docs/NOTIFICATIONS.md and docs/SITE_INFORMATION.md for behavior and limits.
+
 ## 0.1.0 — Paisley
 
 First Paisley prerelease, continuing the Browny project. The executable is `paisley` and the Cargo package is `vox-paisley`; existing `browny` profile directories remain compatible.

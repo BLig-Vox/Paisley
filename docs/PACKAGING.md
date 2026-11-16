@@ -85,7 +85,7 @@ If the desktop-entry validation utility `desktop-file-validate` is available, va
 desktop-file-validate packaging/site.blig.Paisley.desktop
 ```
 
-The desktop entry launches `paisley` without URL arguments: the current application CLI supports `--profile ID` and `--private`, not a URL positional argument or URL association. It uses the bundled pink Paisley logo (`site.blig.Paisley`). The local packager includes the PNG and uses an absolute icon path so an `/opt` installation does not depend on a system icon search path. After a Cargo or extracted binary install, run `paisley --install-desktop` as your normal desktop user to register the launcher and logo under `$XDG_DATA_HOME` (normally `~/.local/share`). The logo and desktop template are embedded in the executable; no network fetch or source checkout is needed. This command is available starting with the next release.
+The desktop entry launches `paisley` without URL arguments: the current application CLI supports `--profile ID` and `--private`, not a URL positional argument or URL association. It uses the bundled pink Paisley logo (`site.blig.Paisley`). The local packager includes the PNG and uses an absolute icon path so an `/opt` installation does not depend on a system icon search path. After a Cargo or extracted binary install, run `paisley --install-desktop` as your normal desktop user to register the launcher and logo under `$XDG_DATA_HOME` (normally `~/.local/share`). The logo and desktop template are embedded in the executable; no network fetch or source checkout is needed. This command is available starting with 0.1.1.
 
 If YouTube says “Your browser can’t play this video”, check the runtime inside
 its actual desktop environment, not the build host. In the 2026-11-16 Bot Screen
@@ -103,3 +103,10 @@ temporary loopback-only page, reached 5.05 seconds with 149 decoded frames and n
 media error. `canPlayType` reported `probably` for H.264/MP4, VP9/WebM, and AAC.
 The temporary playback server was stopped after checking. This validates those
 examples, not every codec or protected stream.
+
+## Desktop notification service
+
+Optional OS alerts need a session D-Bus service implementing
+`org.freedesktop.Notifications`, such as the desktop’s existing GNOME/KDE service
+or `xfce4-notifyd` on XFCE. In-app notifications work without one. Paisley does
+not install a daemon through Cargo or promise delivery while the browser is closed.

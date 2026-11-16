@@ -16,17 +16,15 @@ interface and **WebKitGTK** for rendering and JavaScript. Default window:
 ## Install
 
 ```sh
-cargo install --git https://github.com/BLig-Vox/Paisley --locked vox-paisley
+cargo install vox-paisley --version 0.1.1 --locked
 paisley --install-desktop
 ```
 
-The commands above install the current GitHub source. The crates.io 0.1.0 release
-does not yet include desktop integration; it will be included in the next release. For the current
-source checkout, use `cargo install --path . --locked`, then
-`paisley --install-desktop`. It installs the launcher and bundled logo for your
+The desktop integration command installs the launcher and bundled logo for your
 user, without sudo, and points the launcher at the installed executable. Run it
 again if you move or reinstall the binary in another directory. Cargo alone
-installs the executable; it does not register desktop entries.
+installs the executable; it does not register desktop entries. For a source
+checkout, use `cargo install --path . --locked` first.
 
 The executable is `paisley`. Building requires the Linux development libraries and
 Pango 1.55+ SDK described below. WebKitGTK 6, GTK 4.10+, GStreamer codecs and
@@ -39,6 +37,14 @@ Prebuilt Linux assets are available from
 is a prerelease; platform requirements and checksums accompany the binary.
 
 ## Current features
+
+- Address-bar **site information** with WebKit TLS details, per-site starter
+  protection and confirmed domain-scoped cookie/storage clearing.
+  [Site information and limits](docs/SITE_INFORMATION.md).
+
+- Native **Notifications** bell, unread badge, recent activity and quiet banners;
+  download events, optional Linux desktop alerts, and explicitly allowed website notifications in normal profiles.
+  [Permission flow and limits](docs/NOTIFICATIONS.md).
 
 - Independent, reorderable tabs with their own navigation histories, titles,
   loading indicators, errors, and close buttons.
@@ -297,7 +303,9 @@ WebKit's TLS, origin and process-security defaults are retained. Paisley explici
 **denies permission requests** and explains the missing verified requesting-origin
 association; it does not substitute the top-level URL for an unknown requesting
 frame. Camera, microphone, location and related workflows may be unavailable.
-Per-origin prompts/grants/revocation are not implemented. See the evidence and
+Notifications have explicit native origin opt-in and fresh-tab permission
+initialization; see [notification behavior](docs/NOTIFICATIONS.md). General
+request-origin prompts and grants remain unavailable. See the evidence and
 engine gaps in [docs/CAPABILITIES.md](docs/CAPABILITIES.md).
 Do not mistake the current application for a production-hardened daily browser
 or LibreWolf/Brave-equivalent protection.

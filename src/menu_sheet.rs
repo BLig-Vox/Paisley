@@ -59,12 +59,13 @@ impl MenuSheet {
             ("bookmark", "Bookmarks", "", "bookmarks"),
             ("rotate-ccw-clock", "History", "Ctrl+H", "history"),
             ("download", "Downloads", "Ctrl+J", "downloads"),
+            ("bell", "Notifications", "", "notifications"),
             ("code-xml", "Developer tools", "F12", "inspector"),
         ]
         .into_iter()
         .enumerate()
         {
-            if index == 0 || index == 2 || index == 7 {
+            if index == 0 || index == 2 || index == 8 {
                 let section = crate::download_ui::label(
                     match index {
                         0 => "PREFERENCES",
@@ -75,7 +76,7 @@ impl MenuSheet {
                 );
                 actions.append(&section);
             }
-            if index == 2 || index == 7 {
+            if index == 2 || index == 8 {
                 let separator = gtk::Separator::new(gtk::Orientation::Horizontal);
                 separator.set_margin_top(8);
                 separator.set_margin_bottom(8);
@@ -100,6 +101,7 @@ impl MenuSheet {
                     | "bookmarks"
                     | "history"
                     | "downloads"
+                    | "notifications"
             ) {
                 let arrow = gtk::Image::from_icon_name("lucide-chevron-right-symbolic");
                 arrow.set_pixel_size(14);

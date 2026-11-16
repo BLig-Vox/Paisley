@@ -38,6 +38,7 @@ pub struct Manager {
     poll: RefCell<Option<gtk::glib::SourceId>>,
     enabled: std::cell::Cell<bool>,
     changed: RefCell<Option<Box<dyn Fn()>>>,
+    event: RefCell<Option<Box<dyn Fn(&str, &str)>>>,
 }
 impl Manager {
     pub fn new(parent: &gtk::ApplicationWindow, directory: &Path) -> Rc<Self> {
@@ -60,6 +61,7 @@ impl Manager {
             poll: RefCell::new(None),
             enabled: std::cell::Cell::new(true),
             changed: RefCell::new(None),
+            event: RefCell::new(None),
         });
         match engine::load(&this.registry) {
             Ok(jobs) => {
@@ -587,6 +589,16 @@ impl Manager {
                     row.queued = false;
                     match result {
                         Ok(digest) => {
+                            if let Some(callback) = self.event.borrow().as_ref() {
+                                callback(
+                                    "Download complete",
+                                    &row.job
+                                        .destination
+                                        .file_name()
+                                        .map(|n| n.to_string_lossy().into_owned())
+                                        .unwrap_or_else(|| "File".into()),
+                                );
+                            }
                             row.job.completed = Some(digest.clone());
                             row.job.finished = Some(now());
                             let finished_bytes = worker.control.received.load(Ordering::Relaxed);
@@ -613,6 +625,14 @@ impl Manager {
                             row.reveal.set_visible(true);
                         }
                         Err(error) => {
+                            if error != "Paused"
+                                && let Some(callback) = self.event.borrow().as_ref()
+                            {
+                                callback(
+                                    "Download interrupted",
+                                    "Your progress was kept. Open Downloads to resume or retry.",
+                                );
+                            }
                             row.status.set_text(if error == "Paused" {
                                 "Paused"
                             } else if error.contains("Verification failed")
@@ -671,6 +691,9 @@ impl Manager {
             }
         }
         self.persist();
+    }
+    pub fn on_event(&self, event: impl Fn(&str, &str) + 'static) {
+        *self.event.borrow_mut() = Some(Box::new(event));
     }
     pub fn on_changed(&self, callback: impl Fn() + 'static) {
         *self.changed.borrow_mut() = Some(Box::new(callback));

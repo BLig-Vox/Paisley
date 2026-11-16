@@ -2,6 +2,7 @@ mod automation_runtime;
 mod blocking;
 mod browser;
 mod browsing_ui;
+mod desktop_notifications;
 mod desktop_install;
 mod download_ui;
 mod downloads;
@@ -10,8 +11,10 @@ mod inspector_dock;
 mod library_ui;
 mod managed_ui;
 mod menu_sheet;
+mod notifications;
 mod session_store;
 mod settings_ui;
+mod site_info;
 mod site_styles;
 
 use gtk::prelude::*;
