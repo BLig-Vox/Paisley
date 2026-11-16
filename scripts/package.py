@@ -57,9 +57,9 @@ def main():
         if output.exists() or output.is_symlink():
             raise ValueError("output already exists; refusing to overwrite")
         desktop = read_regular(DESKTOP, 65536)
-        if desktop.count(b"Exec=paisley\n") != 1:
-            raise ValueError("desktop launcher template must have exactly one Exec=paisley")
-        desktop = desktop.replace(b"Exec=paisley\n", f"Exec={args.prefix}/bin/paisley\n".encode("ascii"))
+        if desktop.count(b"Exec=paisley %U\n") != 1:
+            raise ValueError("desktop launcher template must have exactly one Exec=paisley %U")
+        desktop = desktop.replace(b"Exec=paisley %U\n", f"Exec={args.prefix}/bin/paisley %U\n".encode("ascii"))
         desktop = desktop.replace(b"Icon=site.blig.Paisley\n", f"Icon={args.prefix}/share/icons/hicolor/256x256/apps/site.blig.Paisley.png\n".encode("ascii"))
         payloads = [
             (f"{root}/share/icons/hicolor/256x256/apps/site.blig.Paisley.png", read_regular(ROOT / "assets/branding/paisley-logo-stand.png", 4 * 1024 * 1024), 0o644),

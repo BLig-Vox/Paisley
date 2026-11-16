@@ -2,8 +2,8 @@ mod automation_runtime;
 mod blocking;
 mod browser;
 mod browsing_ui;
-mod desktop_notifications;
 mod desktop_install;
+mod desktop_notifications;
 mod download_ui;
 mod downloads;
 mod favicons;
@@ -28,6 +28,7 @@ fn main() -> gtk::glib::ExitCode {
     }
     let mut profile_id = "default".to_string();
     let mut private = false;
+    let mut links = Vec::new();
     let mut args = std::env::args().skip(1);
     while let Some(arg) = args.next() {
         match arg.as_str() {
@@ -50,10 +51,17 @@ fn main() -> gtk::glib::ExitCode {
             }
             "--help" | "-h" => {
                 println!(
-                    "Paisley\nUsage: paisley [--profile ID] [--private]\n       paisley --install-desktop\n       paisley --mcp --allow-origin http://127.0.0.1:PORT\nNormal profiles persist site data and restore tabs. Private windows do not.\nMCP uses a separate isolated ephemeral fixture workspace; requires Wayland, Python 3, bubblewrap, dbus-run-session and WebKitWebDriver."
+                    "Paisley\nUsage: paisley [--profile ID] [--private] [https://URL ...]\n       paisley --install-desktop\n       paisley --mcp --allow-origin http://127.0.0.1:PORT\nNormal profiles persist site data and restore tabs. Private windows do not.\nMCP uses a separate isolated ephemeral fixture workspace; requires Wayland, Python 3, bubblewrap, dbus-run-session and WebKitWebDriver."
                 );
                 return gtk::glib::ExitCode::SUCCESS;
             }
+            _ if !arg.starts_with('-') => match external_link(&arg) {
+                Some(link) if links.len() < 32 => links.push(link),
+                _ => {
+                    eprintln!("Expected an HTTP/HTTPS URL (maximum 32 links, 8192 bytes each)");
+                    return gtk::glib::ExitCode::FAILURE;
+                }
+            },
             _ => {
                 eprintln!("Unknown option: {arg}");
                 return gtk::glib::ExitCode::FAILURE;
@@ -76,14 +84,21 @@ fn main() -> gtk::glib::ExitCode {
     );
     let app = gtk::Application::builder()
         .application_id(&id)
-        .flags(if private {
-            gtk::gio::ApplicationFlags::NON_UNIQUE
-        } else {
-            gtk::gio::ApplicationFlags::FLAGS_NONE
-        })
+        .flags(
+            gtk::gio::ApplicationFlags::HANDLES_OPEN
+                | if private {
+                    gtk::gio::ApplicationFlags::NON_UNIQUE
+                } else {
+                    gtk::gio::ApplicationFlags::FLAGS_NONE
+                },
+        )
         .build();
     let failed = std::rc::Rc::new(std::cell::Cell::new(false));
     let output = std::rc::Rc::clone(&failed);
+    let controller = std::rc::Rc::new(std::cell::RefCell::new(
+        std::rc::Weak::<browser::Browser>::new(),
+    ));
+    let activation_controller = controller.clone();
     app.connect_activate(move |app| {
         if let Some(window) = app.active_window() { window.present(); return; }
         let display = gtk::gdk::Display::default().expect("GTK display is available after activation");
@@ -95,7 +110,10 @@ fn main() -> gtk::glib::ExitCode {
         gtk::Window::set_default_icon_name(desktop_install::ICON_NAME);
         crate::download_ui::install_styles(&display);
         match paisley::profile::Profile::open(&profile_id, private).and_then(|profile| browser::Browser::with_profile(app, profile)) {
-            Ok(browser) => browser.present(),
+            Ok(browser) => {
+                *activation_controller.borrow_mut() = std::rc::Rc::downgrade(&browser);
+                browser.present();
+            },
             Err(error) => {
                 output.set(true);
                 eprintln!("Could not open profile: {error}");
@@ -104,10 +122,43 @@ fn main() -> gtk::glib::ExitCode {
             }
         }
     });
-    let result = app.run_with_args(&["paisley"]);
+    app.connect_open(move |app, files, _| {
+        // Revalidate D-Bus callers as well as locally parsed command-line URLs.
+        let urls: Vec<_> = files
+            .iter()
+            .take(32)
+            .filter_map(|file| external_link(&file.uri()))
+            .collect();
+        if urls.is_empty() {
+            return;
+        }
+        app.activate();
+        if let Some(browser) = controller.borrow().upgrade() {
+            browser.open_external_links(&urls);
+        }
+    });
+    let mut launch_args = vec!["paisley".to_owned()];
+    launch_args.extend(links);
+    let result = app.run_with_args(&launch_args);
     if failed.get() {
         gtk::glib::ExitCode::FAILURE
     } else {
         result
     }
+}
+
+// External applications may supply web URLs, never executable or local-file schemes.
+fn external_link(input: &str) -> Option<String> {
+    if input.len() > 8192 || input.chars().any(char::is_control) {
+        return None;
+    }
+    let url = url::Url::parse(input).ok()?;
+    if !matches!(url.scheme(), "http" | "https")
+        || url.host_str().is_none()
+        || !url.username().is_empty()
+        || url.password().is_some()
+    {
+        return None;
+    }
+    Some(url.into())
 }

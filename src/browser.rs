@@ -331,6 +331,14 @@ impl Browser {
         self.focus_address();
     }
 
+    pub fn open_external_links(self: &Rc<Self>, urls: &[String]) {
+        for uri in urls {
+            self.add_tab(None, Some(uri));
+        }
+        self.window.present();
+        if let Some(tab) = self.active_tab() { tab.view.grab_focus(); }
+    }
+
     fn snapshot_session(&self) -> paisley::profile::Session {
         if !self.settings.borrow().restore_session {
             return paisley::profile::Session::default();

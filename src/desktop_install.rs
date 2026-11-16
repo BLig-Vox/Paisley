@@ -25,7 +25,7 @@ pub fn install() -> io::Result<()> {
         .replace('`', "\\\\`")
         .replace('$', "\\\\$")
         .replace('%', "%%");
-    let entry = ENTRY.replace("Exec=paisley\n", &format!("Exec=\"{quoted}\"\n"));
+    let entry = ENTRY.replace("Exec=paisley %U\n", &format!("Exec=\"{quoted}\" %U\n"));
     let applications = data.join("applications");
     let icons = data.join("icons/hicolor/256x256/apps");
     fs::create_dir_all(&applications)?;

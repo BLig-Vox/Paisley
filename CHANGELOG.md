@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- HTTP/HTTPS command-line links and desktop scheme handling, forwarded into new tabs in the running profile.
+- URL-aware desktop launcher and documented default-browser setup.
+
 ## 0.1.1 — Logo, desktop integration and notifications
 
 - Pink Paisley logo in the repository, desktop launcher and packaged assets.

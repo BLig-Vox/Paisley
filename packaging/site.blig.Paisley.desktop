@@ -2,8 +2,9 @@
 Type=Application
 Name=Paisley
 Comment=Linux-first multi-tab web browser
-Exec=paisley
+Exec=paisley %U
 Icon=site.blig.Paisley
 Terminal=false
 Categories=Network;WebBrowser;
 StartupNotify=true
+MimeType=x-scheme-handler/http;x-scheme-handler/https;

@@ -36,6 +36,11 @@ Prebuilt Linux assets are available from
 [GitHub Releases](https://github.com/BLig-Vox/Paisley/releases). This first release
 is a prerelease; platform requirements and checksums accompany the binary.
 
+Open links from another application with `paisley https://example.com` (one or
+more HTTP/HTTPS URLs). After installing desktop integration, select Paisley in
+your desktop's default-browser settings. Existing profile windows receive links
+in new tabs. This external-link support is newer than the published 0.1.1 crate.
+
 ## Current features
 
 - Address-bar **site information** with WebKit TLS details, per-site starter
