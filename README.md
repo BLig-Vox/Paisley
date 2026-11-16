@@ -10,19 +10,42 @@ MCP and diagnostic environment variables now use the `PAISLEY_` prefix.
 
 
 A Linux-first web browser written in **Rust**, with **GTK4** for the native
-interface and **WebKitGTK** for rendering and JavaScript. Default window:
+interface and **CEF (Chromium Embedded Framework)** for rendering and JavaScript. Default window:
 **1280 × 800**.
 
-## 0.2.0-alpha.2 release
+## 0.2.0-alpha.3 — CEF is the default
 
-This prerelease includes the CEF migration source and bounded inactive-tab residency policy. **WebKitGTK remains the default backend and the backend in the prebuilt binary.** The optional CEF backend requires a matching separately installed runtime; it is not ready to replace your default browser. See [CEF setup, test evidence and known gaps](docs/CEF_PRERELEASE.md). CEF website permissions/notifications, IME, display scaling and opener-preserving popups are unfinished.
+New development targets **CEF**. WebKit is deprecated and available only as an
+explicit migration fallback: `--no-default-features --features legacy-webkit`.
+There is no automatic fallback. Published **0.2.0-alpha.2 still defaults to WebKit**;
+CEF becomes the default starting with **0.2.0-alpha.3**.
+
+CEF includes bounded inactive-tab residency, profile isolation, downloads and
+right-side DevTools. Website permissions/notifications, IME composition, HiDPI
+and opener-preserving popups remain unfinished. See [CEF setup and known gaps](docs/CEF_PRERELEASE.md).
+Deprecation does not imply feature parity or a fixed per-tab memory guarantee.
 
 ## Install
 
+Install the complete matching CEF **156.0.30** runtime first, following
+[the runtime instructions](docs/CEF_PRERELEASE.md), then:
+
 ```sh
-cargo install vox-paisley --version 0.2.0-alpha.2 --locked
+export CEF_PATH=/absolute/path/to/cef_linux_x86_64
+python3 scripts/build-limited.py --limit-mb 3000 -- cargo install vox-paisley --version 0.2.0-alpha.3 --locked
+paisley --backend-info
 paisley --install-desktop
 ```
+
+Run `cargo build --bins` before `cargo run` when developing: Cargo run alone
+only builds the launcher, not its sibling engine.
+
+Do not add `--bin`: Cargo installs both `paisley` (the runtime-aware launcher) and
+`paisley-engine` (the browser and its child-process entrypoint). Keep them together.
+The launcher remembers the build's `CEF_PATH`; for a moved runtime, set
+`PAISLEY_CEF_RUNTIME` or install it under `~/.local/share/paisley/cef`.
+It configures the dynamic-library path before starting the engine and does not
+change Chromium's sandbox policy. Use an ordinary, non-root desktop account.
 
 The desktop integration command installs the launcher and bundled logo for your
 user, without sudo, and points the launcher at the installed executable. Run it
@@ -30,9 +53,10 @@ again if you move or reinstall the binary in another directory. Cargo alone
 installs the executable; it does not register desktop entries. For a source
 checkout, use `cargo install --path . --locked` first.
 
-The executable is `paisley`. Building requires the Linux development libraries and
+The user-facing executable is `paisley`. Building requires the Linux development libraries and
 Pango 1.55+ SDK described below. WebKitGTK 6, GTK 4.10+, GStreamer codecs and
-system fonts must also be installed on the machine running the browser; see
+system fonts remain build/legacy dependencies during migration; CEF additionally
+requires its complete runtime. See
 [Runtime dependencies](docs/PACKAGING.md). The Cargo install does not install
 those system packages.
 
@@ -45,7 +69,11 @@ more HTTP/HTTPS URLs). After installing desktop integration, select Paisley in
 your desktop's default-browser settings. Existing profile windows receive links
 in new tabs. This release includes external-link support.
 
-## Current features
+## Legacy WebKit feature reference
+
+The sections below describe the earlier WebKit implementation and historical
+tests. They are retained for migration reference; they do not assert CEF parity.
+For current CEF support and measurements, use [the CEF status](docs/CEF_PRERELEASE.md).
 
 - Address-bar **site information** with WebKit TLS details, per-site starter
   protection and confirmed domain-scoped cookie/storage clearing.
@@ -172,9 +200,10 @@ sudo apt install build-essential pkg-config libgtk-4-dev libwebkitgtk-6.0-dev
 ## Run
 
 ```sh
-cargo run --locked
-cargo run --locked -- --profile work
-cargo run --locked -- --private
+python3 scripts/build-limited.py --limit-mb 3000 -- cargo build --locked --bins
+./target/debug/paisley
+./target/debug/paisley --profile work
+./target/debug/paisley --private
 ```
 
 Profile IDs are 1–64 ASCII letters, digits, underscores or hyphens. Reopening an
@@ -186,7 +215,7 @@ Private startup, new tabs and Home also open DuckDuckGo, so they contact the net
 Release build:
 
 ```sh
-cargo build --release --locked
+python3 scripts/build-limited.py --limit-mb 3000 -- cargo build --release --locked
 ./target/release/paisley --profile work
 ```
 
@@ -335,7 +364,7 @@ cargo fmt --check
 cargo test --locked
 cargo clippy --locked --all-targets -- -D warnings
 cargo build --locked
-cargo test --locked --bin paisley browser_smoke -- --ignored --test-threads=1
+cargo test --locked --no-default-features --features legacy-webkit --bin paisley-engine browser_smoke -- --ignored --test-threads=1
 python3 -I tests/test_mcp.py
 python3 -I tests/mcp_smoke.py /absolute/path/to/target/debug/paisley
 python3 -I tests/mcp_https_smoke.py /absolute/path/to/target/debug/paisley

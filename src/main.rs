@@ -1,3 +1,6 @@
+#[cfg(not(any(feature = "cef", feature = "legacy-webkit")))]
+compile_error!("Select the default CEF backend, or explicitly enable deprecated legacy-webkit");
+
 #[cfg(feature="cef")]
 mod cef_downloads;
 mod automation_runtime;

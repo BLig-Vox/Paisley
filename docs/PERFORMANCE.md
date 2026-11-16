@@ -13,7 +13,7 @@ PAISLEY_BENCHMARK_OUTPUT="$PWD/target/baseline-new.json" \
 PAISLEY_BENCHMARK_SCREENSHOT="$PWD/target/baseline-new-window.png" \
 PAISLEY_BENCHMARK_PAGE_SCREENSHOT="$PWD/target/baseline-new-page.png" \
 G_DEBUG=fatal-criticals \
-cargo test --release --offline --locked --bin paisley browser_smoke \
+cargo test --release --offline --locked --no-default-features --features legacy-webkit --bin paisley-engine browser_smoke \
   -- --ignored --test-threads=1 --nocapture
 ```
 

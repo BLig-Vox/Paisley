@@ -37,7 +37,8 @@ def read_regular(path, limit):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--binary", required=True, help="already-built release binary")
+    parser.add_argument("--binary", required=True, help="already-built paisley launcher")
+    parser.add_argument("--engine-binary", required=True, help="matching paisley-engine executable")
     parser.add_argument("--output", required=True, help="new .tar.gz output path")
     parser.add_argument("--prefix", required=True, help="absolute install prefix, e.g. /opt/paisley")
     parser.add_argument("--source-date-epoch", required=True, help="reproducible USTAR timestamp")
@@ -64,6 +65,7 @@ def main():
         payloads = [
             (f"{root}/share/icons/hicolor/256x256/apps/site.blig.Paisley.png", read_regular(ROOT / "assets/branding/paisley-logo-stand.png", 4 * 1024 * 1024), 0o644),
             (f"{root}/bin/paisley", read_regular(args.binary, 256 * 1024 * 1024), 0o755),
+            (f"{root}/bin/paisley-engine", read_regular(args.engine_binary, 256 * 1024 * 1024), 0o755),
             (f"{root}/share/applications/site.blig.Paisley.desktop", desktop, 0o644),
             (f"{root}/share/doc/paisley/PACKAGING.md", read_regular(PACKAGING_DOC, 1024 * 1024), 0o644),
         ]

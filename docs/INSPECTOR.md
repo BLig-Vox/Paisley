@@ -27,7 +27,7 @@ The fixture checks actual mapping, positive widget allocation, roots changing be
 ## Reproduction
 
 ```sh
-cargo test --offline --locked --bin paisley --no-run
+cargo test --offline --locked --no-default-features --features legacy-webkit --bin paisley-engine --no-run
 python3 -I scripts/smoke_isolated.py \
   /absolute/path/to/target/debug/deps/paisley-TEST_HASH --inspector-lifecycle
 python3 -I scripts/smoke_isolated.py \

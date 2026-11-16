@@ -34,7 +34,7 @@ Reproduce with the Cargo-reported test executable, not the production binary:
 cargo test --offline --locked
 cargo clippy --offline --locked --all-targets -- -D warnings
 cargo fmt --check
-cargo test --offline --locked --bin paisley --no-run
+cargo test --offline --locked --no-default-features --features legacy-webkit --bin paisley-engine --no-run
 python3 -I scripts/smoke_isolated.py \
   /absolute/path/to/target/debug/deps/paisley-TEST_HASH \
   --screenshots /absolute/path/to/NEW-evidence-directory

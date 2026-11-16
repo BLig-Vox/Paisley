@@ -216,7 +216,7 @@ python3 -I tests/test_mcp.py
 cargo test --offline --locked
 cargo clippy --offline --locked --all-targets -- -D warnings
 cargo build --offline --locked
-cargo test --offline --locked --bin paisley browser_smoke -- --ignored --test-threads=1
+cargo test --offline --locked --no-default-features --features legacy-webkit --bin paisley-engine browser_smoke -- --ignored --test-threads=1
 python3 -I tests/mcp_smoke.py /absolute/path/to/target/debug/paisley
 python3 -I tests/mcp_https_smoke.py /absolute/path/to/target/debug/paisley
 ```

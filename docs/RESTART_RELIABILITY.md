@@ -9,7 +9,7 @@ The original stress test created and deleted many profile cache roots within one
 Build the single Rust test executable, then use Cargo's reported absolute path:
 
 ```sh
-cargo test --offline --locked --bin paisley --no-run
+cargo test --offline --locked --no-default-features --features legacy-webkit --bin paisley-engine --no-run
 python3 -I scripts/smoke_isolated.py \
   /absolute/path/to/target/debug/deps/paisley-TEST_HASH --restart-stress
 python3 -I scripts/smoke_isolated.py \

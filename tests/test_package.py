@@ -21,11 +21,14 @@ class PackageTests(unittest.TestCase):
         self.binary = self.root / "paisley"
         self.binary.write_bytes(b"dummy release executable\x00\xff")
         self.binary.chmod(0o755)
+        self.engine = self.root / "paisley-engine"
+        self.engine.write_bytes(b"dummy engine executable")
         self.output = self.root / "out.tar.gz"
 
     def run_package(self, *args):
         return subprocess.run(
             [sys.executable, "-I", str(SCRIPT), "--binary", str(self.binary),
+             "--engine-binary", str(self.engine),
              "--output", str(self.output), "--prefix", "/opt/paisley",
              "--source-date-epoch", "123456789", *args],
             text=True, capture_output=True,
@@ -43,6 +46,7 @@ class PackageTests(unittest.TestCase):
             members = archive.getmembers()
             expected = [
                 "opt/paisley/bin/paisley",
+                "opt/paisley/bin/paisley-engine",
                 "opt/paisley/share/applications/site.blig.Paisley.desktop",
                 "opt/paisley/share/doc/paisley/MANIFEST.json",
                 "opt/paisley/share/doc/paisley/PACKAGING.md",
@@ -54,13 +58,14 @@ class PackageTests(unittest.TestCase):
                 self.assertEqual(member.gid, 0)
                 self.assertEqual(member.mtime, 123456789)
             binary = archive.extractfile(members[0]).read()
-            manifest = json.load(archive.extractfile(members[2]))
+            manifest = json.load(archive.extractfile(members[3]))
             self.assertEqual(binary, self.binary.read_bytes())
-            desktop = archive.extractfile(members[1]).read()
+            desktop = archive.extractfile(members[2]).read()
             self.assertIn(b"Exec=/opt/paisley/bin/paisley %U\n", desktop)
             self.assertIn(b"Icon=/opt/paisley/share/icons/hicolor/256x256/apps/site.blig.Paisley.png\n", desktop)
             expected_hashes = {
                 "bin/paisley": hashlib.sha256(binary).hexdigest(),
+                "bin/paisley-engine": hashlib.sha256(self.engine.read_bytes()).hexdigest(),
                 "share/applications/site.blig.Paisley.desktop": hashlib.sha256(desktop).hexdigest(),
                 "share/icons/hicolor/256x256/apps/site.blig.Paisley.png": hashlib.sha256((DESKTOP.parents[1] / "assets/branding/paisley-logo-stand.png").read_bytes()).hexdigest(),
                 "share/doc/paisley/PACKAGING.md": hashlib.sha256((DESKTOP.parents[1] / "docs" / "PACKAGING.md").read_bytes()).hexdigest(),

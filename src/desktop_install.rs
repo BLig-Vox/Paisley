@@ -34,13 +34,31 @@ fn apply_window_identity(window: &gtk::Window) {
     let _ = window;
 }
 
+fn launcher_executable(executable: PathBuf) -> io::Result<PathBuf> {
+    if executable
+        .file_name()
+        .is_some_and(|name| name == "paisley-engine")
+    {
+        let launcher = executable.with_file_name("paisley");
+        if !launcher.is_file() {
+            return Err(io::Error::other(
+                "Install both paisley and paisley-engine before registering the desktop launcher",
+            ));
+        }
+        Ok(launcher)
+    } else {
+        // Integration fixtures and older single-binary installs keep their name.
+        Ok(executable)
+    }
+}
+
 pub fn install() -> io::Result<()> {
     let data = env::var_os("XDG_DATA_HOME")
         .filter(|value| PathBuf::from(value).is_absolute())
         .map(PathBuf::from)
         .or_else(|| env::var_os("HOME").map(|home| PathBuf::from(home).join(".local/share")))
         .ok_or_else(|| io::Error::other("HOME or an absolute XDG_DATA_HOME is required"))?;
-    let executable = env::current_exe()?;
+    let executable = launcher_executable(env::current_exe()?)?;
     let executable = executable
         .to_str()
         .ok_or_else(|| io::Error::other("Executable path must be valid UTF-8"))?;

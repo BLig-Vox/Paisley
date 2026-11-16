@@ -1,14 +1,15 @@
 [package]
 name = "vox-paisley"
-version = "0.2.0-alpha.2"
+version = "0.2.0-alpha.3"
 edition = "2024"
+default-run = "paisley"
 rust-version = "1.92"
-description = "A Linux browser built with Rust and GTK4, with WebKitGTK and an optional CEF backend."
+description = "A Linux browser built with Rust and GTK4, with Chromium Embedded Framework (CEF)."
 license = "MIT"
 authors = ["Alexander Vox <alexander.vox.great@gmail.com>"]
 repository = "https://github.com/BLig-Vox/Paisley"
 readme = "README.md"
-keywords = ["browser", "webkit", "gtk4", "linux", "privacy"]
+keywords = ["browser", "chromium", "gtk4", "linux", "privacy"]
 categories = ["web-programming", "gui"]
 include = ["Cargo.toml", "Cargo.lock", "LICENSE", "README.md", "CHANGELOG.md", "THIRD_PARTY_NOTICES.md", "THIRD_PARTY_LICENSES.txt", "src/**", "assets/**", "docs/**", "packaging/**", "scripts/**", "tests/**", ".cargo/config.toml"]
 
@@ -17,10 +18,16 @@ name = "paisley"
 
 [[bin]]
 name = "paisley"
+path = "src/launcher.rs"
+
+[[bin]]
+name = "paisley-engine"
 path = "src/main.rs"
 
 [features]
-default = []
+default = ["cef"]
+# Deprecated migration fallback; select with --no-default-features.
+legacy-webkit = []
 cef = ["dep:cef-gtk"]
 cef-test-support = ["cef", "cef-gtk/test-support"]
 

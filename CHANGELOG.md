@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.0-alpha.3 — CEF by default
+
+- Make CEF the default backend; deprecate WebKit behind explicit `legacy-webkit`.
+- Add a runtime-aware `paisley` launcher and separate `paisley-engine` binary.
+  Desktop integration and local packages retain the launcher for external links.
+- Keep profile routing, private windows, residency limits and production sandbox
+  policy unchanged. CEF parity gaps remain documented.
+
+
 ## 0.2.0-alpha.2 — Wayland desktop identity
 
 - Running Wayland windows use the installed Paisley desktop identity and pink icon across profiles and private instances, while keeping profile-specific application routing.

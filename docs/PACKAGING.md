@@ -2,9 +2,23 @@
 
 Published prerelease archives are unsigned. Their SHA-256 manifests detect payload changes but are not signatures. The local packager described below is a separate development workflow.
 
-The archive contains an explicitly supplied, already-built release executable, a desktop entry, this document, and a payload checksum manifest. The packager never executes the supplied binary or extracts archives. It does not bundle GTK, WebKitGTK, or other shared libraries: the target system must provide compatible GTK 4 and WebKitGTK 6 runtimes and all required shared libraries. Users must obtain upstream Paisley updates independently; this packaging slice defines no update mechanism or policy.
+The archive contains an explicitly supplied, already-built launcher and matching engine executable, a desktop entry, this document, and a payload checksum manifest. The packager never executes the supplied binary or extracts archives. It does not bundle GTK, WebKitGTK, or other shared libraries: the target system must provide compatible GTK 4 and WebKitGTK 6 runtimes and all required shared libraries. Users must obtain upstream Paisley updates independently; this packaging slice defines no update mechanism or policy.
 
 Paisley uses the repository’s MIT license, declared in Cargo.toml. Release archives include LICENSE and bundled dependency notices. They are unsigned prerelease artifacts; checksums detect changes but are not signatures. Updates are installed explicitly from Cargo or GitHub Releases.
+
+## Current CEF source builds
+
+CEF is now the default; WebKit is deprecated. Keep `paisley` and `paisley-engine`
+together in `bin/`. The local packager includes both but **does not bundle CEF**.
+Install the complete matching CEF runtime separately under `lib/paisley/cef`
+relative to the prefix, or configure the launcher as described in
+[CEF setup](CEF_PRERELEASE.md). Retain upstream CEF/Chromium licenses and credits
+when redistributing that runtime. `include/cef_version.h` is needed for the
+launcher's version check. Do not substitute another CEF version.
+
+The following dependency/video notes describe legacy WebKit builds. WebKit SDK
+references still remain in the CEF build during migration. CEF media support uses
+Chromium rather than GStreamer, and depends on the actual CEF distribution.
 
 ## First published release
 
@@ -54,9 +68,10 @@ Noto CJK covers Chinese (Simplified/Traditional), Japanese and Korean. Noto Core
 From the `Browny/` project directory, build the release binary using the project's locally available Rust toolchain and development libraries:
 
 ```sh
-cargo build --locked --release
+python3 scripts/build-limited.py --limit-mb 3000 -- cargo build --locked --release
 python3 -I scripts/package.py \
   --binary "$PWD/target/release/paisley" \
+  --engine-binary "$PWD/target/release/paisley-engine" \
   --output "$PWD/dist/paisley-local.tar.gz" \
   --prefix /opt/paisley \
   --source-date-epoch 1735689600
