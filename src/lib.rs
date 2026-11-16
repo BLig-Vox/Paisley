@@ -8,3 +8,5 @@ pub mod profile;
 pub mod profile_catalog;
 pub mod settings_transfer;
 mod transfer_io;
+
+pub mod managed_download;

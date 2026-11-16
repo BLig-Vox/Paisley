@@ -67,7 +67,7 @@ mod tests {
             fn mkfifo(path: *const std::ffi::c_char, mode: u32) -> i32;
         }
         let directory =
-            std::env::temp_dir().join(format!("browny-transfer-fifo-{}", std::process::id()));
+            std::env::temp_dir().join(format!("paisley-transfer-fifo-{}", std::process::id()));
         fs::create_dir(&directory).unwrap();
         let path = directory.join("pipe");
         let name = std::ffi::CString::new(path.as_os_str().as_encoded_bytes()).unwrap();

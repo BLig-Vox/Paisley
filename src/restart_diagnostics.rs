@@ -51,7 +51,7 @@ impl NetworkExitMonitor {
         };
         let pid_one = std::fs::read_to_string("/proc/1/comm").unwrap_or_default();
         if !scope_allowed(
-            std::env::var_os("BROWNY_DOWNLOAD_CAPACITY_FIXTURE").is_some(),
+            std::env::var_os("PAISLEY_DOWNLOAD_CAPACITY_FIXTURE").is_some(),
             &pid_one,
         ) {
             eprintln!("owned network exit monitor unavailable: not a private fixture namespace");

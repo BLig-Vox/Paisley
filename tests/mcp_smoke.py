@@ -1,4 +1,4 @@
-"""Bounded native-input fixture: python3 -I tests/mcp_smoke.py /absolute/browny.
+"""Bounded native-input fixture: python3 -I tests/mcp_smoke.py /absolute/paisley.
 No external site, personal profile or raw host WebDriver listener is used.
 """
 import base64
@@ -16,7 +16,7 @@ import time
 
 PAGE = b'''<!doctype html><meta charset="utf-8"><title>Interactive fixture</title>
 <style>body{height:3000px;font:20px sans-serif}input,button{font:inherit}#result{white-space:pre-wrap}</style>
-<h1>Browny native automation fixture</h1><form onsubmit="event.preventDefault();document.querySelector('#result').textContent=JSON.stringify({text:document.querySelector('#message').value,trusted:event.isTrusted})"><label>Message <input id="message"></label>
+<h1>Paisley native automation fixture</h1><form onsubmit="event.preventDefault();document.querySelector('#result').textContent=JSON.stringify({text:document.querySelector('#message').value,trusted:event.isTrusted})"><label>Message <input id="message"></label>
 <button id="send" type="submit">Send</button></form>
 <pre id="result">Waiting</pre><pre id="keyboard">Keyboard waiting</pre><p style="margin-top:1700px">Scroll target</p>
 <script>document.querySelector('#message').addEventListener('keydown', e => {document.querySelector('#keyboard').textContent='Keyboard trusted: '+e.isTrusted})</script>'''
@@ -113,7 +113,7 @@ def main(binary, screenshot=None):
     threading.Thread(target=foreign.serve_forever, daemon=True).start()
     threading.Thread(target=site.serve_forever, daemon=True).start()
     origin = f'http://127.0.0.1:{site.server_port}'
-    with tempfile.TemporaryDirectory(prefix='browny-mcp-smoke-') as directory:
+    with tempfile.TemporaryDirectory(prefix='paisley-mcp-smoke-') as directory:
         with open(Path(directory) / 'stderr.log', 'w+b') as log:
             client = Client(binary, origin, log)
             try:
@@ -138,7 +138,7 @@ def main(binary, screenshot=None):
                 state = client.data(client.tool('browser_observe', {'tab': tab, 'screenshot': False}))
                 assert state['origin'] == origin and 'Message' in state['page']['text'], state
                 observation = state['observation']
-                text = 'Hello, Browny — 世界 🦀'
+                text = 'Hello, Paisley — 世界 🦀'
                 client.tool('browser_type', {'tab': tab, 'observation': observation, 'selector': '#message', 'text': text, 'clear': True})
                 client.tool('browser_type', {'tab': tab, 'observation': observation, 'selector': '#message', 'text': 'stale'}, error=True)
                 state = client.data(client.tool('browser_observe', {'tab': tab, 'screenshot': False}))

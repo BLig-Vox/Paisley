@@ -16,7 +16,7 @@ Private profiles never write session records, including transient entries or the
 
 ## Format and privacy limits
 
-The existing version-1 session structure remains `tabs: Vec<String>` plus `active`. The exact marker is an additional supported metadata entry; a marker with a suffix is not accepted. Older Browny versions whose validator accepts only HTTP(S) can drop marker entries and change selection. This is not a backwards-compatible downgrade/migration guarantee.
+The existing version-1 session structure remains `tabs: Vec<String>` plus `active`. The exact marker is an additional supported metadata entry; a marker with a suffix is not accepted. Older Paisley versions whose validator accepts only HTTP(S) can drop marker entries and change selection. This is not a backwards-compatible downgrade/migration guarantee.
 
 Safe web URLs can themselves contain sensitive paths/query parameters and remain stored. This is not URL-secret detection, encrypted storage, whole-profile backup, POST/form replay, full navigation-history restoration or erasure of records previously created by other versions. Disabling restoration clears the next session snapshot. Corrupt/future records remain subject to the existing preservation/refusal rules.
 
@@ -34,9 +34,9 @@ Reproduce with the Cargo-reported test executable, not the production binary:
 cargo test --offline --locked
 cargo clippy --offline --locked --all-targets -- -D warnings
 cargo fmt --check
-cargo test --offline --locked --bin browny --no-run
+cargo test --offline --locked --bin paisley --no-run
 python3 -I scripts/smoke_isolated.py \
-  /absolute/path/to/target/debug/deps/browny-TEST_HASH \
+  /absolute/path/to/target/debug/deps/paisley-TEST_HASH \
   --screenshots /absolute/path/to/NEW-evidence-directory
 ```
 

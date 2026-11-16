@@ -16,7 +16,7 @@ impl Navigation {
 /// Resolve submitted omnibox text without performing network requests.
 pub fn resolve(input: &str) -> Result<Navigation, String> {
     let input = input.trim();
-    if input.is_empty() || input == "browny:home" || input == "about:blank" {
+    if input.is_empty() || matches!(input, "paisley:home" | "browny:home" | "about:blank") {
         return Ok(Navigation::Home);
     }
     if input.chars().any(char::is_control) {
@@ -141,7 +141,7 @@ mod tests {
 
     #[test]
     fn home_addresses_resolve_to_duckduckgo() {
-        for input in ["", "  ", "browny:home", "about:blank"] {
+        for input in ["", "  ", "paisley:home", "about:blank"] {
             let navigation = resolve(input).expect("valid home address");
             assert_eq!(navigation.uri(), "https://duckduckgo.com/", "{input:?}");
         }
@@ -222,7 +222,7 @@ mod tests {
             "ftp://example.com",
             "mailto:test@example.com",
             "about:config",
-            "browny:settings",
+            "paisley:settings",
             "custom:thing",
         ] {
             assert!(resolve(input).is_err(), "accepted {input:?}");

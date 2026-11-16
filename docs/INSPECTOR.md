@@ -6,6 +6,14 @@ Date: 2026-11-07. This records a verified lifecycle subset, not completion of de
 
 F12, Ctrl+Shift+I, Ctrl+Shift+J, the toolbar and menu toggle the active tab's real WebKit Web Inspector. Right-click Inspect Element uses the engine's native context menu. Developer extras are enabled for each tab. Each tab has its own Inspector; opening one does not deliberately open another tab's tools.
 
+Paisley hosts attached inspectors in a resizable pane on the right of the page.
+This applies to keyboard/toolbar opening and the native Inspect Element context
+menu. New tabs use the same layout; no per-tab docking choice is needed. The
+divider initially gives the tools about 40% of the tab width. Closing the tools
+returns that space to the page. The native detach control still opens a separate
+window; reattaching returns the tools to the right. Paisley controls the attached
+layout, so WebKit's native left/bottom dock buttons also use the right-side host.
+
 The public WebKitGTK 6.0 API provides show/close, attach/detach, the frontend widget, inspected URI and lifecycle signals. The installed API/bindings do not expose a dedicated console-panel selection method. Ctrl+Shift+J therefore toggles Inspector; select Console inside the native tools. No private frontend JavaScript, fake console or Chrome DevTools Protocol bridge is substituted.
 
 ## Owner-close regression and fix
@@ -19,13 +27,13 @@ The fixture checks actual mapping, positive widget allocation, roots changing be
 ## Reproduction
 
 ```sh
-cargo test --offline --locked --bin browny --no-run
+cargo test --offline --locked --bin paisley --no-run
 python3 -I scripts/smoke_isolated.py \
-  /absolute/path/to/target/debug/deps/browny-TEST_HASH --inspector-lifecycle
+  /absolute/path/to/target/debug/deps/paisley-TEST_HASH --inspector-lifecycle
 python3 -I scripts/smoke_isolated.py \
-  /absolute/path/to/target/debug/deps/browny-TEST_HASH --inspector-preface
+  /absolute/path/to/target/debug/deps/paisley-TEST_HASH --inspector-preface
 python3 -I scripts/smoke_isolated.py \
-  /absolute/path/to/target/debug/deps/browny-TEST_HASH --inspector-open-close
+  /absolute/path/to/target/debug/deps/paisley-TEST_HASH --inspector-open-close
 ```
 
 Use Cargo's reported test-executable path, not the production browser binary. Prefix commands with `distrobox-host-exec` when the installed development tools are on the host. `--inspector-lifecycle` runs only the Inspector fixture; `--inspector-preface` first runs the settings and non-restorable-placeholder fixtures that precede it in the ordinary full smoke; `--inspector-open-close` runs those same prechecks then three show/close cycles without attach/detach transitions. The ordinary full smoke includes additional tests. A focused pass must not be reported as a full-suite pass.

@@ -1,8 +1,8 @@
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
-use browny::navigation;
 use gtk::prelude::*;
+use paisley::navigation;
 use webkit::prelude::*;
 
 #[derive(Clone)]
@@ -12,6 +12,7 @@ struct Tab {
     view: webkit::WebView,
     title: gtk::Label,
     spinner: gtk::Spinner,
+    favicon: gtk::Image,
     error: gtk::Label,
     placeholder: gtk::Label,
     generation: Rc<Cell<u64>>,
@@ -29,17 +30,19 @@ pub struct Browser {
     session: webkit::NetworkSession,
     tabs: RefCell<Vec<Tab>>,
     next_id: Cell<u64>,
-    memory: RefCell<Option<browny::memory::Usage>>,
-    profile: std::sync::Arc<browny::profile::Profile>,
+    memory: RefCell<Option<paisley::memory::Usage>>,
+    profile: std::sync::Arc<paisley::profile::Profile>,
     profile_label: String,
-    settings: RefCell<browny::profile::Settings>,
-    library: RefCell<browny::library::Library>,
+    settings: RefCell<paisley::profile::Settings>,
+    library: RefCell<paisley::library::Library>,
     pending: RefCell<std::collections::HashMap<u64, String>>,
     dirty: Cell<bool>,
     closing: Cell<bool>,
     writer: RefCell<Option<crate::session_store::SessionWriter>>,
     downloads: RefCell<Rc<crate::downloads::Downloads>>,
+    menu: Rc<crate::menu_sheet::MenuSheet>,
     blocker: Rc<crate::blocking::Blocker>,
+    favicons: Rc<crate::favicons::Favicons>,
     status: gtk::Label,
 }
 
@@ -48,19 +51,19 @@ impl Browser {
     pub fn new(app: &gtk::Application) -> Rc<Self> {
         Self::with_profile(
             app,
-            browny::profile::Profile::open("test-private", true).unwrap(),
+            paisley::profile::Profile::open("test-private", true).unwrap(),
         )
         .unwrap()
     }
 
     pub fn with_profile(
         app: &gtk::Application,
-        profile: browny::profile::Profile,
+        profile: paisley::profile::Profile,
     ) -> Result<Rc<Self>, String> {
         let restored = if profile.settings.restore_session {
             profile.load_session()?
         } else {
-            browny::profile::Session::default()
+            paisley::profile::Session::default()
         };
         let library = profile.load_library()?;
         // Nonessential metadata must not make the whole profile unusable.
@@ -73,7 +76,7 @@ impl Browser {
         let profile = std::sync::Arc::new(profile);
         let window = gtk::ApplicationWindow::builder()
             .application(app)
-            .title("Browny")
+            .title("Paisley")
             .default_width(1280)
             .default_height(800)
             .width_request(640)
@@ -87,7 +90,11 @@ impl Browser {
             .tooltip_text("Address or DuckDuckGo search (Ctrl+L)")
             .build();
         let back = icon_button("lucide-arrow-left-symbolic", "Back (Alt+Left)", "win.back");
-        let forward = icon_button("lucide-arrow-right-symbolic", "Forward (Alt+Right)", "win.forward");
+        let forward = icon_button(
+            "lucide-arrow-right-symbolic",
+            "Forward (Alt+Right)",
+            "win.forward",
+        );
         let reload = icon_button("lucide-rotate-cw-symbolic", "Reload (Ctrl+R)", "win.reload");
         let home = icon_button("lucide-house-symbolic", "Home", "win.home");
         let new_tab = icon_button("lucide-plus-symbolic", "New tab (Ctrl+T)", "win.new-tab");
@@ -97,7 +104,6 @@ impl Browser {
         header.pack_start(&reload);
         header.pack_start(&home);
         header.set_title_widget(Some(&address));
-        header.pack_end(&new_tab);
         header.pack_end(&icon_button(
             "lucide-download-symbolic",
             "Downloads (Ctrl+J)",
@@ -108,27 +114,10 @@ impl Browser {
             "Web Inspector / Console (F12)",
             "win.inspector",
         ));
-        let menu = gtk::gio::Menu::new();
-        menu.append(Some("Settings"), Some("win.settings"));
-        menu.append(Some("Profiles / private window"), Some("win.profiles"));
-        menu.append(
-            Some("Toggle blocking for this site"),
-            Some("win.site-blocking"),
-        );
-        menu.append(
-            Some("Bookmark this page (Ctrl+D)"),
-            Some("win.bookmark-current"),
-        );
-        menu.append(Some("Bookmarks"), Some("win.bookmarks"));
-        menu.append(Some("History (Ctrl+H)"), Some("win.history"));
-        menu.append(Some("Downloads"), Some("win.downloads"));
-        menu.append(Some("Web Inspector / Console"), Some("win.inspector"));
-        let menu_button = gtk::MenuButton::builder()
-            .icon_name("lucide-menu-symbolic")
-            .menu_model(&menu)
-            .tooltip_text("Browny menu")
-            .build();
+        let menu_button = icon_button("lucide-menu-symbolic", "Paisley menu", "win.menu");
         header.pack_end(&menu_button);
+        // HeaderBar packs end children inward: add + last, beside the address.
+        header.pack_end(&new_tab);
         window.set_titlebar(Some(&header));
 
         let notebook = gtk::Notebook::builder()
@@ -175,6 +164,10 @@ impl Browser {
             }
             session
         };
+        if let Some(data) = session.website_data_manager() {
+            // WebKit owns icon fetching and the profile/ephemeral cache policy.
+            data.set_favicons_enabled(true);
+        }
         session.set_itp_enabled(true);
         if settings.strict_privacy
             && let Some(cookies) = session.cookie_manager()
@@ -183,11 +176,23 @@ impl Browser {
         }
         let writer = crate::session_store::SessionWriter::new(std::sync::Arc::clone(&profile));
         let downloads =
-            crate::downloads::Downloads::for_profile(&window, download_history, profile.private);
+            crate::downloads::Downloads::for_profile(&window, download_history, &profile);
         if let Some(error) = download_error {
             downloads.use_memory_records(&error);
         }
+        let menu = crate::menu_sheet::MenuSheet::new(&window);
         let blocker = crate::blocking::Blocker::new(&profile)?;
+        let favicons = crate::favicons::Favicons::new(
+            session
+                .website_data_manager()
+                .and_then(|data| data.favicon_database()),
+            (!profile.private).then(|| profile.cache_dir.join("site-icons-v1")),
+            library
+                .bookmarks
+                .iter()
+                .chain(library.history.iter())
+                .map(|page| page.uri.clone()),
+        );
         let profile_label = match profile.display_name() {
             Ok(name) if name != profile.id => format!("{name} [{}]", profile.id),
             Ok(_) => profile.id.clone(),
@@ -214,7 +219,9 @@ impl Browser {
             closing: Cell::new(false),
             writer: RefCell::new(Some(writer)),
             downloads: RefCell::new(downloads),
+            menu,
             blocker,
+            favicons,
             status,
         });
         browser.install_actions(app);
@@ -235,7 +242,7 @@ impl Browser {
                 }
             });
         if restored.tabs.is_empty() {
-            browser.add_tab(None, Some("browny:home"));
+            browser.add_tab(None, Some("paisley:home"));
         } else {
             for uri in &restored.tabs {
                 browser.add_tab(None, None);
@@ -260,9 +267,9 @@ impl Browser {
         self.focus_address();
     }
 
-    fn snapshot_session(&self) -> browny::profile::Session {
+    fn snapshot_session(&self) -> paisley::profile::Session {
         if !self.settings.borrow().restore_session {
-            return browny::profile::Session::default();
+            return paisley::profile::Session::default();
         }
         let mut tabs = Vec::new();
         for index in 0..self.notebook.n_pages() {
@@ -270,7 +277,7 @@ impl Browser {
                 && let Some(tab) = self.tabs.borrow().iter().find(|tab| tab.page == page)
             {
                 if tab.placeholder.is_visible() {
-                    tabs.push(browny::profile::NON_RESTORABLE_TAB.to_owned());
+                    tabs.push(paisley::profile::NON_RESTORABLE_TAB.to_owned());
                     continue;
                 }
                 let uri = self
@@ -282,13 +289,13 @@ impl Browser {
                     .unwrap_or_else(|| self.settings.borrow().homepage.clone());
                 // Normalize before background queueing, not only at disk write.
                 tabs.push(
-                    browny::profile::session_target(&uri)
+                    paisley::profile::session_target(&uri)
                         .unwrap_or("")
                         .to_owned(),
                 );
             }
         }
-        browny::profile::Session {
+        paisley::profile::Session {
             tabs,
             active: self.notebook.current_page().unwrap_or(0) as usize,
         }
@@ -343,7 +350,7 @@ impl Browser {
     }
 
     fn load_tab(&self, tab: &Tab, uri: &str) {
-        if uri == browny::profile::NON_RESTORABLE_TAB {
+        if uri == paisley::profile::NON_RESTORABLE_TAB {
             // Metadata sentinel only: never send it or the original transient
             // URL/payload through WebKit, search, network or script execution.
             self.pending.borrow_mut().remove(&tab.id);
@@ -356,6 +363,8 @@ impl Browser {
             tab.title.set_tooltip_text(None);
             tab.spinner.set_spinning(false);
             tab.spinner.set_visible(false);
+            tab.favicon.set_icon_name(Some("lucide-globe-symbolic"));
+            tab.favicon.set_visible(true);
             self.dirty.set(true);
             return;
         }
@@ -418,7 +427,7 @@ impl Browser {
         std::thread::spawn(move || {
             loop {
                 if send
-                    .send(browny::memory::sample(std::process::id()))
+                    .send(paisley::memory::sample(std::process::id()))
                     .is_err()
                 {
                     break;
@@ -540,6 +549,9 @@ impl Browser {
         let update: crate::library_ui::UpdateLibrary = Rc::new(move |change| {
             let browser = weak.upgrade().ok_or("Browser has closed")?;
             match change {
+                crate::library_ui::Change::SaveBookmark { uri, title } => {
+                    browser.library.borrow_mut().bookmark(&uri, &title, now())?;
+                }
                 crate::library_ui::Change::ClearHistory => {
                     browser.library.borrow_mut().history.clear()
                 }
@@ -547,7 +559,7 @@ impl Browser {
                     browser.library.borrow_mut().remove_bookmark(&uri)
                 }
                 crate::library_ui::Change::ImportBookmarks(import) => {
-                    let next = browny::bookmark_transfer::merge_import(
+                    let next = paisley::bookmark_transfer::merge_import(
                         &browser.library.borrow(),
                         &import,
                     )?;
@@ -557,36 +569,103 @@ impl Browser {
             browser.dirty.set(true);
             Ok(())
         });
-        crate::library_ui::show(
+        self.downloads.borrow().dismiss();
+        crate::library_ui::show_in_sheet(
             &self.window,
             bookmarks,
             self.profile.private,
             read,
             open,
             update,
+            &self.menu,
+            Some(Rc::clone(&self.favicons)),
         )
     }
 
-    fn install_actions(self: &Rc<Self>, app: &gtk::Application) {
-        self.action("bookmark-current", |browser| {
-            if let Some(tab) = browser.active_tab()
-                && let Some(uri) = tab.view.uri()
-            {
-                let title = tab.view.title().unwrap_or_default();
-                let result = browser.library.borrow_mut().bookmark(&uri, &title, now());
-                match result {
-                    Ok(()) => {
-                        browser.dirty.set(true);
-                        browser.status.set_text(if browser.profile.private {
-                            "Temporary private bookmark saved"
-                        } else {
-                            "Bookmark saved in this profile"
-                        });
-                    }
-                    Err(error) => show_error(&tab, &error),
-                }
-            }
+    fn show_bookmark(self: &Rc<Self>) {
+        let Some(tab) = self.active_tab() else {
+            return;
+        };
+        let uri = tab.view.uri().unwrap_or_default().to_string();
+        let normalized = url::Url::parse(&uri)
+            .ok()
+            .map(|url| url.to_string())
+            .unwrap_or(uri);
+        let existing = self
+            .library
+            .borrow()
+            .bookmarks
+            .iter()
+            .find(|page| page.uri == normalized)
+            .cloned();
+        let title = existing
+            .as_ref()
+            .map(|page| page.title.clone())
+            .unwrap_or_else(|| tab.view.title().unwrap_or_default().to_string());
+        let weak = Rc::downgrade(self);
+        let uri = normalized.clone();
+        let save = Rc::new(move |title: &str| {
+            let browser = weak.upgrade().ok_or("Browser has closed")?;
+            browser.library.borrow_mut().bookmark(&uri, title, now())?;
+            browser.dirty.set(true);
+            Ok(())
         });
+        let weak = Rc::downgrade(self);
+        let uri = normalized.clone();
+        let remove = Rc::new(move || {
+            let browser = weak.upgrade().ok_or("Browser has closed")?;
+            browser.library.borrow_mut().remove_bookmark(&uri);
+            browser.dirty.set(true);
+            Ok(())
+        });
+        self.downloads.borrow().dismiss();
+        crate::browsing_ui::bookmark(
+            &self.menu,
+            &normalized,
+            &title,
+            existing.is_some(),
+            self.profile.private,
+            save,
+            remove,
+        );
+    }
+
+    fn show_protection(self: &Rc<Self>) {
+        let Some(tab) = self.active_tab() else {
+            return;
+        };
+        let uri = tab.view.uri().unwrap_or_default().to_string();
+        let site = origin(&uri);
+        let weak = Rc::downgrade(self);
+        let update = Rc::new(move |enabled: bool| {
+            let browser = weak.upgrade().ok_or("Browser has closed")?;
+            let site = site.as_ref().ok_or("Open a website to change protection")?;
+            let mut settings = browser.settings.borrow().clone();
+            if !settings.block_trackers {
+                return Err("Turn on blocking in Settings first".into());
+            }
+            settings.blocking_exceptions.retain(|item| item != site);
+            if !enabled {
+                settings.blocking_exceptions.push(site.clone());
+            }
+            browser.profile.save_settings(&settings)?;
+            *browser.settings.borrow_mut() = settings;
+            browser.apply_settings();
+            Ok(())
+        });
+        self.downloads.borrow().dismiss();
+        crate::browsing_ui::protection(
+            &self.menu,
+            &uri,
+            self.blocking_enabled(Some(&uri)),
+            self.settings.borrow().block_trackers,
+            self.blocker.ready.get() && self.blocker.filter().is_some(),
+            update,
+        );
+    }
+
+    fn install_actions(self: &Rc<Self>, app: &gtk::Application) {
+        self.action("bookmark-current", |browser| browser.show_bookmark());
         self.action("bookmarks", |browser| {
             browser.show_library(true);
         });
@@ -595,7 +674,8 @@ impl Browser {
         });
         self.action("settings", |browser| {
             let weak = Rc::downgrade(browser);
-            crate::settings_ui::show(
+            browser.downloads.borrow().dismiss();
+            crate::settings_ui::show_in_sheet(
                 &browser.window,
                 browser.settings.borrow().clone(),
                 move |settings| {
@@ -605,39 +685,21 @@ impl Browser {
                     browser.apply_settings();
                     Ok(())
                 },
+                &browser.menu,
             );
         });
         self.action("profiles", |browser| {
-            crate::settings_ui::profiles(
+            browser.downloads.borrow().dismiss();
+            crate::settings_ui::profiles_in_sheet(
                 &browser.window,
                 &browser.profile.id,
                 browser.profile.private,
+                &browser.menu,
             )
         });
-        self.action("site-blocking", |browser| {
-            if let Some(tab) = browser.active_tab()
-                && let Some(uri) = tab.view.uri()
-                && let Some(origin) = origin(&uri)
-            {
-                let mut settings = browser.settings.borrow().clone();
-                if settings.blocking_exceptions.contains(&origin) {
-                    settings.blocking_exceptions.retain(|item| item != &origin);
-                } else {
-                    settings.blocking_exceptions.push(origin);
-                }
-                match browser.profile.save_settings(&settings) {
-                    Ok(()) => {
-                        *browser.settings.borrow_mut() = settings;
-                        browser.apply_settings();
-                    }
-                    Err(error) => {
-                        show_error(&tab, &format!("Could not save site exception: {error}"))
-                    }
-                }
-            }
-        });
+        self.action("site-blocking", |browser| browser.show_protection());
         self.action("new-tab", |browser| {
-            browser.add_tab(None, Some("browny:home"));
+            browser.add_tab(None, Some("paisley:home"));
             browser.focus_address();
         });
         self.action("close-tab", |browser| {
@@ -645,7 +707,17 @@ impl Browser {
                 browser.close_tab(tab.id);
             }
         });
-        self.action("downloads", |browser| browser.downloads.borrow().show());
+        self.action("menu", |browser| {
+            browser.downloads.borrow().dismiss();
+            browser.menu.toggle();
+        });
+        self.action("downloads", |browser| {
+            browser.menu.back();
+            browser.downloads.borrow().toggle();
+            if browser.downloads.borrow().is_open() {
+                browser.menu.select("Downloads");
+            }
+        });
         self.action("inspector", |browser| {
             if let Some(tab) = browser.active_tab()
                 && let Some(inspector) = tab.view.inspector()
@@ -662,7 +734,7 @@ impl Browser {
         self.action("focus-address", |browser| browser.focus_address());
         self.action("next-tab", |browser| browser.cycle_tab(1));
         self.action("previous-tab", |browser| browser.cycle_tab(-1));
-        self.action("home", |browser| browser.navigate("browny:home"));
+        self.action("home", |browser| browser.navigate("paisley:home"));
         self.action("back", |browser| {
             if let Some(tab) = browser.active_tab()
                 && tab.view.can_go_back()
@@ -699,6 +771,9 @@ impl Browser {
         });
         self.reload.set_action_name(Some("win.reload-or-stop"));
         self.action("stop", |browser| {
+            if browser.downloads.borrow().dismiss() || browser.menu.escape() {
+                return;
+            }
             if let Some(tab) = browser.active_tab() {
                 tab.view.stop_loading();
                 tab.view.grab_focus();
@@ -733,8 +808,15 @@ impl Browser {
     fn action(self: &Rc<Self>, name: &str, callback: impl Fn(&Rc<Self>) + 'static) {
         let action = gtk::gio::SimpleAction::new(name, None);
         let weak = Rc::downgrade(self);
+        let dismiss_menu = !matches!(
+            name,
+            "menu" | "stop" | "settings" | "profiles" | "bookmarks" | "history" | "downloads"
+        );
         action.connect_activate(move |_, _| {
             if let Some(browser) = weak.upgrade() {
+                if dismiss_menu {
+                    browser.menu.dismiss();
+                }
                 callback(&browser);
             }
         });
@@ -851,7 +933,18 @@ impl Browser {
         let page = gtk::Box::new(gtk::Orientation::Vertical, 0);
         page.append(&error);
         page.append(&placeholder);
-        page.append(&view);
+        let split = gtk::Paned::builder()
+            .orientation(gtk::Orientation::Horizontal)
+            .hexpand(true)
+            .vexpand(true)
+            .start_child(&view)
+            .resize_start_child(true)
+            .resize_end_child(true)
+            .shrink_start_child(true)
+            .shrink_end_child(true)
+            .build();
+        crate::inspector_dock::install(&view, &split);
+        page.append(&split);
 
         let title = gtk::Label::builder()
             .label("New tab")
@@ -860,12 +953,17 @@ impl Browser {
             .max_width_chars(24)
             .xalign(0.0)
             .build();
+        let favicon = gtk::Image::from_icon_name("lucide-globe-symbolic");
+        favicon.set_pixel_size(16);
+        favicon.set_size_request(16, 16);
         let spinner = gtk::Spinner::new();
+        spinner.set_size_request(16, 16);
         spinner.set_visible(false);
         let close = gtk::Button::from_icon_name("lucide-x-symbolic");
         close.add_css_class("flat");
         close.set_tooltip_text(Some("Close tab (Ctrl+W)"));
         let label = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+        label.append(&favicon);
         label.append(&spinner);
         label.append(&title);
         label.append(&close);
@@ -876,12 +974,27 @@ impl Browser {
             }
         });
 
+        let middle = gtk::GestureClick::new();
+        middle.set_button(2);
+        middle.set_propagation_phase(gtk::PropagationPhase::Capture);
+        middle.connect_pressed(|gesture, _, _, _| {
+            gesture.set_state(gtk::EventSequenceState::Claimed);
+        });
+        let weak = Rc::downgrade(self);
+        middle.connect_released(move |_, _, _, _| {
+            if let Some(browser) = weak.upgrade() {
+                browser.close_tab(id);
+            }
+        });
+        label.add_controller(middle);
+
         self.tabs.borrow_mut().push(Tab {
             id,
             page: page.clone(),
             view: view.clone(),
             title,
             spinner,
+            favicon,
             error,
             placeholder,
             generation: Rc::new(Cell::new(0)),
@@ -917,7 +1030,7 @@ impl Browser {
                 self.notebook.remove_page(Some(index));
             }
             if self.notebook.n_pages() == 0 {
-                self.add_tab(None, Some("browny:home"));
+                self.add_tab(None, Some("paisley:home"));
                 self.focus_address();
             } else {
                 self.sync_active(closing_active);
@@ -946,7 +1059,7 @@ impl Browser {
             self.address.set_text(
                 if tab.placeholder.is_visible()
                     || uri == "about:blank"
-                    || uri == browny::profile::NON_RESTORABLE_TAB
+                    || uri == paisley::profile::NON_RESTORABLE_TAB
                 {
                     ""
                 } else {
@@ -985,7 +1098,7 @@ impl Browser {
             .filter(|_| self.settings.borrow().show_memory)
             .map(|usage| {
                 format!(
-                    " · Browny ≈ {} MiB ({}; {} processes{})",
+                    " · Paisley ≈ {} MiB ({}; {} processes{})",
                     usage.kib / 1024,
                     usage.metric,
                     usage.processes,
@@ -994,7 +1107,7 @@ impl Browser {
             })
             .unwrap_or_default();
         self.window.set_title(Some(&format!(
-            "{title} — Browny · {}{}{suffix}",
+            "{title} — Paisley · {}{}{suffix}",
             self.profile_label,
             if self.profile.private {
                 " (private)"
@@ -1026,7 +1139,7 @@ impl Browser {
             }
         );
         self.status.set_text(&status);
-        self.status.set_tooltip_text(Some("Browny memory is recalculated about every 10 seconds from the Linux-visible process tree. PSS proportionally counts shared pages; if a process PSS cannot be read, that process uses RSS instead, which can overcount shared memory. Sandboxed or reparented processes may be missing, so this is an estimate rather than total system RAM. Starter blocking rules are not Brave/uBlock-equivalent protection."));
+        self.status.set_tooltip_text(Some("Paisley memory is recalculated about every 10 seconds from the Linux-visible process tree. PSS proportionally counts shared pages; if a process PSS cannot be read, that process uses RSS instead, which can overcount shared memory. Sandboxed or reparented processes may be missing, so this is an estimate rather than total system RAM. Starter blocking rules are not Brave/uBlock-equivalent protection."));
     }
 
     fn record_visit(&self, tab: &Tab) {
@@ -1069,6 +1182,15 @@ impl Browser {
             let loading = tab.view.is_loading();
             tab.spinner.set_spinning(loading);
             tab.spinner.set_visible(loading);
+            if tab.committed.get()
+                && !tab.placeholder.is_visible()
+                && let Some(texture) = tab.view.favicon()
+            {
+                tab.favicon.set_paintable(Some(&texture));
+            } else {
+                tab.favicon.set_icon_name(Some("lucide-globe-symbolic"));
+            }
+            tab.favicon.set_visible(!loading);
             if self.active_tab().is_some_and(|active| active.id == id) {
                 self.sync_controls(&tab, false);
             }
@@ -1086,13 +1208,19 @@ impl Browser {
                 && let Some(tab) = browser.tab(id)
             {
                 show_error(&tab, &format!(
-                    "Permission request blocked ({}): Browny cannot verify the requesting origin for this permission. Per-origin grants are unavailable; no access was allowed.",
+                    "Permission request blocked ({}): Paisley cannot verify the requesting origin for this permission. Per-origin grants are unavailable; no access was allowed.",
                     request.type_().name()
                 ));
             }
             true
         });
-        for property in ["title", "uri", "is-loading", "estimated-load-progress"] {
+        for property in [
+            "title",
+            "uri",
+            "is-loading",
+            "estimated-load-progress",
+            "favicon",
+        ] {
             let weak = Rc::downgrade(self);
             view.connect_notify_local(Some(property), move |view, _| {
                 if let Some(browser) = weak.upgrade() {
@@ -1157,6 +1285,12 @@ impl Browser {
                         // Record its commit now; later title notifications only
                         // update the existing visit, without reordering history.
                         browser.record_visit(&tab);
+                    }
+                    if event == webkit::LoadEvent::Finished
+                        && tab.committed.get()
+                        && let Some(uri) = tab.view.uri()
+                    {
+                        browser.favicons.revisit(&uri);
                     }
                     // BFCache history restores need not emit a main-resource
                     // response, but do commit the top-level view's final URI.
@@ -1236,7 +1370,7 @@ impl Browser {
                 let scheme = url::Url::parse(&uri)
                     .map(|url| format!("{}:", url.scheme()))
                     .unwrap_or_else(|_| "unknown".into());
-                show_error(&tab, &format!("Unsupported link type: {scheme}. Browny does not open local files or external applications."));
+                show_error(&tab, &format!("Unsupported link type: {scheme}. Paisley does not open local files or external applications."));
                 return true;
             }
             false

@@ -1,8 +1,14 @@
 mod automation_runtime;
 mod blocking;
 mod browser;
+mod browsing_ui;
+mod download_ui;
 mod downloads;
+mod favicons;
+mod inspector_dock;
 mod library_ui;
+mod managed_ui;
+mod menu_sheet;
 mod session_store;
 mod settings_ui;
 mod site_styles;
@@ -11,7 +17,7 @@ use gtk::prelude::*;
 
 fn main() -> gtk::glib::ExitCode {
     if std::env::args().any(|arg| arg == "--mcp") {
-        return browny::mcp::run_stdio();
+        return paisley::mcp::run_stdio();
     }
     if std::env::args().any(|arg| arg == "--automation") {
         return automation_runtime::run();
@@ -31,7 +37,7 @@ fn main() -> gtk::glib::ExitCode {
             "--private" => private = true,
             "--help" | "-h" => {
                 println!(
-                    "Browny\nUsage: browny [--profile ID] [--private]\n       browny --mcp --allow-origin http://127.0.0.1:PORT\nNormal profiles persist site data and restore tabs. Private windows do not.\nMCP uses a separate isolated ephemeral fixture workspace; requires Wayland, Python 3, bubblewrap, dbus-run-session and WebKitWebDriver."
+                    "Paisley\nUsage: paisley [--profile ID] [--private]\n       paisley --mcp --allow-origin http://127.0.0.1:PORT\nNormal profiles persist site data and restore tabs. Private windows do not.\nMCP uses a separate isolated ephemeral fixture workspace; requires Wayland, Python 3, bubblewrap, dbus-run-session and WebKitWebDriver."
                 );
                 return gtk::glib::ExitCode::SUCCESS;
             }
@@ -52,7 +58,7 @@ fn main() -> gtk::glib::ExitCode {
     }
     let encoded: String = profile_id.bytes().map(|b| format!("{b:02x}")).collect();
     let id = format!(
-        "site.blig.Browny.p{encoded}{}",
+        "site.blig.Paisley.p{encoded}{}",
         if private { ".Private" } else { "" }
     );
     let app = gtk::Application::builder()
@@ -73,17 +79,18 @@ fn main() -> gtk::glib::ExitCode {
             eprintln!("Could not register bundled Lucide icons: {error}");
             return;
         }
-        match browny::profile::Profile::open(&profile_id, private).and_then(|profile| browser::Browser::with_profile(app, profile)) {
+        crate::download_ui::install_styles(&display);
+        match paisley::profile::Profile::open(&profile_id, private).and_then(|profile| browser::Browser::with_profile(app, profile)) {
             Ok(browser) => browser.present(),
             Err(error) => {
                 output.set(true);
                 eprintln!("Could not open profile: {error}");
                 let label = gtk::Label::builder().label(format!("Could not open profile {profile_id}\n\n{error}\n\nExisting state has not been reset. Close other instances or repair the reported file before retrying.")).wrap(true).selectable(true).margin_start(24).margin_end(24).margin_top(24).margin_bottom(24).build();
-                gtk::ApplicationWindow::builder().application(app).title("Browny — profile error").default_width(600).child(&label).build().present();
+                gtk::ApplicationWindow::builder().application(app).title("Paisley — profile error").default_width(600).child(&label).build().present();
             }
         }
     });
-    let result = app.run_with_args(&["browny"]);
+    let result = app.run_with_args(&["paisley"]);
     if failed.get() {
         gtk::glib::ExitCode::FAILURE
     } else {

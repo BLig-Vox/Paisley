@@ -1,8 +1,8 @@
 [Desktop Entry]
 Type=Application
-Name=Browny
+Name=Paisley
 Comment=Linux-first multi-tab web browser
-Exec=browny
+Exec=paisley
 Icon=web-browser
 Terminal=false
 Categories=Network;WebBrowser;

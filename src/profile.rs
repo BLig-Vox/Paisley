@@ -42,6 +42,7 @@ impl Default for Settings {
     }
 }
 /// Metadata-only sentinel: never pass this to WebKit or treat it as a URL grant.
+// Kept stable across the Paisley rename for saved-session compatibility.
 pub const NON_RESTORABLE_TAB: &str = "browny:non-restorable";
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
@@ -432,7 +433,7 @@ mod tests {
     static NEXT: AtomicU64 = AtomicU64::new(0);
     fn base() -> PathBuf {
         std::env::temp_dir().join(format!(
-            "browny-profile-{}-{}",
+            "paisley-profile-{}-{}",
             std::process::id(),
             NEXT.fetch_add(1, Ordering::Relaxed)
         ))

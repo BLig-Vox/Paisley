@@ -135,7 +135,7 @@ mod tests {
 
     fn root() -> std::path::PathBuf {
         std::env::temp_dir().join(format!(
-            "browny-download-records-{}-{}",
+            "paisley-download-records-{}-{}",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)

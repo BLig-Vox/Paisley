@@ -5,8 +5,8 @@ use std::{
     rc::Rc,
 };
 
-use browny::download_history::{DownloadHistory, DownloadRecord, Outcome};
 use gtk::prelude::*;
+use paisley::download_history::{DownloadHistory, DownloadRecord, Outcome};
 use webkit::prelude::*;
 
 struct Item {
@@ -14,6 +14,11 @@ struct Item {
     reveal: gtk::Button,
     received: u64,
     label: gtk::Label,
+    detail: gtk::Label,
+    icon: gtk::Image,
+    size_cell: gtk::Label,
+    status_cell: gtk::Label,
+    date_cell: gtk::Label,
     progress: gtk::ProgressBar,
     cancel: gtk::Button,
     retry: gtk::Button,
@@ -21,13 +26,25 @@ struct Item {
     source_uri: Option<String>,
     source_view: Option<gtk::glib::WeakRef<webkit::WebView>>,
     path: Option<PathBuf>,
+    partial: Option<PathBuf>,
     status: String,
     chooser: gtk::gio::Cancellable,
 }
 
 pub struct Downloads {
+    managed: RefCell<Option<Rc<crate::managed_ui::Manager>>>,
+    managed_box: gtk::Box,
+    controls: gtk::Box,
     parent: gtk::ApplicationWindow,
     window: gtk::Window,
+    dock: gtk::Box,
+    sheet: gtk::Box,
+    close: gtk::Button,
+    empty: gtk::Box,
+    current_heading: gtk::Label,
+    saved_heading: gtk::Label,
+    summary: gtk::Label,
+    previous_focus: RefCell<Option<gtk::glib::WeakRef<gtk::Widget>>>,
     list: gtk::Box,
     saved_list: gtk::Box,
     message: gtk::Label,
@@ -52,9 +69,23 @@ impl Downloads {
     pub fn for_profile(
         parent: &gtk::ApplicationWindow,
         history: DownloadHistory,
-        private: bool,
+        profile: &paisley::profile::Profile,
     ) -> Rc<Self> {
-        Self::build(parent, None, history, private)
+        let this = Self::build(parent, None, history, profile.private);
+        if !profile.private {
+            let managed = crate::managed_ui::Manager::new(parent, &profile.data_dir);
+            this.controls.prepend(&managed.button);
+            this.managed_box.append(&managed.widget);
+            let weak = Rc::downgrade(&this);
+            managed.on_changed(move || {
+                if let Some(this) = weak.upgrade() {
+                    this.refresh_summary();
+                }
+            });
+            *this.managed.borrow_mut() = Some(managed);
+            this.refresh_summary();
+        }
+        this
     }
 
     pub fn on_changed(&self, changed: impl Fn() + 'static) {
@@ -87,36 +118,62 @@ impl Downloads {
         history: DownloadHistory,
         private: bool,
     ) -> Rc<Self> {
-        let list = gtk::Box::new(gtk::Orientation::Vertical, 8);
-        let saved_list = gtk::Box::new(gtk::Orientation::Vertical, 8);
-        let rows = gtk::Box::new(gtk::Orientation::Vertical, 12);
+        let list = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let saved_list = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let rows = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let current_heading = crate::download_ui::label("This session", "downloads-section");
+        let saved_heading = crate::download_ui::label("Earlier downloads", "downloads-section");
+        let managed_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        rows.append(&managed_box);
+        rows.append(&current_heading);
         rows.append(&list);
-        rows.append(&gtk::Label::new(Some(
-            "Saved records from previous sessions",
-        )));
+        rows.append(&saved_heading);
         rows.append(&saved_list);
+        let empty = gtk::Box::new(gtk::Orientation::Vertical, 12);
+        empty.add_css_class("downloads-empty");
+        empty.set_valign(gtk::Align::Center);
+        let empty_icon = gtk::Image::from_icon_name("lucide-download-symbolic");
+        empty_icon.set_pixel_size(40);
+        empty.append(&empty_icon);
+        empty.append(&gtk::Label::new(Some("No downloads yet")));
+        empty.append(&gtk::Label::new(Some(
+            "Files you download will appear here.",
+        )));
+        rows.append(&empty);
         let scroller = gtk::ScrolledWindow::builder()
             .child(&rows)
             .vexpand(true)
             .hexpand(true)
+            .hscrollbar_policy(gtk::PolicyType::Never)
             .build();
         let content = gtk::Box::new(gtk::Orientation::Vertical, 12);
-        content.set_margin_top(16);
-        content.set_margin_bottom(16);
-        content.set_margin_start(16);
-        content.set_margin_end(16);
-        let notice = if private {
-            "Private downloads: records stay in memory; files you explicitly save remain on disk. Files never auto-open."
-        } else {
-            "Up to 200 terminal download records (source URLs, paths and byte counts) are saved in this profile, unencrypted. Older records may be evicted earlier for size. Files never auto-open."
-        };
-        content.append(
-            &gtk::Label::builder()
-                .label(notice)
-                .wrap(true)
-                .xalign(0.0)
-                .build(),
-        );
+        content.add_css_class("downloads-sheet");
+        content.set_widget_name("paisley-downloads-sheet");
+        content.set_halign(gtk::Align::Fill);
+        content.set_valign(gtk::Align::Fill);
+        content.set_width_request(400);
+        content.set_hexpand(false);
+        content.set_vexpand(true);
+        content.set_visible(false);
+        let heading = gtk::Box::new(gtk::Orientation::Horizontal, 12);
+        let titles = gtk::Box::new(gtk::Orientation::Vertical, 4);
+        titles.set_hexpand(true);
+        titles.append(&crate::download_ui::label("Downloads", "downloads-heading"));
+        let summary = crate::download_ui::label("Your downloaded files", "downloads-detail");
+        titles.append(&summary);
+        heading.append(&titles);
+        let clear = gtk::Button::with_label("Clear history…");
+        clear.add_css_class("flat");
+        let controls = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+        controls.append(&clear);
+
+        let close = gtk::Button::from_icon_name("lucide-x-symbolic");
+        close.set_tooltip_text(Some("Close downloads (Esc)"));
+        close.add_css_class("flat");
+        heading.append(&close);
+        content.append(&heading);
+        content.append(&controls);
+        content.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
         let storage_warning = gtk::Label::builder()
             .wrap(true)
             .xalign(0.0)
@@ -124,23 +181,57 @@ impl Downloads {
             .build();
         storage_warning.add_css_class("error");
         content.append(&storage_warning);
-        let clear = gtk::Button::with_label("Clear download records…");
-        content.append(&clear);
         let message = gtk::Label::builder().wrap(true).xalign(0.0).build();
         message.add_css_class("error");
         content.append(&message);
+
         content.append(&scroller);
-        let window = gtk::Window::builder()
-            .title("Downloads")
-            .default_width(560)
-            .default_height(420)
-            .transient_for(parent)
-            .hide_on_close(true)
-            .child(&content)
+        let notice = if private {
+            "Private session · Records disappear when you close Paisley. Saved files stay on disk."
+        } else {
+            "Clearing history keeps your downloaded files."
+        };
+        let notice = gtk::Label::builder()
+            .label(notice)
+            .wrap(true)
+            .xalign(0.0)
             .build();
+        notice.add_css_class("downloads-detail");
+        notice.set_tooltip_text(Some("Downloads never open automatically."));
+        content.append(&notice);
+        let dock = match parent.child() {
+            Some(child) if child.widget_name() == "paisley-downloads-layout" => {
+                child.downcast::<gtk::Box>().expect("downloads layout")
+            }
+            child => {
+                parent.set_child(gtk::Widget::NONE);
+                let dock = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+                dock.set_widget_name("paisley-downloads-layout");
+                if let Some(child) = child {
+                    child.set_hexpand(true);
+                    child.set_vexpand(true);
+                    dock.append(&child);
+                }
+                parent.set_child(Some(&dock));
+                dock
+            }
+        };
+        dock.append(&content);
+        let window: gtk::Window = parent.clone().upcast();
         let this = Rc::new_cyclic(|weak| Self {
+            managed: RefCell::new(None),
+            managed_box,
+            controls,
             parent: parent.clone(),
             window,
+            dock,
+            sheet: content,
+            close,
+            empty,
+            current_heading,
+            saved_heading,
+            summary,
+            previous_focus: RefCell::new(None),
             list,
             saved_list,
             message,
@@ -156,6 +247,27 @@ impl Downloads {
             self_weak: RefCell::new(weak.clone()),
         });
         let weak = Rc::downgrade(&this);
+        this.close.connect_clicked(move |_| {
+            if let Some(this) = weak.upgrade() {
+                this.hide();
+            }
+        });
+        let keys = gtk::EventControllerKey::new();
+        keys.set_propagation_phase(gtk::PropagationPhase::Capture);
+        let weak = Rc::downgrade(&this);
+        keys.connect_key_pressed(move |_, key, _, _| {
+            if key == gtk::gdk::Key::Escape
+                && let Some(this) = weak.upgrade()
+                && this.sheet.is_visible()
+            {
+                this.hide();
+                return gtk::glib::Propagation::Stop;
+            }
+            gtk::glib::Propagation::Proceed
+        });
+        // Owned by the sheet, so replacing a controller cannot accumulate handlers.
+        this.sheet.add_controller(keys);
+        let weak = Rc::downgrade(&this);
         clear.connect_clicked(move |_| {
             let Some(this) = weak.upgrade() else { return; };
             let dialog = gtk::AlertDialog::builder().message("Clear download records?")
@@ -167,6 +279,7 @@ impl Downloads {
                 if let Some(this) = weak.upgrade() {
                     this.history.borrow_mut().records.clear();
                     this.previous.borrow_mut().clear();
+                    if let Some(manager)=this.managed.borrow().as_ref(){manager.clear_completed();}
                     for item in this.items.borrow().iter() {
                         if matches!(item.status.as_str(), "Completed" | "Failed" | "Cancelled") { item.row.set_visible(false); }
                     }
@@ -185,7 +298,7 @@ impl Downloads {
 
     pub fn use_memory_records(&self, reason: &str) {
         self.storage_enabled.set(false);
-        self.storage_warning.set_text(&format!("Saved download records are unavailable: {reason}. The existing file is preserved. New records and clearing are memory-only until the file is explicitly repaired and Browny is restarted."));
+        self.storage_warning.set_text(&format!("Saved download records are unavailable: {reason}. The existing file is preserved. New records and clearing are memory-only until the file is explicitly repaired and Paisley is restarted."));
         self.storage_warning.set_visible(true);
     }
 
@@ -202,29 +315,55 @@ impl Downloads {
             self.saved_list.remove(&child);
         }
         for record in self.previous.borrow().iter() {
-            let row = gtk::Box::new(gtk::Orientation::Vertical, 4);
-            let text = format!(
-                "{:?} · {} · Unix time {}\n{}\n{}",
-                record.outcome,
-                format_size(record.received),
-                record.finished,
-                record
-                    .destination
-                    .as_deref()
-                    .unwrap_or("No destination selected"),
-                record.source.as_deref().unwrap_or("Source not retained")
+            let filename = record
+                .destination
+                .as_deref()
+                .and_then(|path| Path::new(path).file_name())
+                .map(|name| name.to_string_lossy().into_owned())
+                .unwrap_or_else(|| "Download".into());
+            let row = gtk::Box::new(gtk::Orientation::Vertical, 8);
+            row.add_css_class("downloads-row");
+            let file = gtk::Box::new(gtk::Orientation::Horizontal, 14);
+            file.set_hexpand(true);
+            file.set_width_request(160);
+            file.append(&crate::download_ui::icon(&filename));
+            let text = gtk::Box::new(gtk::Orientation::Vertical, 5);
+            text.set_hexpand(true);
+            let title = crate::download_ui::label(&filename, "downloads-filename");
+            title.set_tooltip_text(Some(&filename));
+            text.append(&title);
+            let path = record
+                .destination
+                .as_deref()
+                .unwrap_or("No destination selected");
+
+            let source = crate::download_ui::label(
+                &crate::download_ui::source(record.source.as_deref()),
+                "downloads-detail",
             );
-            row.append(
-                &gtk::Label::builder()
-                    .label(text)
-                    .wrap(true)
-                    .xalign(0.0)
-                    .build(),
-            );
+            source.set_tooltip_text(record.source.as_deref());
+            text.append(&source);
+            file.append(&text);
+            row.append(&file);
+            let metadata = gtk::Box::new(gtk::Orientation::Horizontal, 12);
+            metadata.append(&crate::download_ui::cell(&format_size(record.received), 80));
+            metadata.append(&crate::download_ui::cell(
+                &format!("{:?}", record.outcome),
+                100,
+            ));
+            row.append(&metadata);
+            title.set_tooltip_text(Some(&format!(
+                "{path}\n{}",
+                crate::download_ui::date(record.finished)
+            )));
+            let actions = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+            actions.set_width_request(180);
+            actions.set_valign(gtk::Align::Center);
             if record.outcome == Outcome::Completed
                 && let Some(path) = &record.destination
             {
-                let reveal = gtk::Button::with_label("Reveal in folder");
+                let reveal = gtk::Button::with_label("Show in folder");
+                reveal.set_valign(gtk::Align::Center);
                 let path = PathBuf::from(path);
                 let weak = self.weak_self();
                 reveal.connect_clicked(move |_| {
@@ -232,10 +371,12 @@ impl Downloads {
                         this.reveal(&path);
                     }
                 });
-                row.append(&reveal);
+                actions.append(&reveal);
             }
+            row.append(&actions);
             self.saved_list.append(&row);
         }
+        self.refresh_summary();
     }
 
     fn reveal(&self, path: &Path) {
@@ -287,10 +428,82 @@ impl Downloads {
             self.render_saved();
             self.history_changed();
         }
+        self.refresh_summary();
     }
 
     pub fn show(&self) {
-        self.window.present();
+        if !self.sheet.is_visible() {
+            *self.previous_focus.borrow_mut() =
+                gtk::prelude::GtkWindowExt::focus(&self.parent).map(|widget| widget.downgrade());
+        }
+        self.sheet.set_visible(true);
+        self.close.grab_focus();
+    }
+
+    pub fn is_open(&self) -> bool {
+        self.sheet.is_visible()
+    }
+
+    pub fn toggle(&self) {
+        if !self.dismiss() {
+            self.show();
+        }
+    }
+
+    pub fn dismiss(&self) -> bool {
+        if !self.sheet.is_visible() {
+            return false;
+        }
+        self.hide();
+        true
+    }
+
+    fn hide(&self) {
+        if !self.sheet.is_visible() {
+            return;
+        }
+        self.sheet.set_visible(false);
+        if let Some(focus) = self
+            .previous_focus
+            .borrow_mut()
+            .take()
+            .and_then(|weak| weak.upgrade())
+        {
+            focus.grab_focus();
+        }
+    }
+
+    fn refresh_summary(&self) {
+        let items = self.items.borrow();
+        let visible = items.iter().filter(|item| item.row.is_visible()).count();
+        let active = items
+            .iter()
+            .filter(|item| {
+                matches!(
+                    item.status.as_str(),
+                    "Starting" | "Waiting for location" | "Downloading"
+                )
+            })
+            .count();
+        let saved = self.previous.borrow().len();
+        let (managed, managed_active) = self
+            .managed
+            .borrow()
+            .as_ref()
+            .map_or((0, 0), |manager| manager.counts());
+        self.current_heading.set_visible(visible > 0);
+        self.saved_heading.set_visible(saved > 0);
+        self.empty.set_visible(visible + saved + managed == 0);
+        self.summary.set_text(&format!(
+            "{} active · {} {}",
+            active + managed_active,
+            visible + saved + managed,
+            if visible + saved + managed == 1 {
+                "file"
+            } else {
+                "files"
+            }
+        ));
     }
 
     #[cfg(test)]
@@ -332,33 +545,64 @@ impl Downloads {
         } else {
             "Starting"
         };
-        let row = gtk::Box::new(gtk::Orientation::Vertical, 6);
-        let header = gtk::Box::new(gtk::Orientation::Horizontal, 8);
-        let label = gtk::Label::builder()
-            .label(format!("{filename} — {status}"))
-            .xalign(0.0)
-            .hexpand(true)
-            .build();
-        let reveal = gtk::Button::with_label("Reveal in folder");
+        let row = gtk::Box::new(gtk::Orientation::Vertical, 8);
+        row.add_css_class("downloads-row");
+        let icon = crate::download_ui::icon(&filename);
+        let file = gtk::Box::new(gtk::Orientation::Horizontal, 14);
+        file.set_hexpand(true);
+        file.set_width_request(160);
+        file.append(&icon);
+        let text = gtk::Box::new(gtk::Orientation::Vertical, 6);
+        text.set_hexpand(true);
+        let label = crate::download_ui::label(&filename, "downloads-filename");
+        label.set_tooltip_text(Some(&filename));
+        let detail = crate::download_ui::label(
+            &format!(
+                "{status} · {}",
+                crate::download_ui::source(source_uri.as_deref())
+            ),
+            "downloads-detail",
+        );
+        detail.set_tooltip_text(source_uri.as_deref());
+        let progress = gtk::ProgressBar::new();
+        progress.set_show_text(true);
+        text.append(&label);
+        text.append(&detail);
+        text.append(&progress);
+        file.append(&text);
+        row.append(&file);
+        let size_cell = crate::download_ui::cell("—", 80);
+        let status_cell = crate::download_ui::cell(status, 100);
+        let date_cell = crate::download_ui::cell("—", 175);
+        let metadata = gtk::Box::new(gtk::Orientation::Horizontal, 12);
+        metadata.append(&size_cell);
+        metadata.append(&status_cell);
+        row.append(&metadata);
+
+        let actions = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+        actions.set_valign(gtk::Align::Center);
+        actions.set_width_request(180);
+        let reveal = gtk::Button::with_label("Show in folder");
         reveal.set_visible(false);
-        header.append(&reveal);
         let cancel = gtk::Button::with_label("Cancel");
         let retry = gtk::Button::with_label("Retry");
         retry.set_visible(false);
-        header.append(&label);
-        header.append(&retry);
-        header.append(&cancel);
-        let progress = gtk::ProgressBar::new();
-        progress.set_show_text(true);
-        row.append(&header);
-        row.append(&progress);
-        self.list.append(&row);
+        actions.append(&reveal);
+        actions.append(&retry);
+        actions.append(&cancel);
+        row.append(&actions);
+        self.list.prepend(&row);
         let index = self.items.borrow().len();
         self.items.borrow_mut().push(Item {
             row,
             reveal,
             received: 0,
             label,
+            detail,
+            icon,
+            size_cell,
+            status_cell,
+            date_cell,
             progress,
             cancel,
             retry,
@@ -366,10 +610,12 @@ impl Downloads {
             source_uri,
             source_view: download.web_view().map(|view| view.downgrade()),
             path: None,
+            partial: None,
             status: status.into(),
             chooser: gtk::gio::Cancellable::new(),
         });
 
+        self.refresh_summary();
         let weak = Rc::downgrade(self);
         self.items.borrow()[index].reveal.connect_clicked(move |_| {
             if let Some(this) = weak.upgrade() {
@@ -433,8 +679,12 @@ impl Downloads {
                         return true;
                     }
                     item.status = "Waiting for location".into();
-                    item.label
-                        .set_text(&format!("{filename} — Waiting for location"));
+                    item.status_cell.set_text("Choose location");
+                    item.label.set_text(&filename);
+                    item.label.set_tooltip_text(Some(&filename));
+                    item.icon
+                        .set_icon_name(Some(crate::download_ui::icon_name(&filename)));
+                    item.detail.set_text("Waiting for location");
                 }
                 this.choose_destination(index, download, filename);
             } else {
@@ -543,25 +793,39 @@ impl Downloads {
             download.cancel();
             return;
         };
+        let partial = match native_partial(&path) {
+            Ok(partial) => partial,
+            Err(error) => {
+                self.fail(index, error);
+                download.cancel();
+                return;
+            }
+        };
         download.set_allow_overwrite(false);
         {
             let mut items = self.items.borrow_mut();
             let item = &mut items[index];
             item.path = Some(path);
+            item.partial = Some(partial.clone());
             item.status = "Downloading".into();
-            item.label.set_label(&format!(
-                "{} — Downloading",
-                item.path
-                    .as_ref()
-                    .unwrap()
-                    .file_name()
-                    .unwrap_or_default()
-                    .to_string_lossy()
-            ));
+            item.status_cell.set_text("Downloading");
+            let filename = item
+                .path
+                .as_ref()
+                .unwrap()
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy();
+            item.label.set_text(&filename);
+            item.label.set_tooltip_text(Some(&filename));
+            item.icon
+                .set_icon_name(Some(crate::download_ui::icon_name(&filename)));
+            item.detail.set_text("Downloading");
+            item.detail.set_tooltip_text(Some(&destination));
         }
         // WebKitGTK 6.0 takes an absolute path, not the legacy file:// URI.
         // State is updated first because this can emit terminal signals.
-        download.set_destination(&destination);
+        download.set_destination(partial.to_str().expect("UTF-8 selected destination"));
     }
 
     fn update_progress(&self, index: usize, download: &webkit::Download) {
@@ -571,6 +835,7 @@ impl Downloads {
         let mut items = self.items.borrow_mut();
         let item = &mut items[index];
         item.received = received;
+        item.size_cell.set_text(&format_size(received));
         item.progress.set_fraction(progress);
         item.progress.set_text(Some(&format!(
             "{} / {}",
@@ -607,27 +872,37 @@ impl Downloads {
             self.fail(index, format!("Incomplete download: received {received} bytes, expected {expected}. A partial file may remain."));
             return; // The native download is already terminal; never cancel it again.
         }
-        let mut items = self.items.borrow_mut();
-        let item = &mut items[index];
-        if item.status != "Downloading" {
+        let publication = {
+            let items = self.items.borrow();
+            let item = &items[index];
+            if item.status != "Downloading" {
+                return;
+            }
+            match (&item.partial, &item.path) {
+                (Some(partial), Some(destination)) => publish_native(partial, destination),
+                _ => Err("Missing native partial file; final destination was not published".into()),
+            }
+        };
+        if let Err(error) = publication {
+            self.fail(index, error);
             return;
         }
+        let mut items = self.items.borrow_mut();
+        let item = &mut items[index];
         item.status = "Completed".into();
+        item.status_cell.set_text("Completed");
+        item.date_cell.set_text(&crate::download_ui::date(now()));
         if let Some(download) = item.download.take() {
             item.received = download.received_data_length();
         }
+        item.size_cell.set_text(&format_size(item.received));
         item.reveal.set_visible(item.path.is_some());
         item.progress.set_fraction(1.0);
         item.progress.set_text(Some("Completed"));
-        item.label.set_label(&format!(
-            "{} — Completed",
-            item.path
-                .as_ref()
-                .and_then(|p| p.file_name())
-                .unwrap_or_default()
-                .to_string_lossy()
-        ));
-        item.cancel.set_sensitive(false);
+        item.detail
+            .set_text(&format!("Completed · {}", format_size(item.received)));
+        item.progress.set_visible(false);
+        item.cancel.set_visible(false);
         if let Some(path) = &item.path {
             self.completed.borrow_mut().push(path.clone());
         }
@@ -643,19 +918,19 @@ impl Downloads {
         }
         self.errors.borrow_mut().push(message.clone());
         item.status = "Failed".into();
+        item.status_cell.set_text("Failed");
+        item.date_cell.set_text(&crate::download_ui::date(now()));
         if let Some(download) = item.download.take() {
             item.received = download.received_data_length();
         }
-        item.label.set_label(&format!(
-            "{} — {message}",
-            item.path
-                .as_ref()
-                .and_then(|p| p.file_name())
-                .unwrap_or_default()
-                .to_string_lossy()
-        ));
-        item.progress.set_text(Some("Failed"));
-        item.cancel.set_sensitive(false);
+        item.detail.set_text(&message);
+        item.detail.set_tooltip_text(Some(&message));
+        item.detail.set_ellipsize(gtk::pango::EllipsizeMode::None);
+        item.detail.set_wrap(true);
+        item.detail.add_css_class("error");
+        item.size_cell.set_text(&format_size(item.received));
+        item.progress.set_visible(true);
+        item.cancel.set_visible(false);
         item.retry.set_visible(item.source_uri.is_some());
         let chooser = item.chooser.clone();
         drop(items);
@@ -664,11 +939,17 @@ impl Downloads {
     }
 
     pub fn shutdown(&self) {
+        if let Some(managed) = self.managed.borrow().as_ref() {
+            managed.shutdown();
+        }
         let count = self.items.borrow().len();
         for index in 0..count {
             self.cancel_item(index);
         }
-        self.window.destroy();
+        self.hide();
+        if self.sheet.parent().is_some() {
+            self.dock.remove(&self.sheet);
+        }
     }
 
     fn cancel_item(&self, index: usize) {
@@ -685,9 +966,15 @@ impl Downloads {
                 item.received = download.received_data_length();
             }
             item.status = "Cancelled".into();
-            item.label.set_label("Download cancelled");
+            item.status_cell.set_text("Cancelled");
+            item.date_cell.set_text(&crate::download_ui::date(now()));
+            item.detail.set_text(&format!(
+                "Cancelled · {} received",
+                format_size(item.received)
+            ));
             item.progress.set_text(Some("Cancelled"));
-            item.cancel.set_sensitive(false);
+            item.cancel.set_visible(false);
+            item.progress.set_visible(false);
             (item.download.take(), item.chooser.clone())
         };
         chooser.cancel();
@@ -725,6 +1012,21 @@ impl Downloads {
     fn weak_self(&self) -> std::rc::Weak<Self> {
         self.self_weak.borrow().clone()
     }
+}
+
+impl Drop for Downloads {
+    fn drop(&mut self) {
+        self.hide();
+        if self.sheet.parent().is_some() {
+            self.dock.remove(&self.sheet);
+        }
+    }
+}
+
+fn now() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |time| time.as_secs())
 }
 
 fn checked_reveal_path(path: &Path) -> Result<PathBuf, String> {
@@ -888,7 +1190,7 @@ mod tests {
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_nanos();
-        let path = std::env::temp_dir().join(format!("browny-download-test-{id}"));
+        let path = std::env::temp_dir().join(format!("paisley-download-test-{id}"));
         fs::create_dir(&path).unwrap();
         path
     }
@@ -941,4 +1243,45 @@ mod tests {
     fn duplicate_name_preserves_extension() {
         assert_eq!(unique_name("archive.tar.gz", 2), "archive.tar (2).gz");
     }
+}
+
+fn native_partial(destination: &Path) -> Result<PathBuf, String> {
+    use std::os::unix::fs::DirBuilderExt;
+    let parent = destination.parent().ok_or("Missing download parent")?;
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_err(|e| e.to_string())?
+        .as_nanos();
+    let directory = parent.join(format!(
+        ".paisley-native-{}-{stamp:x}.part",
+        std::process::id()
+    ));
+    std::fs::DirBuilder::new()
+        .mode(0o700)
+        .create(&directory)
+        .map_err(|e| format!("Cannot stage download: {e}"))?;
+    Ok(directory.join("payload.part"))
+}
+fn publish_native(partial: &Path, destination: &Path) -> Result<(), String> {
+    use std::os::unix::fs::OpenOptionsExt;
+    let file = std::fs::OpenOptions::new()
+        .read(true)
+        .custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK)
+        .open(partial)
+        .map_err(|e| format!("Cannot read completed partial: {e}"))?;
+    if !file.metadata().map_err(|e| e.to_string())?.is_file() {
+        return Err("Download partial is not a regular file".into());
+    }
+    file.sync_all()
+        .map_err(|e| format!("Cannot sync completed download: {e}"))?;
+    std::fs::hard_link(partial, destination)
+        .map_err(|e| format!("Cannot publish download without overwriting: {e}"))?;
+    std::fs::File::open(destination.parent().ok_or("Missing download directory")?)
+        .and_then(|directory| directory.sync_all())
+        .map_err(|e| format!("File was linked but directory sync failed: {e}"))?;
+    let _ = std::fs::remove_file(partial);
+    if let Some(directory) = partial.parent() {
+        let _ = std::fs::remove_dir(directory);
+    }
+    Ok(())
 }

@@ -34,6 +34,7 @@ pub struct ProfileCatalog {
 impl ProfileCatalog {
     pub fn system(private: bool) -> Result<Self, String> {
         Ok(Self {
+            // Retain Browny storage roots so the rename keeps existing profiles.
             config: profile::xdg("XDG_CONFIG_HOME", ".config")?.join("browny/profiles"),
             data: profile::xdg("XDG_DATA_HOME", ".local/share")?.join("browny/profiles"),
             cache: profile::xdg("XDG_CACHE_HOME", ".cache")?.join("browny/profiles"),
@@ -224,7 +225,7 @@ mod tests {
     #[test]
     fn discovery_and_metadata_are_bounded_and_invalid_names_do_not_write() {
         let base = std::env::temp_dir().join(format!(
-            "browny-catalog-bounds-{}-{}",
+            "paisley-catalog-bounds-{}-{}",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
@@ -257,7 +258,7 @@ mod tests {
     #[test]
     fn deletion_refuses_nested_roots_that_would_remove_another_profile() {
         let base = std::env::temp_dir().join(format!(
-            "browny-catalog-nesting-{}-{}",
+            "paisley-catalog-nesting-{}-{}",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)

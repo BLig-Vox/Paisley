@@ -1,4 +1,4 @@
-use browny::profile::Profile;
+use paisley::profile::Profile;
 #[cfg(unix)]
 use std::os::unix::fs::DirBuilderExt;
 use std::{
@@ -20,7 +20,7 @@ impl Blocker {
     pub fn new(profile: &Profile) -> Result<Rc<Self>, String> {
         let scratch = if profile.private {
             let name = format!(
-                "browny-filters-{}-{}",
+                "paisley-filters-{}-{}",
                 std::process::id(),
                 std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
@@ -59,7 +59,7 @@ impl Blocker {
         use std::hash::{Hash, Hasher};
         let mut digest = std::collections::hash_map::DefaultHasher::new();
         rules.hash(&mut digest);
-        let identifier = format!("browny-{:x}", digest.finish());
+        let identifier = format!("paisley-{:x}", digest.finish());
         self.store.save(
             &identifier,
             &gtk::glib::Bytes::from_owned(rules.as_bytes().to_vec()),

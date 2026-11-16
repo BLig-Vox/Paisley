@@ -158,7 +158,7 @@ mod tests {
         fn new() -> Self {
             use std::os::unix::fs::DirBuilderExt;
             let root = std::env::temp_dir().join(format!(
-                "browny-settings-test-{}-{}",
+                "paisley-settings-test-{}-{}",
                 std::process::id(),
                 std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)

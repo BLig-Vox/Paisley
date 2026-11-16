@@ -1,4 +1,4 @@
-# Browny: product goal and roadmap
+# Paisley: product goal and roadmap
 
 Date: 2026-11-07
 
@@ -17,7 +17,7 @@ not quietly become persistent. Automation should be observable, interruptible,
 and isolated from personal browsing unless explicitly authorized.
 
 “LibreWolf + Brave” describes the ambition, not verified feature or security
-parity. This roadmap does not claim Browny is already production-hardened.
+parity. This roadmap does not claim Paisley is already production-hardened.
 
 ## Original baseline
 
@@ -38,7 +38,7 @@ and regression-tested, but the remaining exit criteria still apply.
 | Persistent foundation | Profile CLI/switching and bounded discovery catalog; closed-profile display-name rename and native confirmed deletion, stable IDs/paths, root maintenance plus per-profile locks. Private no-write, supported searchable settings with confirmed reset and bounded typed draft import/export, atomic background snapshots and lazy restore. Native non-restorable placeholders retain transient-tab position/selection without saving payloads or replaying documents ([evidence](docs/SESSION_RESTORE.md)). Actual owned writer-process SIGKILL covers whole metadata snapshots and lock release ([limits](docs/RECOVERY.md)). Bounded bookmarks/searchable history and native managers; strict additive bookmark JSON import/export with native confirmation, no history loss and temporary private imports ([details](docs/BOOKMARK_TRANSFER.md)). Fixtures cover restart storage/tabs/library, profile isolation, private/history opt-out, catalog rename/delete Cancel/Confirm, settings draft/Save/reset/search, nested-root deletion refusal and nonblocking metadata. [Details](docs/PROFILE_SETTINGS.md). | Migrations/recovery beyond the verified metadata SIGKILL subset, large-tree maintenance responsiveness, full native chooser/portal and private-window UI matrices, expanded settings categories, library folders/history transfer and cross-browser bookmark HTML interchange. A prior same-process localStorage `null` observation remains recorded. Subsequent investigation reproduced the WebKit NetworkProcess SIGSEGV when native test fixtures deleted watched profile/cache roots during teardown; all cycles now retain their fixture roots until isolated namespace exit. The updated stress/full suite no longer observed that crash, but production-profile close/reopen and real closed-profile deletion remain to be verified. Corrupt/future records are preserved/rejected, not repaired. Independent review of the new management/transfer UI remains open. |
 | Downloads | Destination chooser, sanitized names, no-overwrite policy, progress/cancel/retry and terminal states. Bounded per-profile terminal metadata with private no-records and confirmed metadata-only clearing; explicit native reveal with missing-file/symlink guards. Real fixtures cover matching bytes, persisted completed/failed/close-cancelled outcomes, pre-response failure, vanished-parent write failure, identity-length truncation, retention/UI consistency and late destination rejection. Unreadable/future download metadata is preserved with visible memory-only degradation, not whole-profile lockout. Isolated fixtures additionally verify actual EACCES at destination preparation, native ENOSPC on a bounded tmpfs, visible failure/no Reveal, persisted Failed outcomes and successful native Retry after restoring directory permissions. [Failure matrix](docs/DOWNLOAD_FAILURES.md). | Successful external file-manager/portal matrix, broader permission/filesystem combinations, crash recovery of active transfers and capability-gated resume. Partial files may remain; same-user filesystem races are not a security boundary. |
 | Privacy/blocking | ITP enabled, optional Strict WebRTC/third-party-cookie controls, twelve-domain native starter rules and exact-origin exceptions. Server counters verify blocking, related views, cross-origin navigation and history back/forward. Permission signals explicitly denied with a reason; real geolocation fixture receives PERMISSION_DENIED. [Capability matrix](docs/CAPABILITIES.md) records evidence and gaps. | Safe requesting-origin attribution blocks per-origin permission prompts/grants/revocation; never trust the top-level URL as the requesting frame. Broader privacy behavior, maintained lists/updates/rollback, diagnostics and full security review remain. No Brave/LibreWolf parity. |
-| Interactive visual MCP | Opt-in stdio and ephemeral fixture workspace inside mandatory namespaces; fixed HTTP relay or pinned exact-authority HTTPS tunnel, native exact-origin filter, trusted cursor/actions and Stop. Owned HTTP/HTTPS fixtures verify native Unicode/click/key/wheel/PNG, scope/staleness/foreign-request denial, wrong-CA rejection and cleanup. | The user now requests a Playwright-like headless page surface that can use an explicitly selected existing Browny profile/session (including site sign-ins) or Incognito, with a trusted visible indicator of the selected target and Stop. This is not implemented. Existing MCP remains fixture-only. Headless rendering/input, safe attachment to the profile-owning process, per-session grant/revoke, live-account policy and independent client interoperability need design and fixture validation; no live Google session has been accessed. See [MCP setup/boundaries](docs/MCP.md). |
+| Interactive visual MCP | Opt-in stdio and ephemeral fixture workspace inside mandatory namespaces; fixed HTTP relay or pinned exact-authority HTTPS tunnel, native exact-origin filter, trusted cursor/actions and Stop. Owned HTTP/HTTPS fixtures verify native Unicode/click/key/wheel/PNG, scope/staleness/foreign-request denial, wrong-CA rejection and cleanup. | The user now requests a Playwright-like headless page surface that can use an explicitly selected existing Paisley profile/session (including site sign-ins) or Incognito, with a trusted visible indicator of the selected target and Stop. This is not implemented. Existing MCP remains fixture-only. Headless rendering/input, safe attachment to the profile-owning process, per-session grant/revoke, live-account policy and independent client interoperability need design and fixture validation; no live Google session has been accessed. See [MCP setup/boundaries](docs/MCP.md). |
 | Hardening/release | Headless suites, isolated HTTP/HTTPS MCP fixtures, strict Clippy and debug/release builds pass. Test-only owned-fixture release measurements cover fresh/restored in-process readiness, 1/10/30 tabs, partial PSS/CPU, native snapshots/PNG and filter request counters. Reproducible unsigned local archives and prefix-correct desktop launchers are tested and payload hashes verified. See [performance evidence](docs/PERFORMANCE.md) and [local packaging](docs/PACKAGING.md). | Representative/standalone cold-warm benchmarks, incremental CPU and agreed budgets, intermittent readiness investigation, third-party notices/dependency-license review, signing/update policy and redistributable packaging; accessibility, broader Wayland/X11/scale matrix, recovery tests and release security review. MIT was selected for the project source on 2026-11-08. |
 
 HTTPS-slice verification before the release-evidence additions (host tools through `distrobox-host-exec`):
@@ -46,12 +46,12 @@ HTTPS-slice verification before the release-evidence additions (host tools throu
 ```sh
 cargo fmt --check
 cargo test --offline --locked
-cargo test --offline --locked --bin browny browser_smoke -- --ignored --test-threads=1
+cargo test --offline --locked --bin paisley browser_smoke -- --ignored --test-threads=1
 cargo clippy --offline --locked --all-targets -- -D warnings
 cargo build --offline --locked
 python3 -I tests/test_mcp.py
-python3 -I tests/mcp_smoke.py /absolute/path/to/target/debug/browny
-python3 -I tests/mcp_https_smoke.py /absolute/path/to/target/debug/browny
+python3 -I tests/mcp_smoke.py /absolute/path/to/target/debug/paisley
+python3 -I tests/mcp_https_smoke.py /absolute/path/to/target/debug/paisley
 ```
 
 Results: **38 Rust headless tests and 20 Python MCP tests passed** (28 library,
@@ -308,7 +308,7 @@ conditions, methodological limits, a prior readiness timeout, and the unestablis
 credential-socket warning. A later green run does not erase the timeout.
 
 Two local release archives were byte-identical, with four regular members and
-verified SHA-256 payloads. The generated `/opt/browny/bin/browny` desktop launcher
+verified SHA-256 payloads. The generated `/opt/paisley/bin/paisley` desktop launcher
 passed host validation; nothing was installed or published. Missing license,
 dependency notices/provenance, signing and update policy still block a redistributable
 release. See [PACKAGING.md](docs/PACKAGING.md) and the
@@ -404,7 +404,7 @@ capability requires an explicit product/engine decision, not a silent downgrade.
   WebKit session and explicit data/cache directories. Switching activates or
   opens that profile's window; never retarget live WebViews to another profile.
 - Fixture/untrusted-site automation defaults to a disposable dedicated profile.
-  New requested mode: before each session, the user explicitly selects one Browny
+  New requested mode: before each session, the user explicitly selects one Paisley
   profile with its existing WebKit sign-ins, or Incognito. Show that choice and the
   connected client in trusted UI before control begins and throughout the session.
   The page surface should be headless (not shown), while a native trusted status/
@@ -520,7 +520,7 @@ sandboxing is a separate, tested hardening measure.
 
 ### RAM title and performance
 
-Example title: `Page title — Browny · Work · RAM ≈ 842 MiB`.
+Example title: `Page title — Paisley · Work · RAM ≈ 842 MiB`.
 
 - Show application-attributable memory, including UI, web, network, and other
   owned subprocesses—not just the Rust shell and never every WebKit process on
@@ -552,18 +552,18 @@ Example title: `Page title — Browny · Work · RAM ≈ 842 MiB`.
 
 ### Visible agent control and MCP
 
-Browny exposes a **browser-control MCP server**, usable by compatible clients
+Paisley exposes a **browser-control MCP server**, usable by compatible clients
 regardless of model provider. MCP interoperability does not guarantee that every
 client supports image results, streaming, or every advertised tool.
 
 **New user requirement — 2026-11-07:** The page/browser window should be headless so
 web content does not cover the user's desktop, while a separate trusted native status
-surface remains visible and names the selected Browny profile or Incognito, connected
+surface remains visible and names the selected Paisley profile or Incognito, connected
 client, current authorization and Stop control. The user wants an explicit session
-choice that can use an existing Browny profile's own signed-in site state. This is not
+choice that can use an existing Paisley profile's own signed-in site state. This is not
 implemented: today's MCP is a separate fixture-only ephemeral runtime. Before adding
 it, validate the supported WebKit/Wayland headless rendering and real input path, then
-architect attachment through the profile-owning Browny process (rather than sharing
+architect attachment through the profile-owning Paisley process (rather than sharing
 profile files, copying databases/cookies or launching a competing profile writer).
 Require a fresh native per-session grant, visible target confirmation, immediate
 revocation and clear Incognito semantics. Persistent profiles retain their usual
@@ -642,7 +642,7 @@ Each milestone gets its own scoped implementation plan before code changes.
 | **2. Persistent browser foundation** | Profile runtime/locks, profile switcher, typed settings, atomic session restore, private mode; history/bookmark foundation. | Restart restores tab order/selection and fixture site data; two profiles remain isolated; locking, migration, crash recovery, and private non-restoration tests pass. |
 | **3. Usable downloads** | Download UI, safe file destinations, cancellation/retry, profile metadata and errors. | Attachment bytes match the fixture; malicious names, collisions, cancellation, disk-full/write failure, profile closure and private-mode metadata are handled without silent execution or overwrite. |
 | **4. Privacy and blocking** | Permission manager, supported privacy presets, native request blocking, cosmetics, site controls, list updates. | Fixture server confirms blocked requests never arrive; allowed content works; exceptions are scoped; invalid/oversized updates roll back; permission revocation and advertised privacy behaviors are tested. |
-| **5. Headless interactive MCP** | Opt-in adapter, screenshots/inspection plus real clicks, arbitrary text, keys, scrolling and navigation; headless page surface with a trusted visible profile/Incognito target and Stop. User may explicitly pair a Browny profile's own signed-in session. | An MCP client completes a local fixture task; verified supported headless input/capture works. Explicit profile/Incognito choice is correct and visible, grants revoke, cross-profile/session access is denied, and Stop cancels queued actions. Existing profile sign-in state is used in place, never copied/exported. |
+| **5. Headless interactive MCP** | Opt-in adapter, screenshots/inspection plus real clicks, arbitrary text, keys, scrolling and navigation; headless page surface with a trusted visible profile/Incognito target and Stop. User may explicitly pair a Paisley profile's own signed-in session. | An MCP client completes a local fixture task; verified supported headless input/capture works. Explicit profile/Incognito choice is correct and visible, grants revoke, cross-profile/session access is denied, and Stop cancels queued actions. Existing profile sign-in state is used in place, never copied/exported. |
 | **6. Automation hardening and interoperability** | Granular grants, elevated debugging, approval workflows, human preemption, robust frames/dialogs, and multi-client coverage. | Two independent clients interoperate; scope escapes, injected page instructions, layout races, disconnects, and post-revocation commands fail safely; human control remains authoritative. |
 | **7. Hardening and daily-use release** | Packaging/update policy, recovery/migration coverage, performance tuning, accessibility, security review and documented limitations. | Full test matrix and security review are completed with material findings resolved; patch delivery is documented; measured performance stays within agreed budgets and no unverified parity claims ship. |
 
@@ -669,7 +669,7 @@ separate disposable profiles and local fixtures.
 
 ## Definition of success
 
-Browny can retain and restore separate everyday profiles; inspect and debug real
+Paisley can retain and restore separate everyday profiles; inspect and debug real
 web applications; download files safely; explain and demonstrate its privacy/
 blocking controls; report honest aggregate memory use; and let compatible agents
 observe and interact with explicitly approved pages while the user sees and can

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create a reproducible, unsigned local-development Browny tarball."""
+"""Create a reproducible, unsigned local-development Paisley tarball."""
 
 import argparse
 import gzip
@@ -15,7 +15,7 @@ import tarfile
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
-DESKTOP = ROOT / "packaging" / "site.blig.Browny.desktop"
+DESKTOP = ROOT / "packaging" / "site.blig.Paisley.desktop"
 PACKAGING_DOC = ROOT / "docs" / "PACKAGING.md"
 
 
@@ -39,7 +39,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--binary", required=True, help="already-built release binary")
     parser.add_argument("--output", required=True, help="new .tar.gz output path")
-    parser.add_argument("--prefix", required=True, help="absolute install prefix, e.g. /opt/browny")
+    parser.add_argument("--prefix", required=True, help="absolute install prefix, e.g. /opt/paisley")
     parser.add_argument("--source-date-epoch", required=True, help="reproducible USTAR timestamp")
     args = parser.parse_args()
     try:
@@ -57,18 +57,18 @@ def main():
         if output.exists() or output.is_symlink():
             raise ValueError("output already exists; refusing to overwrite")
         desktop = read_regular(DESKTOP, 65536)
-        if desktop.count(b"Exec=browny\n") != 1:
-            raise ValueError("desktop launcher template must have exactly one Exec=browny")
-        desktop = desktop.replace(b"Exec=browny\n", f"Exec={args.prefix}/bin/browny\n".encode("ascii"))
+        if desktop.count(b"Exec=paisley\n") != 1:
+            raise ValueError("desktop launcher template must have exactly one Exec=paisley")
+        desktop = desktop.replace(b"Exec=paisley\n", f"Exec={args.prefix}/bin/paisley\n".encode("ascii"))
         payloads = [
-            (f"{root}/bin/browny", read_regular(args.binary, 256 * 1024 * 1024), 0o755),
-            (f"{root}/share/applications/site.blig.Browny.desktop", desktop, 0o644),
-            (f"{root}/share/doc/browny/PACKAGING.md", read_regular(PACKAGING_DOC, 1024 * 1024), 0o644),
+            (f"{root}/bin/paisley", read_regular(args.binary, 256 * 1024 * 1024), 0o755),
+            (f"{root}/share/applications/site.blig.Paisley.desktop", desktop, 0o644),
+            (f"{root}/share/doc/paisley/PACKAGING.md", read_regular(PACKAGING_DOC, 1024 * 1024), 0o644),
         ]
         hashes = {name[len(root) + 1:]: hashlib.sha256(data).hexdigest()
                   for name, data, _mode in payloads}
         manifest = json.dumps({"files": hashes}, sort_keys=True, indent=2) + "\n"
-        payloads.append((f"{root}/share/doc/browny/MANIFEST.json", manifest.encode("utf-8"), 0o644))
+        payloads.append((f"{root}/share/doc/paisley/MANIFEST.json", manifest.encode("utf-8"), 0o644))
         payloads.sort(key=lambda item: item[0])
         output.parent.mkdir(parents=True, exist_ok=True)
         # Only expose a finished archive. Hard-link creation refuses races with

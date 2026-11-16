@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Run the compiled ignored GTK fixture with no external network or host profiles.
 
-This is a test runner, not an automation backend. Supply Cargo's compiled browny
-unit-test executable, not target/debug/browny. Uses installed tools only.
+This is a test runner, not an automation backend. Supply Cargo's compiled paisley
+unit-test executable, not target/debug/paisley. Uses installed tools only.
 """
 import os
 from pathlib import Path
@@ -29,7 +29,7 @@ def main():
     display = os.environ['WAYLAND_DISPLAY']
     if '/' in display or not (runtime / display).is_socket():
         raise ValueError("a local Wayland display socket is required")
-    with tempfile.TemporaryDirectory(prefix='browny-ordinary-smoke-') as scratch:
+    with tempfile.TemporaryDirectory(prefix='paisley-ordinary-smoke-') as scratch:
         root = Path(scratch)
         (root / 'passwd').write_text(f'agent:x:{uid}:{gid}:Owned fixture:/home/agent:/usr/bin/false\n')
         (root / 'group').write_text(f'agent:x:{gid}:\n')
@@ -39,11 +39,11 @@ def main():
         command = ['/usr/bin/bwrap', '--unshare-all', '--die-with-parent', '--new-session',
             '--ro-bind', '/usr', '/usr', '--symlink', 'usr/lib', '/lib', '--symlink', 'usr/lib', '/lib64',
             '--proc', '/proc', '--dev', '/dev', '--tmpfs', '/tmp',
-            '--size', '1048576', '--tmpfs', '/tmp/browny-download-capacity',
+            '--size', '1048576', '--tmpfs', '/tmp/paisley-download-capacity',
             '--dir', '/home/agent',
             '--dir', '/sys/block', '--dir', '/sys/bus', '--dir', '/sys/class', '--dir', '/sys/dev', '--dir', '/sys/devices',
             '--dir', '/var/tmp', '--dir', '/var/cache/fontconfig', '--dir', '/app',
-            '--ro-bind', str(binary), '/app/browny-test',
+            '--ro-bind', str(binary), '/app/paisley-test',
             '--ro-bind', str(root / 'passwd'), '/etc/passwd', '--ro-bind', str(root / 'group'), '/etc/group',
             '--ro-bind', str(root / 'machine-id'), '/etc/machine-id', '--ro-bind', str(root / 'bus.conf'), '/app/bus.conf',
             '--perms', '0700', '--dir', private, '--ro-bind', str(runtime / display), private + '/' + display,
@@ -52,33 +52,33 @@ def main():
             '--setenv', 'GDK_BACKEND', 'wayland', '--setenv', 'LANG', 'C.UTF-8',
             '--setenv', 'GSK_RENDERER', 'cairo', '--setenv', 'GTK_A11Y', 'none',
             '--setenv', 'LIBGL_ALWAYS_SOFTWARE', '1', '--setenv', 'G_DEBUG', 'fatal-criticals',
-            '--setenv', 'BROWNY_DOWNLOAD_CAPACITY_FIXTURE', '/tmp/browny-download-capacity',
+            '--setenv', 'PAISLEY_DOWNLOAD_CAPACITY_FIXTURE', '/tmp/paisley-download-capacity',
             '--chdir', '/home/agent']
         if restart_stress:
-            command += ['--setenv', 'BROWNY_RESTART_STRESS', '1',
+            command += ['--setenv', 'PAISLEY_RESTART_STRESS', '1',
                         '--setenv', 'WEBKIT_DEBUG', 'Process']
         if restart_processes:
-            command += ['--setenv', 'BROWNY_RESTART_PROCESSES', '1']
+            command += ['--setenv', 'PAISLEY_RESTART_PROCESSES', '1']
         if inspector_lifecycle:
-            command += ['--setenv', 'BROWNY_INSPECTOR_LIFECYCLE', '1']
+            command += ['--setenv', 'PAISLEY_INSPECTOR_LIFECYCLE', '1']
         if inspector_preface:
-            command += ['--setenv', 'BROWNY_INSPECTOR_PREFACE', '1']
+            command += ['--setenv', 'PAISLEY_INSPECTOR_PREFACE', '1']
         if inspector_open_close:
-            command += ['--setenv', 'BROWNY_INSPECTOR_OPEN_CLOSE', '1']
+            command += ['--setenv', 'PAISLEY_INSPECTOR_OPEN_CLOSE', '1']
         if len(sys.argv) == 4:
             output = Path(sys.argv[3])
             if not output.is_absolute():
                 raise ValueError('screenshot directory must be absolute and new')
             output.mkdir(mode=0o700)
             command += ['--bind', str(output), '/evidence',
-                        '--setenv', 'BROWNY_SETTINGS_SCREENSHOT', '/evidence/settings.png',
-                        '--setenv', 'BROWNY_PROFILES_SCREENSHOT', '/evidence/profiles.png',
-                        '--setenv', 'BROWNY_BOOKMARKS_SCREENSHOT', '/evidence/bookmarks.png',
-                        '--setenv', 'BROWNY_BOOKMARK_EXPORT_SCREENSHOT', '/evidence/bookmark-export.png',
-                        '--setenv', 'BROWNY_PLACEHOLDER_SCREENSHOT', '/evidence/placeholder.png']
+                        '--setenv', 'PAISLEY_SETTINGS_SCREENSHOT', '/evidence/settings.png',
+                        '--setenv', 'PAISLEY_PROFILES_SCREENSHOT', '/evidence/profiles.png',
+                        '--setenv', 'PAISLEY_BOOKMARKS_SCREENSHOT', '/evidence/bookmarks.png',
+                        '--setenv', 'PAISLEY_BOOKMARK_EXPORT_SCREENSHOT', '/evidence/bookmark-export.png',
+                        '--setenv', 'PAISLEY_PLACEHOLDER_SCREENSHOT', '/evidence/placeholder.png']
         if Path('/etc/fonts').is_dir():
             command += ['--ro-bind', '/etc/fonts', '/etc/fonts']
-        command += ['/usr/bin/dbus-run-session', '--config-file=/app/bus.conf', '--', '/app/browny-test',
+        command += ['/usr/bin/dbus-run-session', '--config-file=/app/bus.conf', '--', '/app/paisley-test',
                     'browser_smoke', '--ignored', '--test-threads=1', '--nocapture']
         return subprocess.run(command, timeout=90).returncode
 

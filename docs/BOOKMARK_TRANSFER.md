@@ -1,6 +1,6 @@
 # Bookmark import and export
 
-Open **Bookmarks** from the browser menu. **Import bookmarks…** and **Export bookmarks…** use the native local-file chooser. This is Browny's bounded JSON interchange, not Netscape/Firefox/Chromium HTML, folder transfer, sync or a complete profile backup.
+Open **Bookmarks** from the browser menu. **Import bookmarks…** and **Export bookmarks…** use the native local-file chooser. This is Paisley's bounded JSON interchange, not Netscape/Firefox/Chromium HTML, folder transfer, sync or a complete profile backup.
 
 ## Format
 

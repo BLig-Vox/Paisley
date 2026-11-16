@@ -89,7 +89,7 @@ impl Runtime {
     fn build(app: &gtk::Application, origin: String, proxy: String, fixture: bool) -> Rc<Self> {
         let window = gtk::ApplicationWindow::builder()
             .application(app)
-            .title("Browny — AUTOMATION · ephemeral origin workspace")
+            .title("Paisley — AUTOMATION · ephemeral origin workspace")
             .default_width(1280)
             .default_height(800)
             .build();
@@ -205,7 +205,7 @@ impl Runtime {
                     return;
                 };
                 let info = webkit::ApplicationInfo::new();
-                info.set_name("Browny");
+                info.set_name("Paisley");
                 info.set_version(0, 1, 0);
                 session.set_application_info(&info);
                 let Some(network) = context.network_session_for_automation() else {
@@ -311,7 +311,7 @@ impl Runtime {
             Err(_) => return,
         };
         let path = PathBuf::from(format!(
-            "/tmp/browny-automation-filter-{}-{stamp}",
+            "/tmp/paisley-automation-filter-{}-{stamp}",
             std::process::id()
         ));
         let mut builder = std::fs::DirBuilder::new();
@@ -722,19 +722,19 @@ fn control(
 pub fn run() -> glib::ExitCode {
     let configuration = (|| -> Result<_, String> {
         if std::env::args().skip(1).collect::<Vec<_>>() != ["--automation"]
-            || std::env::var("BROWNY_MCP_SANDBOX").as_deref() != Ok("1")
+            || std::env::var("PAISLEY_MCP_SANDBOX").as_deref() != Ok("1")
         {
             return Err("Automation requires the isolated MCP launcher".into());
         }
         let socket =
-            std::env::var("BROWNY_AUTOMATION_SOCKET").map_err(|_| "Missing control socket")?;
+            std::env::var("PAISLEY_AUTOMATION_SOCKET").map_err(|_| "Missing control socket")?;
         let token =
-            std::env::var("BROWNY_AUTOMATION_TOKEN").map_err(|_| "Missing control token")?;
+            std::env::var("PAISLEY_AUTOMATION_TOKEN").map_err(|_| "Missing control token")?;
         let origin =
-            std::env::var("BROWNY_AUTOMATION_ORIGIN").map_err(|_| "Missing origin grant")?;
+            std::env::var("PAISLEY_AUTOMATION_ORIGIN").map_err(|_| "Missing origin grant")?;
         let proxy =
-            std::env::var("BROWNY_AUTOMATION_PROXY").map_err(|_| "Missing isolated proxy")?;
-        let fixture = match std::env::var("BROWNY_AUTOMATION_FIXTURE") {
+            std::env::var("PAISLEY_AUTOMATION_PROXY").map_err(|_| "Missing isolated proxy")?;
+        let fixture = match std::env::var("PAISLEY_AUTOMATION_FIXTURE") {
             Ok(value) if value == "1" => true,
             Err(std::env::VarError::NotPresent) => false,
             _ => return Err("Invalid fixture flag".into()),
@@ -767,7 +767,7 @@ pub fn run() -> glib::ExitCode {
     let (tx, rx) = mpsc::sync_channel(2);
     std::thread::spawn(move || control(listener, token, tx, Duration::from_secs(125)));
     let app = gtk::Application::builder()
-        .application_id("site.blig.Browny.Automation")
+        .application_id("site.blig.Paisley.Automation")
         .flags(gtk::gio::ApplicationFlags::NON_UNIQUE)
         .build();
     let receiver = Rc::new(RefCell::new(Some(rx)));
@@ -805,7 +805,7 @@ pub fn run() -> glib::ExitCode {
             glib::ControlFlow::Continue
         });
     });
-    let result = app.run_with_args(&["browny-automation"]);
+    let result = app.run_with_args(&["paisley-automation"]);
     let _ = std::fs::remove_file(socket);
     result
 }
@@ -860,7 +860,7 @@ pub(crate) fn check_native_grants(app: &gtk::Application, capture: impl Fn(&gtk:
     );
     assert!(!runtime.granted());
     let workspace = runtime.prompts.borrow().last().unwrap().window.clone();
-    capture(&workspace, "BROWNY_GRANT_SCREENSHOT");
+    capture(&workspace, "PAISLEY_GRANT_SCREENSHOT");
     assert_eq!(
         runtime.reply(&json!({"op":"action","label":"Grant workspace"}))["granted"],
         false
@@ -889,7 +889,7 @@ pub(crate) fn check_native_grants(app: &gtk::Application, capture: impl Fn(&gtk:
         runtime.authorize(request.clone(), tx);
         let prompt = runtime.prompts.borrow().last().unwrap().window.clone();
         if label == "click" {
-            capture(&prompt, "BROWNY_CONSENT_SCREENSHOT");
+            capture(&prompt, "PAISLEY_CONSENT_SCREENSHOT");
         }
         assert!(
             label_contains(prompt.upcast_ref(), "Target: #send; label=Preview"),
@@ -1008,7 +1008,7 @@ mod tests {
     fn idle_control_timeout_does_not_revoke_a_live_connection() {
         use std::os::unix::net::UnixStream;
         let path = std::env::temp_dir().join(format!(
-            "browny-idle-control-{}-{}.sock",
+            "paisley-idle-control-{}-{}.sock",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)

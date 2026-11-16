@@ -258,7 +258,7 @@ mod tests {
     #[test]
     fn export_refuses_unsafe_in_memory_records_before_creating_a_file() {
         let directory =
-            std::env::temp_dir().join(format!("browny-invalid-export-{}", std::process::id()));
+            std::env::temp_dir().join(format!("paisley-invalid-export-{}", std::process::id()));
         std::fs::create_dir(&directory).unwrap();
         for (uri, title) in [
             ("https://user:secret@example.test/", "A".to_owned()),
@@ -282,7 +282,7 @@ mod tests {
     fn file_transfer_is_private_regular_bounded_and_never_overwrites() {
         use std::os::unix::fs::{PermissionsExt, symlink};
         let directory = std::env::temp_dir().join(format!(
-            "browny-bookmark-transfer-{}-{}",
+            "paisley-bookmark-transfer-{}-{}",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)

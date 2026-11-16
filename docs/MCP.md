@@ -1,6 +1,6 @@
 # Interactive MCP origin workspace
 
-Browny has an opt-in **interactive**, provider-neutral stdio MCP adapter. It can
+Paisley has an opt-in **interactive**, provider-neutral stdio MCP adapter. It can
 click, type Unicode text, press keys, scroll, navigate, inspect and capture the
 rendered page. It is not a read-only substitute and does not require a browser-owned
 LLM or any particular model provider.
@@ -13,7 +13,7 @@ roadmap delivery. Implementation was validated on owned fixtures only, not live 
 
 ## Requirements and startup
 
-Build Browny normally. These tools must already be installed on the host:
+Build Paisley normally. These tools must already be installed on the host:
 
 - Python 3 (standard library only; the adapter runs with `-I`).
 - `bubblewrap` with working user/network/PID/mount namespaces.
@@ -32,8 +32,8 @@ client, configure the executable and a **canonical origin**, for example:
 ```json
 {
   "mcpServers": {
-    "browny": {
-      "command": "/absolute/path/to/Browny/target/debug/browny",
+    "paisley": {
+      "command": "/absolute/path/to/Browny/target/debug/paisley",
       "args": ["--mcp", "--allow-origin", "https://app.example.org"]
     }
   }
@@ -51,13 +51,13 @@ not add another origin to the grant, even on the same IP.
 For an owned local HTTP fixture, start its server separately and use:
 
 ```sh
-/absolute/path/to/browny --mcp --allow-origin http://127.0.0.1:8000
+/absolute/path/to/paisley --mcp --allow-origin http://127.0.0.1:8000
 ```
 
 For an owned HTTPS loopback fixture, explicitly provide its **public CA certificate**:
 
 ```sh
-/absolute/path/to/browny --mcp --allow-origin https://127.0.0.1:8443 --fixture-ca /absolute/path/to/public-ca.pem
+/absolute/path/to/paisley --mcp --allow-origin https://127.0.0.1:8443 --fixture-ca /absolute/path/to/public-ca.pem
 ```
 
 Fixture origins require the exact host `127.0.0.1` and an explicit nondefault,
@@ -185,7 +185,7 @@ action-consent Stop, unavailable/non-ephemeral automation session, and control-o
 disconnection. Reentrant close callbacks do not add another Stop line.
 
 These lines contain no origin, token, key identity, selector, page content, typed
-value or request payload. Browny does not create a persistent diagnostic log;
+value or request payload. Paisley does not create a persistent diagnostic log;
 the caller may retain stderr under their own policy. Engine/driver stderr remains
 outside this fixed-code guarantee and should not be shared without inspection.
 
@@ -216,9 +216,9 @@ python3 -I tests/test_mcp.py
 cargo test --offline --locked
 cargo clippy --offline --locked --all-targets -- -D warnings
 cargo build --offline --locked
-cargo test --offline --locked --bin browny browser_smoke -- --ignored --test-threads=1
-python3 -I tests/mcp_smoke.py /absolute/path/to/target/debug/browny
-python3 -I tests/mcp_https_smoke.py /absolute/path/to/target/debug/browny
+cargo test --offline --locked --bin paisley browser_smoke -- --ignored --test-threads=1
+python3 -I tests/mcp_smoke.py /absolute/path/to/target/debug/paisley
+python3 -I tests/mcp_https_smoke.py /absolute/path/to/target/debug/paisley
 ```
 
 The 20 headless Python tests cover protocol/schemas/input bounds, exact HTTP/HTTPS
@@ -245,10 +245,10 @@ personal profiles or live websites. Two protocol versions are **not** two client
 An optional second smoke argument saves the PNG to a **new** path without overwrite:
 
 ```sh
-python3 -I tests/mcp_https_smoke.py /absolute/path/to/browny /new/empty/directory/https.png
+python3 -I tests/mcp_https_smoke.py /absolute/path/to/paisley /new/empty/directory/https.png
 ```
 
-The GTK smoke optionally captures native windows with `BROWNY_GRANT_SCREENSHOT` and
-`BROWNY_CONSENT_SCREENSHOT` set to new absolute PNG paths. The recorded grant,
+The GTK smoke optionally captures native windows with `PAISLEY_GRANT_SCREENSHOT` and
+`PAISLEY_CONSENT_SCREENSHOT` set to new absolute PNG paths. The recorded grant,
 per-action prompt and rendered HTTPS Unicode/trusted-event captures were visually
 checked. Test evidence is not a full security audit or production-hardening claim.

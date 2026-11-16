@@ -1,5 +1,5 @@
 //! A single bounded worker serializes profile snapshots off the GTK thread.
-use browny::{
+use paisley::{
     download_history::DownloadHistory,
     library::Library,
     profile::{Profile, Session},
@@ -103,7 +103,7 @@ mod tests {
     #[test]
     fn writes_download_records_even_when_session_and_library_fail() {
         let root = std::env::temp_dir().join(format!(
-            "browny-download-writer-{}-{}",
+            "paisley-download-writer-{}-{}",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
@@ -120,7 +120,7 @@ mod tests {
         history.record(
             Some("https://example.org/file"),
             Some(std::path::Path::new("/tmp/file.bin")),
-            browny::download_history::Outcome::Completed,
+            paisley::download_history::Outcome::Completed,
             4,
             10,
         );
@@ -150,7 +150,7 @@ mod tests {
     #[test]
     fn invalid_session_does_not_prevent_library_save_or_history_deletion() {
         let root = std::env::temp_dir().join(format!(
-            "browny-writer-{}-{}",
+            "paisley-writer-{}-{}",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)

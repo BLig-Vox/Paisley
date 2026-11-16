@@ -1,6 +1,6 @@
 //! Actual child-process interruption of owned profile metadata writes.
 //! No GTK session, network, personal profile or production fault hook is used.
-use browny::profile::{Profile, Session};
+use paisley::profile::{Profile, Session};
 use std::{
     fs::{self, File},
     io::Read,
@@ -10,8 +10,8 @@ use std::{
     time::{Duration, Instant},
 };
 
-const CHILD: &str = "BROWNY_PERSISTENCE_CRASH_CHILD";
-const ROOT: &str = "BROWNY_PERSISTENCE_CRASH_ROOT";
+const CHILD: &str = "PAISLEY_PERSISTENCE_CRASH_CHILD";
+const ROOT: &str = "PAISLEY_PERSISTENCE_CRASH_ROOT";
 
 fn snapshot(new: bool) -> Session {
     let padding = "x".repeat(1400);
@@ -57,7 +57,7 @@ fn child(stage: &str, root: &Path) {
         root.file_name()
             .unwrap()
             .to_string_lossy()
-            .starts_with("browny-crash-record-")
+            .starts_with("paisley-crash-record-")
     );
     assert!(!fs::symlink_metadata(root).unwrap().file_type().is_symlink());
     assert_eq!(
@@ -92,7 +92,7 @@ fn process_interruption_preserves_atomic_profile_records() {
         .enumerate()
     {
         let root = std::env::temp_dir().join(format!(
-            "browny-crash-record-{}-{index}",
+            "paisley-crash-record-{}-{index}",
             std::process::id()
         ));
         fs::DirBuilder::new().mode(0o700).create(&root).unwrap();

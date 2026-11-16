@@ -9,11 +9,11 @@ The original stress test created and deleted many profile cache roots within one
 Build the single Rust test executable, then use Cargo's reported absolute path:
 
 ```sh
-cargo test --offline --locked --bin browny --no-run
+cargo test --offline --locked --bin paisley --no-run
 python3 -I scripts/smoke_isolated.py \
-  /absolute/path/to/target/debug/deps/browny-TEST_HASH --restart-stress
+  /absolute/path/to/target/debug/deps/paisley-TEST_HASH --restart-stress
 python3 -I scripts/smoke_isolated.py \
-  /absolute/path/to/target/debug/deps/browny-TEST_HASH --restart-processes
+  /absolute/path/to/target/debug/deps/paisley-TEST_HASH --restart-processes
 ```
 
 Prefix with `distrobox-host-exec` when tools are on the host. The existing runner still requires installed Wayland/bubblewrap/private-D-Bus dependencies; it installs nothing. Both modes keep host personal profiles and public networking unavailable. They are diagnostics, not alternate browser backends or isolation fallbacks.
@@ -50,7 +50,7 @@ The subprocess branch uses the production Browser/Profile implementation but not
 A fresh post-placeholder stress run failed in cycle 6, after **4.24 seconds**, at
 `test directory must be fresh`, before its page/storage assertions. Local log:
 `target/restart-post-placeholder-71zijwqg.txt`. Every cycle reused the same
-`browny-restart-PID` root even though each preceding fixture removed that directory.
+`paisley-restart-PID` root even though each preceding fixture removed that directory.
 Its reappearance demonstrates that reusing the pathname is not a fresh-root test;
 the particular recreating writer was not identified.
 
@@ -62,7 +62,7 @@ retry or sleep, but **still explicitly reported a NetworkProcess crash during cy
 `target/restart-distinct-roots-5xfd12wt.txt`, lines 983–988, records the crash, an empty
 connection identifier and engine-internal reconnection/replacement launch. The runner
 and Rust assertions returned success; this was **not an engine-clean reliability pass**.
-No Browny retry was added. View/session weak references were gone after closes, and
+No Paisley retry was added. View/session weak references were gone after closes, and
 pre-cycle application/GTK window counts stayed zero. Credential-socket warnings remain.
 
 Distinct roots therefore correct the fresh-directory fixture failure but do not
@@ -143,7 +143,7 @@ scope, and real Linux terminal status from an owned SIGKILL child before reaping
 A separate teardown-lifetime regression first failed when cleanup removed a marker,
 then passed with a bounded owned-root deferral helper. This helper is used only by
 native test fixtures: under `smoke_isolated.py`, a disposable namespace `/tmp` is
-removed at namespace exit; a direct graphical test run logs each retained `/tmp/browny-*`
+removed at namespace exit; a direct graphical test run logs each retained `/tmp/paisley-*`
 root for manual cleanup only after the test process exits.
 
 Paired eight-cycle comparison captured SIGSEGV when roots were deleted immediately

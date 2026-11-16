@@ -120,7 +120,7 @@ fn defer_engine_fixture_cleanup_until_process_exit(root: &std::path::Path) {
         root.file_name()
             .unwrap()
             .to_string_lossy()
-            .starts_with("browny-")
+            .starts_with("paisley-")
     );
     eprintln!(
         "owned engine fixture retained: {}; isolated runner removes it at namespace exit; direct runs require cleanup after process exit",
@@ -131,7 +131,7 @@ fn defer_engine_fixture_cleanup_until_process_exit(root: &std::path::Path) {
 #[test]
 fn engine_fixture_teardown_keeps_owned_storage_until_process_exit() {
     let root =
-        std::env::temp_dir().join(format!("browny-teardown-lifetime-{}", std::process::id()));
+        std::env::temp_dir().join(format!("paisley-teardown-lifetime-{}", std::process::id()));
     std::fs::create_dir(&root).unwrap();
     std::fs::write(
         root.join("owned-fixture"),
@@ -148,13 +148,13 @@ fn engine_fixture_teardown_keeps_owned_storage_until_process_exit() {
 }
 
 fn isolated_resource_snapshot() {
-    if std::env::var_os("BROWNY_DOWNLOAD_CAPACITY_FIXTURE").is_none() {
+    if std::env::var_os("PAISLEY_DOWNLOAD_CAPACITY_FIXTURE").is_none() {
         return;
     }
     let output = std::process::Command::new("/usr/bin/python3").args(["-I", "-c", r#"
 import os, pathlib, resource
 print('owned resource snapshot: RLIMIT_NOFILE=', resource.getrlimit(resource.RLIMIT_NOFILE))
-for name in ('/', '/tmp', '/dev/shm', '/home/agent', '/tmp/browny-download-capacity'):
+for name in ('/', '/tmp', '/dev/shm', '/home/agent', '/tmp/paisley-download-capacity'):
     try:
         value = os.statvfs(name)
         print('owned filesystem:', name, 'available_bytes=', value.f_bavail * value.f_frsize, 'total_bytes=', value.f_blocks * value.f_frsize, 'free_inodes=', value.f_favail)
@@ -199,7 +199,7 @@ fn wait_until(description: &str, mut condition: impl FnMut() -> bool) {
 }
 
 fn capture_window(window: &gtk::ApplicationWindow) {
-    capture_native_window(window.upcast_ref(), "BROWNY_SCREENSHOT");
+    capture_native_window(window.upcast_ref(), "PAISLEY_SCREENSHOT");
 }
 
 fn capture_native_window(window: &gtk::Window, variable: &str) {
@@ -339,41 +339,41 @@ fn check_embedded_content(browser: &Browser, site: &LocalSite) {
 fn browser_smoke() {
     gtk::init().expect("GTK initialization failed; run in a graphical session");
     let app = gtk::Application::builder()
-        .application_id("site.blig.Browny.Tests")
+        .application_id("site.blig.Paisley.Tests")
         .flags(gtk::gio::ApplicationFlags::NON_UNIQUE)
         .build();
     app.register(None::<&gtk::gio::Cancellable>).unwrap();
-    if let Some(output) = std::env::var_os("BROWNY_BENCHMARK_OUTPUT") {
+    if let Some(output) = std::env::var_os("PAISLEY_BENCHMARK_OUTPUT") {
         let site = LocalSite::start();
         benchmarks::run(&app, &site, std::path::Path::new(&output));
         return;
     }
-    if let Ok(stage) = std::env::var("BROWNY_RESTART_CHILD") {
+    if let Ok(stage) = std::env::var("PAISLEY_RESTART_CHILD") {
         check_restart_child(&app, &stage);
         return;
     }
     let site = LocalSite::start();
-    if std::env::var_os("BROWNY_INSPECTOR_LIFECYCLE").is_some()
-        || std::env::var_os("BROWNY_INSPECTOR_OPEN_CLOSE").is_some()
+    if std::env::var_os("PAISLEY_INSPECTOR_LIFECYCLE").is_some()
+        || std::env::var_os("PAISLEY_INSPECTOR_OPEN_CLOSE").is_some()
     {
-        if std::env::var_os("BROWNY_INSPECTOR_PREFACE").is_some()
-            || std::env::var_os("BROWNY_INSPECTOR_OPEN_CLOSE").is_some()
+        if std::env::var_os("PAISLEY_INSPECTOR_PREFACE").is_some()
+            || std::env::var_os("PAISLEY_INSPECTOR_OPEN_CLOSE").is_some()
         {
             check_settings_preferences(&app, &site);
             check_non_restorable_sessions(&app, &site);
         }
-        if std::env::var_os("BROWNY_INSPECTOR_OPEN_CLOSE").is_some() {
+        if std::env::var_os("PAISLEY_INSPECTOR_OPEN_CLOSE").is_some() {
             check_inspector_open_close(&app, &site);
         } else {
             check_inspector_lifecycle(&app, &site);
         }
         return;
     }
-    if std::env::var_os("BROWNY_RESTART_PROCESSES").is_some() {
+    if std::env::var_os("PAISLEY_RESTART_PROCESSES").is_some() {
         check_process_restarts(&site);
         return;
     }
-    if std::env::var_os("BROWNY_RESTART_STRESS").is_some() {
+    if std::env::var_os("PAISLEY_RESTART_STRESS").is_some() {
         let _monitor = restart_diagnostics::NetworkExitMonitor::start();
         for cycle in 1..=8 {
             let processes = std::fs::read_dir("/proc")
@@ -457,7 +457,7 @@ fn browser_smoke() {
     browser.settings.borrow_mut().show_memory = true;
     browser.apply_settings();
     capture_window(&browser.window);
-    assert!(browser.window.title().unwrap().starts_with("Two — Browny"));
+    assert!(browser.window.title().unwrap().starts_with("Two — Paisley"));
     gtk::prelude::WidgetExt::activate_action(&browser.window, "win.inspector", None).unwrap();
     let inspector = second.view.inspector().expect("native Web Inspector");
     let inspector_frontend = mapped_inspector(&inspector);
@@ -546,7 +546,7 @@ fn browser_smoke() {
     );
 
     let download_dir =
-        std::env::temp_dir().join(format!("browny-download-ui-{}", std::process::id()));
+        std::env::temp_dir().join(format!("paisley-download-ui-{}", std::process::id()));
     assert!(!download_dir.exists());
     std::fs::create_dir(&download_dir).unwrap();
     *browser.downloads.borrow_mut() =
@@ -604,9 +604,9 @@ fn browser_smoke() {
         assert_eq!(
             records.records[0].outcome,
             if count == 1 {
-                browny::download_history::Outcome::Cancelled
+                paisley::download_history::Outcome::Cancelled
             } else {
-                browny::download_history::Outcome::Failed
+                paisley::download_history::Outcome::Failed
             }
         );
         if count == 3 {
@@ -666,7 +666,7 @@ fn browser_smoke() {
         replacement.view.uri().as_deref(),
         Some("https://duckduckgo.com/")
     );
-    if std::env::var_os("BROWNY_LIVE_DUCKDUCKGO").is_some() {
+    if std::env::var_os("PAISLEY_LIVE_DUCKDUCKGO").is_some() {
         wait_until("live DuckDuckGo homepage", || {
             replacement
                 .view
@@ -724,7 +724,7 @@ fn browser_smoke() {
     }
     check_duckduckgo_promotions(&replacement.view);
     check_embedded_content(&browser, &site);
-    if std::env::var_os("BROWNY_LIVE_DUCKAI").is_some() {
+    if std::env::var_os("PAISLEY_LIVE_DUCKAI").is_some() {
         browser.navigate(
             "https://duck.ai/chat?ia=chat&duckai=1&home=1&prompt=1&origin=funnel_home_website&t=h_",
         );
@@ -794,11 +794,11 @@ fn bookmark_decide(dialog: &gtk::Window, choice: &str) {
 fn check_bookmark_transfer_ui(app: &gtk::Application, site: &LocalSite) {
     for private in [false, true] {
         let base = std::env::temp_dir().join(format!(
-            "browny-bookmark-ui-{}-{private}",
+            "paisley-bookmark-ui-{}-{private}",
             std::process::id()
         ));
         std::fs::create_dir(&base).unwrap();
-        let mut profile = browny::profile::Profile::open_at(&base, "transfer", private).unwrap();
+        let mut profile = paisley::profile::Profile::open_at(&base, "transfer", private).unwrap();
         profile.settings.homepage = format!("{}/one", site.base);
         profile.settings.restore_session = false;
         let browser = Browser::with_profile(app, profile).unwrap();
@@ -818,7 +818,7 @@ fn check_bookmark_transfer_ui(app: &gtk::Application, site: &LocalSite) {
             .into_iter()
             .filter_map(|w| w.downcast::<gtk::Window>().ok())
             .find(|w| {
-                w.title().as_deref() == Some("Browny bookmarks")
+                w.title().as_deref() == Some("Paisley bookmarks")
                     && w.transient_for().as_ref() == Some(browser.window.upcast_ref())
             })
             .unwrap();
@@ -873,7 +873,7 @@ fn check_bookmark_transfer_ui(app: &gtk::Application, site: &LocalSite) {
             "imported title must be rendered as literal text"
         );
         if !private {
-            capture_native_window(&manager, "BROWNY_BOOKMARKS_SCREENSHOT");
+            capture_native_window(&manager, "PAISLEY_BOOKMARKS_SCREENSHOT");
         }
         let imported = browser.library.borrow().clone();
         assert!(
@@ -885,7 +885,7 @@ fn check_bookmark_transfer_ui(app: &gtk::Application, site: &LocalSite) {
         editor.export_file(&output).unwrap();
         let exported = std::fs::read(&output).unwrap();
         assert_eq!(
-            browny::bookmark_transfer::parse_import(&exported)
+            paisley::bookmark_transfer::parse_import(&exported)
                 .unwrap()
                 .count(),
             3
@@ -906,7 +906,7 @@ fn check_bookmark_transfer_ui(app: &gtk::Application, site: &LocalSite) {
                 .is_some_and(|label| label.text().contains("survives closing"))
         }));
         if !private {
-            capture_native_window(&dialog, "BROWNY_BOOKMARK_EXPORT_SCREENSHOT");
+            capture_native_window(&dialog, "PAISLEY_BOOKMARK_EXPORT_SCREENSHOT");
         }
         bookmark_decide(&dialog, "Cancel");
         assert_eq!(*browser.library.borrow(), imported);
@@ -919,7 +919,7 @@ fn check_bookmark_transfer_ui(app: &gtk::Application, site: &LocalSite) {
         .unwrap();
         editor.import_file(&capacity).unwrap();
         let dialog = bookmark_confirmation(&manager);
-        for n in 0..browny::library::MAX_BOOKMARKS - imported.bookmarks.len() {
+        for n in 0..paisley::library::MAX_BOOKMARKS - imported.bookmarks.len() {
             browser
                 .library
                 .borrow_mut()
@@ -951,7 +951,7 @@ fn check_bookmark_transfer_ui(app: &gtk::Application, site: &LocalSite) {
             .filter_map(|w| w.downcast::<gtk::Window>().ok())
             .find(|w| {
                 w.is_visible()
-                    && w.title().as_deref() == Some("Browny bookmarks")
+                    && w.title().as_deref() == Some("Paisley bookmarks")
                     && w.transient_for().as_ref() == Some(browser.window.upcast_ref())
             })
             .unwrap();
@@ -975,7 +975,7 @@ fn check_bookmark_transfer_ui(app: &gtk::Application, site: &LocalSite) {
                 "private import must not write profile state"
             );
         } else {
-            let profile = browny::profile::Profile::open_at(&base, "transfer", false).unwrap();
+            let profile = paisley::profile::Profile::open_at(&base, "transfer", false).unwrap();
             assert_eq!(profile.load_library().unwrap(), imported);
         }
         assert_eq!(
@@ -993,7 +993,7 @@ fn check_settings_preferences(app: &gtk::Application, site: &LocalSite) {
         .title("Owned settings fixture")
         .build();
     parent.present();
-    let current = browny::profile::Settings {
+    let current = paisley::profile::Settings {
         homepage: format!("{}/one", site.base),
         remember_history: false,
         ..Default::default()
@@ -1008,7 +1008,7 @@ fn check_settings_preferences(app: &gtk::Application, site: &LocalSite) {
         .into_iter()
         .filter_map(|widget| widget.downcast::<gtk::Window>().ok())
         .find(|window| {
-            window.title().as_deref() == Some("Browny settings")
+            window.title().as_deref() == Some("Paisley settings")
                 && window.transient_for().as_ref() == Some(parent.upcast_ref())
         })
         .unwrap();
@@ -1026,7 +1026,7 @@ fn check_settings_preferences(app: &gtk::Application, site: &LocalSite) {
         saved.borrow().is_empty(),
         "opening settings must not save anything"
     );
-    let base = std::env::temp_dir().join(format!("browny-settings-ui-{}", std::process::id()));
+    let base = std::env::temp_dir().join(format!("paisley-settings-ui-{}", std::process::id()));
     std::fs::create_dir(&base).unwrap();
     let source = base.join("import.json");
     let imported_home = format!("{}/two", site.base);
@@ -1052,7 +1052,7 @@ fn check_settings_preferences(app: &gtk::Application, site: &LocalSite) {
         bounds.y() >= 0.0 && bounds.y() + bounds.height() <= window.height() as f32,
         "Save settings must stay visible without scrolling the form"
     );
-    capture_native_window(&window, "BROWNY_SETTINGS_SCREENSHOT");
+    capture_native_window(&window, "PAISLEY_SETTINGS_SCREENSHOT");
     let export = base.join("export.json");
     editor.export_file(&export).unwrap();
     assert!(
@@ -1128,7 +1128,7 @@ fn check_settings_preferences(app: &gtk::Application, site: &LocalSite) {
         .emit_clicked();
     assert_eq!(
         saved.borrow().as_slice(),
-        &[browny::profile::Settings::default()]
+        &[paisley::profile::Settings::default()]
     );
     drop(editor);
     let result = Rc::clone(&saved);
@@ -1140,7 +1140,7 @@ fn check_settings_preferences(app: &gtk::Application, site: &LocalSite) {
         .into_iter()
         .filter_map(|widget| widget.downcast::<gtk::Window>().ok())
         .find(|candidate| {
-            candidate.is_visible() && candidate.title().as_deref() == Some("Browny settings")
+            candidate.is_visible() && candidate.title().as_deref() == Some("Paisley settings")
         })
         .unwrap();
     window.close();
@@ -1150,9 +1150,9 @@ fn check_settings_preferences(app: &gtk::Application, site: &LocalSite) {
         1,
         "closing a settings draft saved changes"
     );
-    let profile = browny::profile::Profile::open_at(&base, "catalog", false).unwrap();
+    let profile = paisley::profile::Profile::open_at(&base, "catalog", false).unwrap();
     drop(profile);
-    let catalog = browny::profile_catalog::ProfileCatalog::at(&base, false);
+    let catalog = paisley::profile_catalog::ProfileCatalog::at(&base, false);
     let manager =
         crate::settings_ui::profiles_with_catalog(&parent, "fixture", false, Ok(catalog.clone()));
     let name = library_widgets(manager.upcast_ref())
@@ -1171,7 +1171,7 @@ fn check_settings_preferences(app: &gtk::Application, site: &LocalSite) {
         catalog.display_name("catalog").unwrap(),
         "Owned named profile"
     );
-    capture_native_window(&manager, "BROWNY_PROFILES_SCREENSHOT");
+    capture_native_window(&manager, "PAISLEY_PROFILES_SCREENSHOT");
     for confirm in [false, true] {
         library_widgets(manager.upcast_ref())
             .into_iter()
@@ -1207,10 +1207,10 @@ fn check_settings_preferences(app: &gtk::Application, site: &LocalSite) {
 }
 
 fn check_download_io_failures(app: &gtk::Application, site: &LocalSite) {
-    use browny::download_history::Outcome;
+    use paisley::download_history::Outcome;
     use std::os::unix::fs::PermissionsExt;
 
-    let Some(capacity) = std::env::var_os("BROWNY_DOWNLOAD_CAPACITY_FIXTURE") else {
+    let Some(capacity) = std::env::var_os("PAISLEY_DOWNLOAD_CAPACITY_FIXTURE") else {
         eprintln!("SKIP download EACCES/ENOSPC fixtures: use scripts/smoke_isolated.py");
         return;
     };
@@ -1219,7 +1219,7 @@ fn check_download_io_failures(app: &gtk::Application, site: &LocalSite) {
     // bounded 1-MiB tmpfs; a mount check precedes the bounded 2-MiB probe.
     assert_eq!(
         capacity,
-        std::path::Path::new("/tmp/browny-download-capacity")
+        std::path::Path::new("/tmp/paisley-download-capacity")
     );
     let mounts = std::fs::read_to_string("/proc/self/mountinfo").unwrap();
     assert!(
@@ -1245,9 +1245,9 @@ fn check_download_io_failures(app: &gtk::Application, site: &LocalSite) {
     drop(file);
     std::fs::remove_file(probe).unwrap();
 
-    let base = std::env::temp_dir().join(format!("browny-download-io-{}", std::process::id()));
+    let base = std::env::temp_dir().join(format!("paisley-download-io-{}", std::process::id()));
     assert!(!base.exists());
-    let mut profile = browny::profile::Profile::open_at(&base, "io", false).unwrap();
+    let mut profile = paisley::profile::Profile::open_at(&base, "io", false).unwrap();
     profile.settings.homepage = format!("{}/one", site.base);
     profile.settings.restore_session = false;
     let browser = Browser::with_profile(app, profile).unwrap();
@@ -1317,15 +1317,7 @@ fn check_download_io_failures(app: &gtk::Application, site: &LocalSite) {
                 downloads.errors()
             );
         }
-        let manager = gtk::Window::list_toplevels()
-            .into_iter()
-            .filter_map(|w| w.downcast::<gtk::Window>().ok())
-            .find(|w| {
-                w.is_visible()
-                    && w.title().as_deref() == Some("Downloads")
-                    && w.transient_for().as_ref() == Some(browser.window.upcast_ref())
-            })
-            .unwrap();
+        let manager: gtk::Window = browser.window.clone().upcast();
         let widgets = library_widgets(manager.upcast_ref());
         assert!(
             widgets.iter().any(|w| w
@@ -1377,7 +1369,7 @@ fn check_download_io_failures(app: &gtk::Application, site: &LocalSite) {
     browser.window.close();
     drop(view);
     drop(browser);
-    let profile = browny::profile::Profile::open_at(&base, "io", false).unwrap();
+    let profile = paisley::profile::Profile::open_at(&base, "io", false).unwrap();
     assert_eq!(
         profile.load_download_history().unwrap().records[0].outcome,
         Outcome::Failed
@@ -1388,9 +1380,9 @@ fn check_download_io_failures(app: &gtk::Application, site: &LocalSite) {
 
 fn check_download_records(app: &gtk::Application, site: &LocalSite) {
     check_download_io_failures(app, site);
-    use browny::download_history::Outcome;
+    use paisley::download_history::Outcome;
     let base = std::env::temp_dir().join(format!(
-        "browny-record-integration-{}-{}",
+        "paisley-record-integration-{}-{}",
         std::process::id(),
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -1398,7 +1390,7 @@ fn check_download_records(app: &gtk::Application, site: &LocalSite) {
             .as_nanos()
     ));
     for (id, private) in [("work", false), ("private", true)] {
-        let mut profile = browny::profile::Profile::open_at(&base, id, private).unwrap();
+        let mut profile = paisley::profile::Profile::open_at(&base, id, private).unwrap();
         profile.settings.homepage = format!("{}/one", site.base);
         profile.settings.restore_session = false;
         let directory = base.join(format!("{id}-files"));
@@ -1499,7 +1491,7 @@ fn check_download_records(app: &gtk::Application, site: &LocalSite) {
                 "explicitly saved private files survive"
             );
         } else {
-            let mut profile = browny::profile::Profile::open_at(&base, id, false).unwrap();
+            let mut profile = paisley::profile::Profile::open_at(&base, id, false).unwrap();
             assert_eq!(profile.load_download_history().unwrap(), history);
             profile.settings.homepage = format!("{}/one", site.base);
             profile.settings.restore_session = false;
@@ -1507,21 +1499,14 @@ fn check_download_records(app: &gtk::Application, site: &LocalSite) {
             browser.present();
             gtk::prelude::WidgetExt::activate_action(&browser.window, "win.downloads", None)
                 .unwrap();
-            let manager = gtk::Window::list_toplevels()
-                .into_iter()
-                .filter_map(|w| w.downcast::<gtk::Window>().ok())
-                .find(|w| {
-                    w.title().as_deref() == Some("Downloads")
-                        && w.transient_for().as_ref() == Some(browser.window.upcast_ref())
-                })
-                .unwrap();
+            let manager: gtk::Window = browser.window.clone().upcast();
             assert!(
                 library_widgets(manager.upcast_ref()).iter().any(|w| w
                     .downcast_ref::<gtk::Label>()
                     .is_some_and(|l| l.text().contains(path.to_str().unwrap()))),
                 "restored metadata should be visible without redownloading"
             );
-            capture_native_window(&manager, "BROWNY_DOWNLOADS_SCREENSHOT");
+            capture_native_window(&manager, "PAISLEY_DOWNLOADS_SCREENSHOT");
             std::fs::remove_file(&path).unwrap();
             let reveal = library_widgets(manager.upcast_ref())
                 .into_iter()
@@ -1571,14 +1556,14 @@ fn check_download_records(app: &gtk::Application, site: &LocalSite) {
             }
             browser.window.close();
             drop(browser);
-            let profile = browny::profile::Profile::open_at(&base, id, false).unwrap();
+            let profile = paisley::profile::Profile::open_at(&base, id, false).unwrap();
             assert!(profile.load_download_history().unwrap().records.is_empty());
         }
     }
-    let mut profile = browny::profile::Profile::open_at(&base, "eviction", false).unwrap();
+    let mut profile = paisley::profile::Profile::open_at(&base, "eviction", false).unwrap();
     profile.settings.homepage = format!("{}/one", site.base);
     profile.settings.restore_session = false;
-    let mut history = browny::download_history::DownloadHistory::default();
+    let mut history = paisley::download_history::DownloadHistory::default();
     for i in 0..200 {
         history.record(
             Some(&format!("{}/saved/{i}", site.base)),
@@ -1616,15 +1601,7 @@ fn check_download_records(app: &gtk::Application, site: &LocalSite) {
             .iter()
             .any(|r| r.source.as_deref() == Some(old.as_str()))
     );
-    let manager = gtk::Window::list_toplevels()
-        .into_iter()
-        .filter_map(|w| w.downcast::<gtk::Window>().ok())
-        .find(|w| {
-            w.title().as_deref() == Some("Downloads")
-                && w.transient_for().as_ref() == Some(browser.window.upcast_ref())
-                && w.is_visible()
-        })
-        .unwrap();
+    let manager: gtk::Window = browser.window.clone().upcast();
     assert!(
         !library_widgets(manager.upcast_ref()).iter().any(|w| w
             .downcast_ref::<gtk::Label>()
@@ -1637,7 +1614,7 @@ fn check_download_records(app: &gtk::Application, site: &LocalSite) {
         ("corrupt-downloads", "{"),
         ("future-downloads", "{\"version\":999,\"records\":[]}"),
     ] {
-        let mut profile = browny::profile::Profile::open_at(&base, id, false).unwrap();
+        let mut profile = paisley::profile::Profile::open_at(&base, id, false).unwrap();
         profile.settings.homepage = format!("{}/one", site.base);
         profile.settings.restore_session = false;
         let path = profile.data_dir.join("downloads.json");
@@ -1653,15 +1630,7 @@ fn check_download_records(app: &gtk::Application, site: &LocalSite) {
             browser.active_tab().unwrap().view.title().as_deref() == Some("One")
         });
         gtk::prelude::WidgetExt::activate_action(&browser.window, "win.downloads", None).unwrap();
-        let manager = gtk::Window::list_toplevels()
-            .into_iter()
-            .filter_map(|w| w.downcast::<gtk::Window>().ok())
-            .find(|w| {
-                w.title().as_deref() == Some("Downloads")
-                    && w.transient_for().as_ref() == Some(browser.window.upcast_ref())
-                    && w.is_visible()
-            })
-            .unwrap();
+        let manager: gtk::Window = browser.window.clone().upcast();
         assert!(
             library_widgets(manager.upcast_ref()).iter().any(|w| w
                 .downcast_ref::<gtk::Label>()
@@ -1685,7 +1654,7 @@ fn check_download_records(app: &gtk::Application, site: &LocalSite) {
             bad,
             "neither automatic writes nor close may replace the bad record"
         );
-        let profile = browny::profile::Profile::open_at(&base, id, false).unwrap();
+        let profile = paisley::profile::Profile::open_at(&base, id, false).unwrap();
         assert!(profile.load_session().is_ok());
         assert!(profile.load_library().is_ok());
     }
@@ -1704,14 +1673,14 @@ fn library_widgets(root: &gtk::Widget) -> Vec<gtk::Widget> {
 
 fn check_browser_library(app: &gtk::Application, site: &LocalSite) {
     let base = std::env::temp_dir().join(format!(
-        "browny-browser-library-{}-{}",
+        "paisley-browser-library-{}-{}",
         std::process::id(),
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_nanos()
     ));
-    let mut profile = browny::profile::Profile::open_at(&base, "work", false).unwrap();
+    let mut profile = paisley::profile::Profile::open_at(&base, "work", false).unwrap();
     profile.settings.homepage = format!("{}/one", site.base);
     let browser = Browser::with_profile(app, profile).unwrap();
     browser.present();
@@ -1726,8 +1695,8 @@ fn check_browser_library(app: &gtk::Application, site: &LocalSite) {
         view.title().as_deref() == Some("Two") && !view.is_loading()
     });
     for (action, title, page_title) in [
-        ("win.bookmarks", "Browny bookmarks", "One"),
-        ("win.history", "Browny history", "Two"),
+        ("win.bookmarks", "Paisley bookmarks", "One"),
+        ("win.history", "Paisley history", "Two"),
     ] {
         gtk::prelude::WidgetExt::activate_action(&browser.window, action, None).unwrap();
         let manager = gtk::Window::list_toplevels()
@@ -1770,7 +1739,7 @@ fn check_browser_library(app: &gtk::Application, site: &LocalSite) {
                 w.downcast_ref::<gtk::Label>()
                     .is_some_and(|l| l.text() == "One")
             }));
-            capture_native_window(&manager, "BROWNY_LIBRARY_SCREENSHOT");
+            capture_native_window(&manager, "PAISLEY_LIBRARY_SCREENSHOT");
         }
         manager.close();
     }
@@ -1816,7 +1785,7 @@ fn check_browser_library(app: &gtk::Application, site: &LocalSite) {
     browser.window.close();
     drop(browser);
     drop(view);
-    let profile = browny::profile::Profile::open_at(&base, "work", false).unwrap();
+    let profile = paisley::profile::Profile::open_at(&base, "work", false).unwrap();
     let library = profile.load_library().unwrap();
     assert_eq!(library.bookmarks.len(), 1);
     assert_eq!(library.bookmarks[0].uri, format!("{}/one", site.base));
@@ -1836,7 +1805,7 @@ fn check_browser_library(app: &gtk::Application, site: &LocalSite) {
     );
     drop(profile);
     for (id, private) in [("no-history", false), ("private", true)] {
-        let mut profile = browny::profile::Profile::open_at(&base, id, private).unwrap();
+        let mut profile = paisley::profile::Profile::open_at(&base, id, private).unwrap();
         profile.settings.homepage = format!("{}/one", site.base);
         profile.settings.remember_history = private; // Test both opt-out and private overriding opt-in.
         profile.save_settings(&profile.settings).unwrap();
@@ -1856,7 +1825,7 @@ fn check_browser_library(app: &gtk::Application, site: &LocalSite) {
         if private {
             assert!(!base.join(id).exists());
         } else {
-            let profile = browny::profile::Profile::open_at(&base, id, false).unwrap();
+            let profile = paisley::profile::Profile::open_at(&base, id, false).unwrap();
             assert!(!profile.settings.remember_history);
             let saved = profile.load_library().unwrap();
             assert!(saved.history.is_empty());
@@ -1864,7 +1833,7 @@ fn check_browser_library(app: &gtk::Application, site: &LocalSite) {
         }
     }
     // A failed background write stays pending and retries without another user edit.
-    let mut profile = browny::profile::Profile::open_at(&base, "retry", false).unwrap();
+    let mut profile = paisley::profile::Profile::open_at(&base, "retry", false).unwrap();
     profile.settings.homepage = format!("{}/one", site.base);
     let browser = Browser::with_profile(app, profile).unwrap();
     browser.present();
@@ -1898,8 +1867,8 @@ fn check_browser_library(app: &gtk::Application, site: &LocalSite) {
             && !browser.dirty.get()
     });
     for (action, title, button) in [
-        ("win.bookmarks", "Browny bookmarks", "Remove"),
-        ("win.history", "Browny history", "Clear history…"),
+        ("win.bookmarks", "Paisley bookmarks", "Remove"),
+        ("win.history", "Paisley history", "Clear history…"),
     ] {
         gtk::prelude::WidgetExt::activate_action(&browser.window, action, None).unwrap();
         let manager = gtk::Window::list_toplevels()
@@ -1950,7 +1919,7 @@ fn check_browser_library(app: &gtk::Application, site: &LocalSite) {
     browser.window.close();
     drop(browser);
     drop(tab);
-    let profile = browny::profile::Profile::open_at(&base, "retry", false).unwrap();
+    let profile = paisley::profile::Profile::open_at(&base, "retry", false).unwrap();
     let saved = profile.load_library().unwrap();
     assert!(saved.history.is_empty());
     assert!(saved.bookmarks.is_empty());
@@ -1985,7 +1954,7 @@ fn check_sensitive_permission_denial(app: &gtk::Application, site: &LocalSite) {
 }
 
 fn check_native_request_blocking(app: &gtk::Application, site: &LocalSite) {
-    let profile = browny::profile::Profile::open("filter-test", true).unwrap();
+    let profile = paisley::profile::Profile::open("filter-test", true).unwrap();
     let blocker = crate::blocking::Blocker::new(&profile).unwrap();
     blocker.compile(
         r#"[{"trigger":{"url-filter":".*/tracker.js"},"action":{"type":"block"}}]"#,
@@ -2097,8 +2066,8 @@ fn check_blocking_navigation_boundaries(app: &gtk::Application, site: &LocalSite
 }
 
 fn check_non_restorable_sessions(app: &gtk::Application, site: &LocalSite) {
-    use browny::profile::{NON_RESTORABLE_TAB, Profile, Session};
-    let root = std::env::temp_dir().join(format!("browny-placeholder-{}", std::process::id()));
+    use paisley::profile::{NON_RESTORABLE_TAB, Profile, Session};
+    let root = std::env::temp_dir().join(format!("paisley-placeholder-{}", std::process::id()));
     assert!(!root.exists());
     let first_uri = format!("{}/one", site.base);
     let last_uri = format!("{}/two", site.base);
@@ -2155,7 +2124,10 @@ fn check_non_restorable_sessions(app: &gtk::Application, site: &LocalSite) {
     gtk::prelude::WidgetExt::activate_action(&browser.window, "win.reload", None).unwrap();
     assert_eq!(browser.snapshot_session(), expected);
     assert!(!tab.view.is_loading());
-    capture_native_window(browser.window.upcast_ref(), "BROWNY_PLACEHOLDER_SCREENSHOT");
+    capture_native_window(
+        browser.window.upcast_ref(),
+        "PAISLEY_PLACEHOLDER_SCREENSHOT",
+    );
     browser.window.close();
     drop(tab);
     drop(browser);
@@ -2300,11 +2272,11 @@ fn mapped_inspector(inspector: &webkit::WebInspector) -> webkit::WebViewBase {
 
 fn check_inspector_open_close(app: &gtk::Application, site: &LocalSite) {
     let base = std::env::temp_dir().join(format!(
-        "browny-inspector-open-close-{}",
+        "paisley-inspector-open-close-{}",
         std::process::id()
     ));
     assert!(!base.exists());
-    let mut profile = browny::profile::Profile::open_at(&base, "owned", true).unwrap();
+    let mut profile = paisley::profile::Profile::open_at(&base, "owned", true).unwrap();
     profile.settings.homepage = format!("{}/one", site.base);
     let browser = Browser::with_profile(app, profile).unwrap();
     browser.present();
@@ -2339,9 +2311,9 @@ fn check_inspector_open_close(app: &gtk::Application, site: &LocalSite) {
 fn check_inspector_lifecycle(app: &gtk::Application, site: &LocalSite) {
     // These assertions exercise real native Inspector lifecycle, not page-side
     // JavaScript pretending to be console, DOM-editor or debugger coverage.
-    let base = std::env::temp_dir().join(format!("browny-inspector-{}", std::process::id()));
+    let base = std::env::temp_dir().join(format!("paisley-inspector-{}", std::process::id()));
     assert!(!base.exists());
-    let mut profile = browny::profile::Profile::open_at(&base, "owned", true).unwrap();
+    let mut profile = paisley::profile::Profile::open_at(&base, "owned", true).unwrap();
     profile.settings.homepage = format!("{}/one", site.base);
     let browser = Browser::with_profile(app, profile).unwrap();
     browser.present();
@@ -2462,15 +2434,15 @@ fn check_inspector_lifecycle(app: &gtk::Application, site: &LocalSite) {
 }
 
 fn check_restart_child(app: &gtk::Application, stage: &str) {
-    let base = std::path::PathBuf::from(std::env::var_os("BROWNY_RESTART_ROOT").unwrap());
+    let base = std::path::PathBuf::from(std::env::var_os("PAISLEY_RESTART_ROOT").unwrap());
     assert!(base.is_absolute() && base.parent() == Some(std::env::temp_dir().as_path()));
     assert!(
         base.file_name()
             .unwrap()
             .to_string_lossy()
-            .starts_with("browny-process-restart-")
+            .starts_with("paisley-process-restart-")
     );
-    let uri = std::env::var("BROWNY_RESTART_URI").unwrap();
+    let uri = std::env::var("PAISLEY_RESTART_URI").unwrap();
     let parsed = url::Url::parse(&uri).unwrap();
     assert_eq!(parsed.scheme(), "http");
     assert_eq!(parsed.host_str(), Some("127.0.0.1"));
@@ -2481,7 +2453,7 @@ fn check_restart_child(app: &gtk::Application, stage: &str) {
     } else {
         "owned"
     };
-    let mut profile = browny::profile::Profile::open_at(&base, id, false).unwrap();
+    let mut profile = paisley::profile::Profile::open_at(&base, id, false).unwrap();
     profile.settings.homepage = uri;
     profile.settings.restore_session = false;
     let browser = Browser::with_profile(app, profile).unwrap();
@@ -2494,26 +2466,26 @@ fn check_restart_child(app: &gtk::Application, stage: &str) {
         assert_eq!(
             javascript(
                 &tab.view,
-                "localStorage.setItem('browny-profile','work'); document.cookie='browny=work; max-age=3600; path=/'; localStorage.getItem('browny-profile')"
+                "localStorage.setItem('paisley-profile','work'); document.cookie='paisley=work; max-age=3600; path=/'; localStorage.getItem('paisley-profile')"
             ),
             "work"
         );
     } else if stage == "isolation" {
         assert_eq!(
-            javascript(&tab.view, "localStorage.getItem('browny-profile')"),
+            javascript(&tab.view, "localStorage.getItem('paisley-profile')"),
             "null"
         );
         assert!(
-            !javascript(&tab.view, "document.cookie").contains("browny=work"),
+            !javascript(&tab.view, "document.cookie").contains("paisley=work"),
             "another profile must not see the seeded cookie"
         );
     } else {
         assert_eq!(
-            javascript(&tab.view, "localStorage.getItem('browny-profile')"),
+            javascript(&tab.view, "localStorage.getItem('paisley-profile')"),
             "work",
             "owned value must survive actual process exit/relaunch"
         );
-        assert!(javascript(&tab.view, "document.cookie").contains("browny=work"));
+        assert!(javascript(&tab.view, "document.cookie").contains("paisley=work"));
     }
     browser.window.close();
     drop(tab);
@@ -2527,7 +2499,7 @@ fn check_process_restarts(site: &LocalSite) {
     let executable = std::env::current_exe().unwrap();
     for cycle in 1..=4 {
         let base = std::env::temp_dir().join(format!(
-            "browny-process-restart-{}-{cycle}",
+            "paisley-process-restart-{}-{cycle}",
             std::process::id()
         ));
         assert!(!base.exists());
@@ -2540,11 +2512,11 @@ fn check_process_restarts(site: &LocalSite) {
                     "--test-threads=1",
                     "--nocapture",
                 ])
-                .env_remove("BROWNY_RESTART_STRESS")
-                .env_remove("BROWNY_RESTART_PROCESSES")
-                .env("BROWNY_RESTART_CHILD", stage)
-                .env("BROWNY_RESTART_ROOT", &base)
-                .env("BROWNY_RESTART_URI", format!("{}/one", site.base))
+                .env_remove("PAISLEY_RESTART_STRESS")
+                .env_remove("PAISLEY_RESTART_PROCESSES")
+                .env("PAISLEY_RESTART_CHILD", stage)
+                .env("PAISLEY_RESTART_ROOT", &base)
+                .env("PAISLEY_RESTART_URI", format!("{}/one", site.base))
                 .output()
                 .unwrap();
             assert!(
@@ -2557,7 +2529,7 @@ fn check_process_restarts(site: &LocalSite) {
         // Catalog removal is intentionally after each profile's actual GTK/WebKit
         // child process has exited; in-process teardown uses the deferred fixture
         // cleanup helper to avoid deleting storage under shared native watchers.
-        let catalog = browny::profile_catalog::ProfileCatalog::at(&base, false);
+        let catalog = paisley::profile_catalog::ProfileCatalog::at(&base, false);
         catalog.delete("owned", true).unwrap();
         assert!(!base.join("owned").exists());
         std::fs::remove_dir_all(base).unwrap();
@@ -2565,10 +2537,10 @@ fn check_process_restarts(site: &LocalSite) {
 }
 
 fn check_persistent_profiles(app: &gtk::Application, site: &LocalSite, cycle: usize) {
-    use browny::profile::{Profile, Session};
+    use paisley::profile::{Profile, Session};
     // Each stress cycle needs a new root: native asynchronous work can recreate
     // an earlier root after cleanup. Reusing its path is not a fresh-profile test.
-    let base = std::env::temp_dir().join(format!("browny-restart-{}-{cycle}", std::process::id()));
+    let base = std::env::temp_dir().join(format!("paisley-restart-{}-{cycle}", std::process::id()));
     assert!(!base.exists(), "test directory must be fresh");
     let profile = Profile::open_at(&base, "work", false).unwrap();
     profile
@@ -2596,7 +2568,7 @@ fn check_persistent_profiles(app: &gtk::Application, site: &LocalSite, cycle: us
     browser.notebook.reorder_child(&second.page, Some(0));
     javascript(
         &second.view,
-        "localStorage.setItem('browny-profile', 'work'); document.cookie='browny=work; max-age=3600; path=/'; 'stored'",
+        "localStorage.setItem('paisley-profile', 'work'); document.cookie='paisley=work; max-age=3600; path=/'; 'stored'",
     );
     let native_view = second.view.downgrade();
     let native_session = browser.session.downgrade();
@@ -2608,7 +2580,7 @@ fn check_persistent_profiles(app: &gtk::Application, site: &LocalSite, cycle: us
     while gtk::glib::MainContext::default().pending() {
         gtk::glib::MainContext::default().iteration(false);
     }
-    if std::env::var_os("BROWNY_RESTART_STRESS").is_some() {
+    if std::env::var_os("PAISLEY_RESTART_STRESS").is_some() {
         eprintln!(
             "restart native lifetime: view_alive={} session_alive={}",
             native_view.upgrade().is_some(),
@@ -2628,7 +2600,7 @@ fn check_persistent_profiles(app: &gtk::Application, site: &LocalSite, cycle: us
     wait_until("persistent site data after restart", || {
         !tab.view.is_loading() && tab.view.title().as_deref() == Some("Two")
     });
-    let restored = javascript(&tab.view, "localStorage.getItem('browny-profile')");
+    let restored = javascript(&tab.view, "localStorage.getItem('paisley-profile')");
     if restored != "work" {
         // Read only the disposable fixture's SQLite state after observing a
         // failure. No profile roots from the host enter the isolated runner.
@@ -2648,7 +2620,7 @@ for path in itertools.islice(root.rglob('*'), 128):
         try:
             tables = [row[0] for row in connection.execute("SELECT name FROM sqlite_master WHERE type='table' LIMIT 16")]
             if 'ItemTable' in tables:
-                row = connection.execute('SELECT value FROM ItemTable WHERE key = ?', ('browny-profile',)).fetchone()
+                row = connection.execute('SELECT value FROM ItemTable WHERE key = ?', ('paisley-profile',)).fetchone()
                 print('owned storage diagnostic:', path.relative_to(root), 'fixture-row-present=', row is not None, 'fixture-value-matches=', bool(row and row[0] in ('work', b'work', 'work'.encode('utf-16-le'))))
         finally:
             connection.close()
@@ -2664,7 +2636,7 @@ for path in itertools.islice(root.rglob('*'), 128):
         }
     }
     assert_eq!(restored, "work");
-    assert!(javascript(&tab.view, "document.cookie").contains("browny=work"));
+    assert!(javascript(&tab.view, "document.cookie").contains("paisley=work"));
     restarted.window.close();
     drop(tab);
     drop(restarted);
@@ -2680,7 +2652,7 @@ for path in itertools.islice(root.rglob('*'), 128):
     assert_eq!(
         javascript(
             &tab.view,
-            "localStorage.getItem('browny-profile') === null && document.cookie === ''"
+            "localStorage.getItem('paisley-profile') === null && document.cookie === ''"
         ),
         "true"
     );

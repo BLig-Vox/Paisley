@@ -59,12 +59,12 @@ Final graphical run: **30.78s**, `G_DEBUG=fatal-criticals`; native settings/cata
 Reproduce with the Cargo-reported unit-test executable path (hashes can differ):
 
 ```sh
-cargo test --offline --locked --bin browny --no-run
+cargo test --offline --locked --bin paisley --no-run
 python3 -I scripts/smoke_isolated.py \
-  /absolute/path/to/target/debug/deps/browny-TEST_HASH \
+  /absolute/path/to/target/debug/deps/paisley-TEST_HASH \
   --screenshots /absolute/path/to/new-empty-output-directory
 ```
 
-The screenshot directory must **not exist**; the runner creates it exclusively. Only the display socket and, when requested, this new output directory cross the test namespace. The runner is for the compiled Rust **test executable**, not `target/debug/browny`, and is not an MCP backend or an isolation fallback. It requires the already-installed tools documented for MCP; it installs nothing. Prefix host commands with `distrobox-host-exec` where applicable.
+The screenshot directory must **not exist**; the runner creates it exclusively. Only the display socket and, when requested, this new output directory cross the test namespace. The runner is for the compiled Rust **test executable**, not `target/debug/paisley`, and is not an MCP backend or an isolation fallback. It requires the already-installed tools documented for MCP; it installs nothing. Prefix host commands with `distrobox-host-exec` where applicable.
 
 Still open: expanded settings categories/search providers/site-data controls, advanced migration/recovery, native chooser/portal matrix, large-tree responsiveness and interrupted deletion, private-window UI coverage beyond model guarantees, independent review, and broader daily-use/release criteria. This feature does not complete the whole roadmap.

@@ -148,7 +148,7 @@ fn open_browser(
     home: &str,
     fresh: bool,
 ) -> Rc<Browser> {
-    let mut profile = browny::profile::Profile::open_at(base, id, false).unwrap();
+    let mut profile = paisley::profile::Profile::open_at(base, id, false).unwrap();
     if fresh {
         profile.settings.homepage = home.into();
         profile.save_settings(&profile.settings).unwrap();
@@ -245,7 +245,7 @@ impl Drop for BenchmarkWindows<'_> {
 #[test]
 fn benchmark_failure_removes_profiles_without_publishing_an_empty_report() {
     let root = std::env::temp_dir().join(format!(
-        "browny-evidence-test-{}-{}",
+        "paisley-evidence-test-{}-{}",
         std::process::id(),
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -359,7 +359,7 @@ pub(super) fn run(app: &gtk::Application, site: &LocalSite, output: &Path) {
         png_ms.push(started.elapsed().as_secs_f64() * 1000.0);
         assert!(png.as_ref().starts_with(b"\x89PNG\r\n\x1a\n"));
         if capture_index == 9
-            && let Some(path) = std::env::var_os("BROWNY_BENCHMARK_PAGE_SCREENSHOT")
+            && let Some(path) = std::env::var_os("PAISLEY_BENCHMARK_PAGE_SCREENSHOT")
         {
             let mut file = OpenOptions::new()
                 .write(true)
@@ -399,13 +399,13 @@ pub(super) fn run(app: &gtk::Application, site: &LocalSite, output: &Path) {
         .unwrap();
     assert!(hz.is_finite() && hz > 0.0);
     let idle_percent = ticks as f64 / hz / elapsed * 100.0;
-    if let Some(path) = std::env::var_os("BROWNY_BENCHMARK_SCREENSHOT") {
+    if let Some(path) = std::env::var_os("PAISLEY_BENCHMARK_SCREENSHOT") {
         assert!(
             std::fs::symlink_metadata(path).is_err(),
             "choose a new benchmark window PNG path"
         );
     }
-    capture_native_window(browser.window.upcast_ref(), "BROWNY_BENCHMARK_SCREENSHOT");
+    capture_native_window(browser.window.upcast_ref(), "PAISLEY_BENCHMARK_SCREENSHOT");
     let mut tabs = Vec::new();
     for count in [1usize, 10, 30] {
         while browser.tabs.borrow().len() < count {
@@ -431,7 +431,7 @@ pub(super) fn run(app: &gtk::Application, site: &LocalSite, output: &Path) {
             assert_eq!(browser.notebook.current_page(), Some(index));
             selection_ms.push(started.elapsed().as_secs_f64() * 1000.0);
         }
-        let usage = background(|| browny::memory::sample(std::process::id()));
+        let usage = background(|| paisley::memory::sample(std::process::id()));
         let memory = usage.map(|usage| json!({"kib":usage.kib,"metric":usage.metric,"processes":usage.processes,"partial":usage.partial}));
         tabs.push(json!({"loaded_tabs":count,"selection_kind":next_selection(0, count as u32).1,"selection_dispatch_ms":summarize(&selection_ms),"samples_ms":selection_ms,"memory":memory}));
     }

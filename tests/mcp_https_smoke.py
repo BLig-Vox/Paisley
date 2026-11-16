@@ -1,5 +1,5 @@
 """Owned HTTPS fixtures only; never contacts a public website or changes host trust.
-Run: python3 -I tests/mcp_https_smoke.py /absolute/path/to/browny [new-png-path]
+Run: python3 -I tests/mcp_https_smoke.py /absolute/path/to/paisley [new-png-path]
 Requires the normal isolated MCP dependencies and installed openssl.
 """
 import base64
@@ -14,7 +14,7 @@ import tempfile
 import threading
 import time
 
-spec = importlib.util.spec_from_file_location('browny_fixture', Path(__file__).with_name('mcp_smoke.py'))
+spec = importlib.util.spec_from_file_location('paisley_fixture', Path(__file__).with_name('mcp_smoke.py'))
 fixture = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(fixture)
 
@@ -44,7 +44,7 @@ class HTTPSFixture(http.server.BaseHTTPRequestHandler):
 def certificate(directory, stem):
     cert, key = directory / (stem + '.pem'), directory / (stem + '.key')
     subprocess.run(['/usr/bin/openssl', 'req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1',
-                    '-subj', '/CN=Browny owned HTTPS fixture', '-addext', 'subjectAltName=IP:127.0.0.1',
+                    '-subj', '/CN=Paisley owned HTTPS fixture', '-addext', 'subjectAltName=IP:127.0.0.1',
                     '-addext', 'basicConstraints=critical,CA:TRUE', '-keyout', str(key), '-out', str(cert)],
                    check=True, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                    timeout=20, cwd='/')
@@ -62,7 +62,7 @@ def ready(client):
 
 
 def main(binary, screenshot=None):
-    with tempfile.TemporaryDirectory(prefix='browny-https-fixture-') as name:
+    with tempfile.TemporaryDirectory(prefix='paisley-https-fixture-') as name:
         directory = Path(name)
         cert, key = certificate(directory, 'fixture')
         wrong, _ = certificate(directory, 'unrelated')
@@ -145,7 +145,7 @@ def main(binary, screenshot=None):
                 result = client.request('tools/call', {'name': 'browser_navigate', 'arguments': {'tab': tab, 'url': origin + '/untrusted-cert'}})
                 if not result.get('isError'):
                     state = client.data(client.tool('browser_observe', {'tab': tab, 'screenshot': False}))
-                    assert 'Browny native automation fixture' not in state['page']['text'], state
+                    assert 'Paisley native automation fixture' not in state['page']['text'], state
                 assert len(site.requests) == count, 'untrusted certificate reached HTTP fixture handler'
                 client.close()
                 print('PASS: owned HTTPS TLS validation, trusted Unicode/click/wheel input, PNG, foreign-origin denial and Stop cleanup; no live sites contacted')

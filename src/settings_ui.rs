@@ -1,5 +1,5 @@
-use browny::profile::{Profile, Settings};
 use gtk::prelude::*;
+use paisley::profile::{Profile, Settings};
 
 fn contents() -> gtk::Box {
     let content = gtk::Box::new(gtk::Orientation::Vertical, 12);
@@ -61,22 +61,41 @@ impl SettingsEditor {
         *self.base.borrow_mut() = settings;
     }
     pub(crate) fn import_file(&self, path: &Path) -> Result<(), String> {
-        let settings = browny::settings_transfer::load_file(path, &self.draft())?;
+        let settings = paisley::settings_transfer::load_file(path, &self.draft())?;
         self.set_draft(settings);
         self.message.set_text("Imported into the draft only. Review homepage, switches and site exceptions, then Save to apply. Closing without Save discards changes.");
         Ok(())
     }
     pub(crate) fn export_file(&self, path: &Path) -> Result<(), String> {
-        browny::settings_transfer::save_export(path, &self.draft())?;
+        paisley::settings_transfer::save_export(path, &self.draft())?;
         self.message.set_text("Exported supported switches only; homepage, site exceptions, paths, history and credentials were omitted. This is not a complete profile backup.");
         Ok(())
     }
 }
 
+#[cfg(test)]
 pub(crate) fn show(
     parent: &gtk::ApplicationWindow,
     current: Settings,
     save: impl Fn(Settings) -> Result<(), String> + 'static,
+) -> Rc<SettingsEditor> {
+    build(parent, current, save, None)
+}
+
+pub(crate) fn show_in_sheet(
+    parent: &gtk::ApplicationWindow,
+    current: Settings,
+    save: impl Fn(Settings) -> Result<(), String> + 'static,
+    menu: &Rc<crate::menu_sheet::MenuSheet>,
+) -> Rc<SettingsEditor> {
+    build(parent, current, save, Some(menu))
+}
+
+fn build(
+    parent: &gtk::ApplicationWindow,
+    current: Settings,
+    save: impl Fn(Settings) -> Result<(), String> + 'static,
+    host: Option<&Rc<crate::menu_sheet::MenuSheet>>,
 ) -> Rc<SettingsEditor> {
     let content = contents();
     let search = gtk::SearchEntry::builder()
@@ -84,9 +103,7 @@ pub(crate) fn show(
         .build();
     content.append(&search);
     let homepage_row = gtk::Box::new(gtk::Orientation::Vertical, 4);
-    homepage_row.append(&gtk::Label::new(Some(
-        "Startup / search: homepage (HTTP or HTTPS)",
-    )));
+    homepage_row.append(&crate::download_ui::label("Homepage", "downloads-filename"));
     let homepage = gtk::Entry::builder()
         .input_purpose(gtk::InputPurpose::Url)
         .hexpand(true)
@@ -98,15 +115,35 @@ pub(crate) fn show(
         vec![(homepage_row.upcast(), "startup search homepage url".into())];
     let mut checks = Vec::new();
     for label in [
-        "Startup: restore tabs after restarting this profile",
-        "Privacy: remember visited pages (does not clear existing history)",
-        "Appearance / performance: show partial process memory in title and status",
-        "Blocking: bundled ad/tracker starter rules",
-        "Privacy: Strict disables WebRTC and declines third-party cookies",
+        "Restore tabs on startup",
+        "Remember browsing history",
+        "Show memory usage",
+        "Block ads and trackers",
+        "Strict privacy",
     ] {
         let check = gtk::CheckButton::with_label(label);
-        content.append(&check);
-        rows.push((check.clone().upcast(), label.to_lowercase()));
+        if host.is_some() {
+            let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
+            row.add_css_class("setting-row");
+            let text = crate::download_ui::label(label, "setting-label");
+            let toggle = gtk::Switch::builder()
+                .valign(gtk::Align::Center)
+                .tooltip_text(label)
+                .build();
+            text.set_mnemonic_widget(Some(&toggle));
+            check
+                .bind_property("active", &toggle, "active")
+                .bidirectional()
+                .sync_create()
+                .build();
+            row.append(&text);
+            row.append(&toggle);
+            content.append(&row);
+            rows.push((row.upcast(), label.to_lowercase()));
+        } else {
+            content.append(&check);
+            rows.push((check.clone().upcast(), label.to_lowercase()));
+        }
         checks.push(check);
     }
     search.connect_search_changed(move |search| {
@@ -122,12 +159,19 @@ pub(crate) fn show(
         .build();
     content.append(
         &gtk::Expander::builder()
-            .label("Site blocking exceptions in this draft")
+            .label("Site exceptions")
             .child(&exceptions)
             .build(),
     );
-    content.append(&gtk::Label::builder().label("These supported settings are profile-local and apply on Save, without restart, to new requests and future startup. Existing requests are not undone. WebKit tracking prevention stays enabled. Strict can break calls/logins and is not anonymity. Sensitive permissions remain denied. Private settings stay in memory. Unsupported proxy, fingerprinting and permission-grant controls are not exposed.").wrap(true).xalign(0.0).build());
-    content.append(&gtk::Label::builder().label("Import/reset edits this draft only. Export writes a user-selected file, including in private mode, but omits site URLs, paths and secrets by default. Exported files survive closing a private window. No import enables automation or grants permissions.").wrap(true).xalign(0.0).build());
+    let notes = gtk::Box::new(gtk::Orientation::Vertical, 8);
+    notes.append(&gtk::Label::builder().label("Changes apply to this profile when saved. Existing history is kept when recording is disabled. Strict privacy disables WebRTC and third-party cookies and can affect calls or sign-ins. Private settings remain in memory.").wrap(true).xalign(0.0).build());
+    notes.append(&gtk::Label::builder().label("Import and reset change the draft only. Export saves supported preferences without site URLs or secrets. Exported files remain after a private window closes.").wrap(true).xalign(0.0).build());
+    content.append(
+        &gtk::Expander::builder()
+            .label("Advanced")
+            .child(&notes)
+            .build(),
+    );
     let actions = gtk::Box::new(gtk::Orientation::Vertical, 6);
     let import = gtk::Button::with_label("Import preferences…");
     let export = gtk::Button::with_label("Export preferences…");
@@ -135,8 +179,9 @@ pub(crate) fn show(
     for button in [&import, &export, &reset] {
         actions.append(button);
     }
-    content.append(&actions);
+    notes.append(&actions);
     let message = gtk::Label::builder().wrap(true).xalign(0.0).build();
+    crate::download_ui::hide_when_empty(&message);
     let save_button = gtk::Button::with_label("Save settings");
     save_button.add_css_class("suggested-action");
     let scroll = gtk::ScrolledWindow::builder()
@@ -152,15 +197,28 @@ pub(crate) fn show(
     let layout = gtk::Box::new(gtk::Orientation::Vertical, 0);
     layout.append(&scroll);
     layout.append(&footer);
-    let window = gtk::Window::builder()
-        .title("Browny settings")
-        .transient_for(parent)
-        .destroy_with_parent(true)
-        .modal(true)
-        .default_width(620)
-        .default_height(680)
-        .child(&layout)
-        .build();
+    let window: gtk::Window = if host.is_some() {
+        parent.clone().upcast()
+    } else {
+        gtk::Window::builder()
+            .title("Paisley settings")
+            .transient_for(parent)
+            .destroy_with_parent(true)
+            .modal(true)
+            .default_width(620)
+            .default_height(680)
+            .child(&layout)
+            .build()
+    };
+    if host.is_some() {
+        for body in [&content, &footer] {
+            body.set_margin_start(0);
+            body.set_margin_end(0);
+            body.set_margin_top(0);
+            body.set_margin_bottom(0);
+        }
+    }
+    let finish = finish_callback(&window, host);
     let editor = Rc::new(SettingsEditor {
         window: window.downgrade(),
         base: RefCell::new(current.clone()),
@@ -172,10 +230,12 @@ pub(crate) fn show(
     editor.set_draft(current);
     let retained = Rc::clone(&editor);
     // Window owns the editor; the reverse window reference is weak.
-    window.connect_close_request(move |_| {
-        let _keep = &retained;
-        gtk::glib::Propagation::Proceed
-    });
+    if host.is_none() {
+        window.connect_close_request(move |_| {
+            let _keep = &retained;
+            gtk::glib::Propagation::Proceed
+        });
+    }
     let weak = Rc::downgrade(&editor);
     save_button.connect_clicked(move |_| {
         let Some(editor) = weak.upgrade() else {
@@ -183,9 +243,7 @@ pub(crate) fn show(
         };
         match save(editor.draft()) {
             Ok(()) => {
-                if let Some(window) = editor.window.upgrade() {
-                    window.close();
-                }
+                finish();
             }
             Err(message) => editor.message.set_text(&message),
         }
@@ -221,7 +279,7 @@ pub(crate) fn show(
                 .modal(true)
                 .build();
             if !importing {
-                dialog.set_initial_name(Some("browny-preferences.json"));
+                dialog.set_initial_name(Some("paisley-preferences.json"));
             }
             let weak = Rc::downgrade(&editor);
             let finish = move |result: Result<gtk::gio::File, gtk::glib::Error>| {
@@ -267,94 +325,279 @@ pub(crate) fn show(
             }
         });
     }
-    window.present();
+    if let Some(host) = host {
+        host.show_page("Settings", &layout, editor.clone());
+    } else {
+        window.present();
+    }
     editor
 }
 
+fn finish_callback(
+    window: &gtk::Window,
+    host: Option<&Rc<crate::menu_sheet::MenuSheet>>,
+) -> Rc<dyn Fn()> {
+    if let Some(host) = host {
+        let weak = Rc::downgrade(host);
+        Rc::new(move || {
+            if let Some(host) = weak.upgrade() {
+                host.back();
+            }
+        })
+    } else {
+        let weak = window.downgrade();
+        Rc::new(move || {
+            if let Some(window) = weak.upgrade() {
+                window.close();
+            }
+        })
+    }
+}
+
+#[cfg(test)]
 pub fn profiles(parent: &gtk::ApplicationWindow, current: &str, is_private: bool) {
     let catalog = if is_private {
-        Ok(browny::profile_catalog::ProfileCatalog::at(
+        Ok(paisley::profile_catalog::ProfileCatalog::at(
             Path::new(""),
             true,
         ))
     } else {
-        browny::profile_catalog::ProfileCatalog::system(false)
+        paisley::profile_catalog::ProfileCatalog::system(false)
     };
     profiles_with_catalog(parent, current, is_private, catalog);
 }
 
+pub fn profiles_in_sheet(
+    parent: &gtk::ApplicationWindow,
+    current: &str,
+    is_private: bool,
+    menu: &Rc<crate::menu_sheet::MenuSheet>,
+) {
+    let catalog = if is_private {
+        Ok(paisley::profile_catalog::ProfileCatalog::at(
+            Path::new(""),
+            true,
+        ))
+    } else {
+        paisley::profile_catalog::ProfileCatalog::system(false)
+    };
+    build_profiles(parent, current, is_private, catalog, Some(menu));
+}
+
+#[cfg(test)]
 pub(crate) fn profiles_with_catalog(
     parent: &gtk::ApplicationWindow,
     current: &str,
     is_private: bool,
-    catalog: Result<browny::profile_catalog::ProfileCatalog, String>,
+    catalog: Result<paisley::profile_catalog::ProfileCatalog, String>,
+) -> gtk::Window {
+    build_profiles(parent, current, is_private, catalog, None)
+}
+
+fn build_profiles(
+    parent: &gtk::ApplicationWindow,
+    current: &str,
+    is_private: bool,
+    catalog: Result<paisley::profile_catalog::ProfileCatalog, String>,
+    host: Option<&Rc<crate::menu_sheet::MenuSheet>>,
 ) -> gtk::Window {
     let content = contents();
-    let label = gtk::Label::builder().label(format!("Current profile: {current}\nOpening another profile activates its own isolated browser window. An unused ID creates a new profile.")).wrap(true).xalign(0.0).build();
-    content.append(&label);
-    let entry = gtk::Entry::builder()
-        .placeholder_text("Profile ID: work, personal, testing…")
+    let intro = gtk::Label::builder()
+        .label("Separate spaces for work, personal browsing, and everything else.")
+        .wrap(true)
+        .xalign(0.0)
         .build();
-    content.append(&entry);
-    let open = gtk::Button::with_label("Open / switch profile");
-    content.append(&open);
-    let private = gtk::Button::with_label("Open a private window");
-    content.append(&private);
-    let error = gtk::Label::builder().wrap(true).xalign(0.0).build();
-    content.append(&error);
-    let window = gtk::Window::builder()
-        .title("Browny profiles")
-        .transient_for(parent)
-        .destroy_with_parent(true)
-        .modal(true)
-        .default_width(480)
-        .child(&content)
-        .build();
-    if is_private {
-        content.append(&gtk::Label::new(Some(
-            "Profile management is unavailable in private windows.",
-        )));
+    intro.add_css_class("downloads-detail");
+    content.append(&intro);
+    let window: gtk::Window = if host.is_some() {
+        parent.clone().upcast()
     } else {
-        content.append(&gtk::Label::builder().label("Rename changes only the display name, not the stable ID or storage paths. Close a profile before renaming/deleting it. Deletion is permanent and requires confirmation.").wrap(true).xalign(0.0).build());
-        match catalog {
-            Ok(catalog) => {
-                let list = gtk::Box::new(gtk::Orientation::Vertical, 6);
-                let scroll = gtk::ScrolledWindow::builder()
-                    .min_content_height(120)
-                    .max_content_height(300)
-                    .propagate_natural_height(true)
-                    .child(&list)
-                    .build();
-                content.append(&scroll);
-                render_profiles(&list, &window, &error, &catalog);
-            }
-            Err(message) => error.set_text(&message),
-        }
+        gtk::Window::builder()
+            .title("Paisley profiles")
+            .transient_for(parent)
+            .destroy_with_parent(true)
+            .modal(true)
+            .default_width(480)
+            .child(&content)
+            .build()
+    };
+    let finish = finish_callback(&window, host);
+    if host.is_some() {
+        content.set_margin_start(0);
+        content.set_margin_end(0);
+        content.set_margin_top(0);
+        content.set_margin_bottom(0);
     }
-    let weak = window.downgrade();
-    let error_open = error.clone();
-    open.connect_clicked(move |_| {
-        let id = entry.text();
-        let result = Profile::validate_id(&id).and_then(|()| spawn_profile(&id, false));
-        match result {
-            Ok(()) => {
-                if let Some(window) = weak.upgrade() {
-                    window.close();
-                }
+    let error = gtk::Label::builder().wrap(true).xalign(0.0).build();
+    error.add_css_class("error");
+    crate::download_ui::hide_when_empty(&error);
+    let actions = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    let create = gtk::ToggleButton::with_label("Create profile");
+    create.add_css_class("suggested-action");
+    create.set_hexpand(true);
+    let private = gtk::Button::with_label("Private window");
+    private.set_hexpand(true);
+    actions.append(&create);
+    actions.append(&private);
+    content.append(&actions);
+    let form = gtk::Box::new(gtk::Orientation::Vertical, 10);
+    form.add_css_class("profile-create");
+    form.append(&crate::download_ui::label(
+        "New profile",
+        "downloads-filename",
+    ));
+    let entry = gtk::Entry::builder()
+        .placeholder_text("Profile ID, e.g. work")
+        .max_length(64)
+        .build();
+    entry.set_tooltip_text(Some(
+        "Use letters, digits, hyphens or underscores. You can change its display name later.",
+    ));
+    form.append(&entry);
+    let helper = gtk::Label::builder()
+        .label("Opens in a separate window with its own history, bookmarks, and sign-ins.")
+        .wrap(true)
+        .xalign(0.0)
+        .build();
+    helper.add_css_class("downloads-detail");
+    form.append(&helper);
+    let create_actions = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    let cancel = gtk::Button::with_label("Cancel");
+    let open = gtk::Button::with_label("Create and open");
+    open.add_css_class("suggested-action");
+    open.set_hexpand(true);
+    create_actions.append(&cancel);
+    create_actions.append(&open);
+    form.append(&create_actions);
+    let reveal = gtk::Revealer::builder()
+        .child(&form)
+        .transition_type(gtk::RevealerTransitionType::SlideDown)
+        .transition_duration(120)
+        .build();
+    create
+        .bind_property("active", &reveal, "reveal-child")
+        .sync_create()
+        .build();
+    let weak_entry = entry.downgrade();
+    create.connect_toggled(move |button| {
+        if button.is_active()
+            && let Some(entry) = weak_entry.upgrade()
+        {
+            entry.grab_focus();
+        }
+    });
+    let weak_create = create.downgrade();
+    let cancel_entry = entry.downgrade();
+    let cancel_error = error.downgrade();
+    cancel.connect_clicked(move |_| {
+        if let Some(create) = weak_create.upgrade() {
+            create.set_active(false);
+        }
+        if let Some(entry) = cancel_entry.upgrade() {
+            entry.set_text("");
+        }
+        if let Some(error) = cancel_error.upgrade() {
+            error.set_text("");
+        }
+    });
+    let weak_error = error.downgrade();
+    entry.connect_changed(move |_| {
+        if let Some(error) = weak_error.upgrade() {
+            error.set_text("");
+        }
+    });
+    let weak_open = open.downgrade();
+    entry.connect_activate(move |_| {
+        if let Some(open) = weak_open.upgrade() {
+            open.emit_clicked();
+        }
+    });
+    content.append(&reveal);
+    content.append(&error);
+    let query = gtk::SearchEntry::builder()
+        .placeholder_text("Find a profile")
+        .build();
+    content.append(&query);
+    let list = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    list.set_vexpand(true);
+    content.append(&list);
+    let catalog = match catalog {
+        Ok(catalog) if !is_private => Some(catalog),
+        Ok(_) => None,
+        Err(message) => {
+            error.set_text(&message);
+            None
+        }
+    };
+    create.set_sensitive(catalog.is_some());
+    query.set_sensitive(catalog.is_some());
+    if let Some(catalog) = catalog.clone() {
+        render_profiles(&list, &window, &error, &catalog, &finish, current, "");
+        let (weak_list, weak_window, weak_error, finish, current) = (
+            list.downgrade(),
+            window.downgrade(),
+            error.downgrade(),
+            finish.clone(),
+            current.to_owned(),
+        );
+        query.connect_search_changed(move |query| {
+            if let (Some(list), Some(window), Some(error)) = (
+                weak_list.upgrade(),
+                weak_window.upgrade(),
+                weak_error.upgrade(),
+            ) {
+                render_profiles(
+                    &list,
+                    &window,
+                    &error,
+                    &catalog,
+                    &finish,
+                    &current,
+                    &query.text(),
+                );
             }
+        });
+    } else if is_private {
+        let notice=gtk::Label::builder().label("Private browsing keeps this session temporary. Saved profiles are managed from a regular window.").wrap(true).xalign(0.0).build();
+        notice.add_css_class("downloads-detail");
+        list.append(&notice);
+    }
+    let (done, error_open) = (finish.clone(), error.clone());
+    open.connect_clicked(move |_| {
+        let id = entry.text().trim().to_owned();
+        let result = Profile::validate_id(&id)
+            .map_err(|_| {
+                "Use 1–64 letters, digits, hyphens, or underscores for the profile ID.".to_owned()
+            })
+            .and_then(|()| {
+                let catalog = catalog
+                    .as_ref()
+                    .ok_or("Profile management is unavailable")?;
+                if catalog.list()?.iter().any(|profile| profile.id == id) {
+                    return Err("That profile already exists. Open it from the list below.".into());
+                }
+                spawn_profile(&id, false)
+            });
+        match result {
+            Ok(()) => done(),
             Err(message) => error_open.set_text(&message),
         }
     });
-    let weak = window.downgrade();
+    let done = finish.clone();
     private.connect_clicked(move |_| match spawn_profile("private", true) {
-        Ok(()) => {
-            if let Some(window) = weak.upgrade() {
-                window.close();
-            }
-        }
+        Ok(()) => done(),
         Err(message) => error.set_text(&message),
     });
-    window.present();
+    if let Some(host) = host {
+        let scroll = gtk::ScrolledWindow::builder()
+            .child(&content)
+            .vexpand(true)
+            .hscrollbar_policy(gtk::PolicyType::Never)
+            .build();
+        host.show_page("Profiles", &scroll, ());
+    } else {
+        window.present();
+    }
     window
 }
 
@@ -362,52 +605,129 @@ fn render_profiles(
     list: &gtk::Box,
     window: &gtk::Window,
     error: &gtk::Label,
-    catalog: &browny::profile_catalog::ProfileCatalog,
+    catalog: &paisley::profile_catalog::ProfileCatalog,
+    finish: &Rc<dyn Fn()>,
+    current: &str,
+    query: &str,
 ) {
     while let Some(child) = list.first_child() {
         list.remove(&child);
     }
-    let entries = match catalog.list() {
+    let mut entries = match catalog.list() {
         Ok(entries) => entries,
         Err(message) => {
             error.set_text(&message);
             return;
         }
     };
+    entries.sort_by(|a, b| {
+        (a.id != current, a.name.to_lowercase()).cmp(&(b.id != current, b.name.to_lowercase()))
+    });
+    let query = query.to_lowercase();
+    entries.retain(|profile| {
+        profile.name.to_lowercase().contains(&query) || profile.id.to_lowercase().contains(&query)
+    });
+    if entries.is_empty() {
+        let empty = gtk::Label::builder()
+            .label(if query.is_empty() {
+                "No saved profiles yet"
+            } else {
+                "No matching profiles"
+            })
+            .margin_top(24)
+            .margin_bottom(24)
+            .build();
+        empty.add_css_class("dim-label");
+        list.append(&empty);
+    }
     for profile in entries {
-        let row = gtk::Box::new(gtk::Orientation::Vertical, 4);
-        row.append(
-            &gtk::Label::builder()
-                .label(format!("Profile ID: {}", profile.id))
-                .xalign(0.0)
-                .selectable(true)
-                .build(),
-        );
-        let controls = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+        let active = profile.id == current;
+        let row = gtk::Box::new(gtk::Orientation::Vertical, 10);
+        row.add_css_class("profile-row");
+        let identity = gtk::Box::new(gtk::Orientation::Horizontal, 12);
+        let initial = profile
+            .name
+            .chars()
+            .next()
+            .unwrap_or('P')
+            .to_uppercase()
+            .collect::<String>();
+        let avatar = gtk::Label::builder()
+            .label(initial)
+            .width_request(38)
+            .height_request(38)
+            .valign(gtk::Align::Center)
+            .build();
+        avatar.add_css_class("profile-avatar");
+        identity.append(&avatar);
+        let text = gtk::Box::new(gtk::Orientation::Vertical, 3);
+        text.set_hexpand(true);
+        text.append(&crate::download_ui::label(
+            &profile.name,
+            "downloads-filename",
+        ));
+        let detail = crate::download_ui::label(&profile.id, "downloads-detail");
+        detail.set_tooltip_text(Some("Stable profile ID"));
+        text.append(&detail);
+        identity.append(&text);
+        if active {
+            let badge = gtk::Label::new(Some("Current"));
+            badge.add_css_class("profile-current");
+            identity.append(&badge);
+        } else {
+            let open = gtk::Button::with_label("Open");
+            open.set_valign(gtk::Align::Center);
+            let (done, error, id) = (finish.clone(), error.clone(), profile.id.clone());
+            open.connect_clicked(move |_| match spawn_profile(&id, false) {
+                Ok(()) => done(),
+                Err(message) => error.set_text(&message),
+            });
+            identity.append(&open);
+        }
+        let more = gtk::ToggleButton::new();
+        more.set_child(Some(&gtk::Image::from_icon_name(
+            "lucide-ellipsis-symbolic",
+        )));
+        more.add_css_class("flat");
+        more.set_valign(gtk::Align::Center);
+        more.set_tooltip_text(Some("Profile options"));
+        identity.append(&more);
+        row.append(&identity);
+        let options = gtk::Box::new(gtk::Orientation::Vertical, 10);
+        options.add_css_class("profile-options");
         let name = gtk::Entry::builder()
             .text(&profile.name)
-            .hexpand(true)
+            .max_length(128)
             .build();
-        controls.append(&name);
-        let rename = gtk::Button::with_label("Rename");
-        controls.append(&rename);
-        let delete = gtk::Button::with_label("Delete…");
-        controls.append(&delete);
-        row.append(&controls);
+        name.set_sensitive(!active);
+        name.set_tooltip_text(Some("Display name"));
+        options.append(&crate::download_ui::label(
+            "Display name",
+            "downloads-detail",
+        ));
+        options.append(&name);
+        let buttons = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+        let rename = gtk::Button::with_label("Save name");
+        rename.set_sensitive(!active);
+        let delete = gtk::Button::with_label("Delete profile…");
+        delete.add_css_class("destructive-action");
+        delete.set_sensitive(!active);
+        buttons.append(&rename);
+        buttons.append(&delete);
+        options.append(&buttons);
+        let note=gtk::Label::builder().label(if active {"Close this profile before renaming or deleting it."}else{"Renaming keeps the profile ID and browsing data. Close the profile before editing it."}).wrap(true).xalign(0.0).build();
+        note.add_css_class("downloads-detail");
+        options.append(&note);
+        let reveal = gtk::Revealer::builder()
+            .child(&options)
+            .transition_type(gtk::RevealerTransitionType::SlideDown)
+            .transition_duration(120)
+            .build();
+        more.bind_property("active", &reveal, "reveal-child")
+            .sync_create()
+            .build();
+        row.append(&reveal);
         list.append(&row);
-        let open = gtk::Button::with_label("Open");
-        controls.append(&open);
-        let weak_window = window.downgrade();
-        let open_error = error.clone();
-        let open_id = profile.id.clone();
-        open.connect_clicked(move |_| match spawn_profile(&open_id, false) {
-            Ok(()) => {
-                if let Some(window) = weak_window.upgrade() {
-                    window.close();
-                }
-            }
-            Err(message) => open_error.set_text(&message),
-        });
         let (weak_list, weak_window, error, catalog, id) = (
             list.downgrade(),
             window.downgrade(),
@@ -415,35 +735,63 @@ fn render_profiles(
             catalog.clone(),
             profile.id.clone(),
         );
-        let rename_list = weak_list.clone();
-        let rename_window = weak_window.clone();
-        let rename_error = error.clone();
-        let rename_catalog = catalog.clone();
-        let rename_id = id.clone();
+        let (
+            rename_list,
+            rename_window,
+            rename_error,
+            rename_catalog,
+            rename_id,
+            rename_finish,
+            rename_current,
+            rename_query,
+        ) = (
+            weak_list.clone(),
+            weak_window.clone(),
+            error.clone(),
+            catalog.clone(),
+            id.clone(),
+            finish.clone(),
+            current.to_owned(),
+            query.clone(),
+        );
         rename.connect_clicked(move |_| {
             let (Some(list), Some(window)) = (rename_list.upgrade(), rename_window.upgrade())
             else {
                 return;
             };
-            match rename_catalog.rename(&rename_id, &name.text()) {
+            if !list.is_mapped() {
+                return;
+            }
+            match rename_catalog.rename(&rename_id, name.text().trim()) {
                 Ok(()) => {
                     rename_error.set_text("");
-                    render_profiles(&list, &window, &rename_error, &rename_catalog);
+                    render_profiles(
+                        &list,
+                        &window,
+                        &rename_error,
+                        &rename_catalog,
+                        &rename_finish,
+                        &rename_current,
+                        &rename_query,
+                    );
                 }
                 Err(message) => rename_error.set_text(&message),
             }
         });
-        delete.connect_clicked(move |_| {
-            let Some(window) = weak_window.upgrade() else { return; };
-            let dialog = gtk::AlertDialog::builder().message(format!("Delete profile {id}?")).detail("Permanently deletes this profile's settings, bookmarks, history, session, cookies, website data, download records and cache. Downloaded files outside the profile are not deleted. Deletion across folders may only partly succeed. Close the profile before deleting it.").buttons(["Cancel", "Delete profile"]).cancel_button(0).default_button(0).modal(true).build();
-            let (weak_list, weak_window, error, catalog, id) = (weak_list.clone(), weak_window.clone(), error.clone(), catalog.clone(), id.clone());
-            dialog.choose(Some(&window), None::<&gtk::gio::Cancellable>, move |choice| {
-                if choice != Ok(1) { return; }
-                let (Some(list), Some(window)) = (weak_list.upgrade(), weak_window.upgrade()) else { return; };
-                if !window.is_visible() { return; }
-                match catalog.delete(&id, true) {
-                    Ok(()) => { error.set_text(""); render_profiles(&list, &window, &error, &catalog); }
-                    Err(message) => error.set_text(&message),
+        let (finish, current, query) = (finish.clone(), current.to_owned(), query.clone());
+        delete.connect_clicked(move |_|{
+            let Some(parent)=weak_window.upgrade()else{return;};
+            let dialog=gtk::AlertDialog::builder().message(format!("Delete profile {id}?"))
+                .detail("Permanently deletes this profile’s settings, history, bookmarks, cookies, sessions, download records, and cache. Downloaded files outside the profile are kept. Close the profile first. Deletion across folders may only partly succeed.")
+                .buttons(["Cancel","Delete profile"]).cancel_button(0).default_button(0).modal(true).build();
+            let (list,window,error,catalog,id,finish,current,query)=(weak_list.clone(),weak_window.clone(),error.clone(),catalog.clone(),id.clone(),finish.clone(),current.clone(),query.clone());
+            dialog.choose(Some(&parent),None::<&gtk::gio::Cancellable>,move |choice|{
+                if choice!=Ok(1){return;}
+                let (Some(list),Some(window))=(list.upgrade(),window.upgrade())else{return;};
+                if !list.is_mapped()||!window.is_visible(){return;}
+                match catalog.delete(&id,true){
+                    Ok(())=>{error.set_text("");render_profiles(&list,&window,&error,&catalog,&finish,&current,&query);},
+                    Err(message)=>error.set_text(&message),
                 }
             });
         });

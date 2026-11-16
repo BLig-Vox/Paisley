@@ -1,0 +1,31 @@
+.downloads-sheet { background: @theme_bg_color; color: @theme_fg_color; border: none; border-left: 1px solid alpha(@theme_fg_color, 0.16); border-radius: 0; box-shadow: none; padding: 16px; }
+.downloads-heading { font-size: 22px; font-weight: 700; }
+.downloads-section { font-size: 11px; font-weight: 700; opacity: 0.65; margin-top: 10px; margin-bottom: 6px; }
+.downloads-row { padding: 12px 4px; border-bottom: 1px solid alpha(@theme_fg_color, 0.10); }
+.downloads-filename { font-weight: 600; }
+.downloads-detail { font-size: 12px; opacity: 0.72; }
+.downloads-empty { padding: 32px; }
+.downloads-row progressbar trough { min-height: 4px; }
+.downloads-row progressbar progress { min-height: 4px; }
+
+.menu-sheet { background: @theme_bg_color; }
+.menu-section { font-size: 10px; font-weight: 600; letter-spacing: 1px; opacity: 0.5; margin-top: 12px; margin-bottom: 4px; }
+.menu-row { border-radius: 7px; padding: 3px 8px; }
+.menu-row:hover { background: alpha(@theme_fg_color, 0.05); }
+.menu-sheet .downloads-heading, .secondary-sheet .downloads-heading { font-size: 20px; font-weight: 600; }
+.secondary-sheet { background: @theme_base_color; }
+.secondary-sheet entry, .secondary-sheet searchentry { border-radius: 6px; }
+.setting-row { padding: 8px 0; border-bottom: 1px solid alpha(@theme_fg_color, 0.06); }
+.library-row { padding: 10px 0; border-bottom: 1px solid alpha(@theme_fg_color, 0.07); }
+.library-row button { padding: 3px 0; }
+.menu-row.selected-section { background: alpha(@theme_selected_bg_color, 0.09); }
+.profile-row { padding: 16px 0; border-bottom: 1px solid alpha(@theme_fg_color, 0.08); }
+.profile-avatar { border-radius: 12px; background: alpha(@theme_selected_bg_color, 0.10); color: @theme_fg_color; font-size: 17px; font-weight: 600; }
+.profile-current { font-size: 11px; color: @theme_selected_bg_color; background: alpha(@theme_selected_bg_color, 0.08); border-radius: 6px; padding: 4px 7px; }
+.profile-create, .profile-options { padding: 12px; background: alpha(@theme_fg_color, 0.025); border-radius: 8px; }
+
+.browsing-site { padding: 8px 0 14px; border-bottom: 1px solid alpha(@theme_fg_color, 0.08); }
+.bookmark-editor { padding: 14px; background: alpha(@theme_fg_color, 0.025); border-radius: 8px; }
+.library-row button { padding: 6px; }
+
+.site-initial { min-width: 28px; min-height: 28px; border-radius: 7px; background: alpha(@theme_selected_bg_color, 0.09); color: @theme_fg_color; font-size: 13px; font-weight: 600; }

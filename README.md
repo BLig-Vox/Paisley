@@ -1,8 +1,31 @@
-# Browny
+# Paisley
+
+Formerly Browny. The executable is `paisley`; the Cargo package is `vox-paisley`
+on crates.io. Existing profiles continue to use the `browny` storage
+directories below, so this rename preserves settings, sessions and site data.
+The internal `browny:home` address remains an alias for `paisley:home`.
+MCP and diagnostic environment variables now use the `PAISLEY_` prefix.
+
 
 A Linux-first web browser written in **Rust**, with **GTK4** for the native
 interface and **WebKitGTK** for rendering and JavaScript. Default window:
 **1280 × 800**.
+
+## Install
+
+```sh
+cargo install vox-paisley --version 0.1.0 --locked
+```
+
+The executable is `paisley`. Building requires the Linux development libraries and
+Pango 1.55+ SDK described below. WebKitGTK 6, GTK 4.10+, GStreamer codecs and
+system fonts must also be installed on the machine running the browser; see
+[Runtime dependencies](docs/PACKAGING.md). The Cargo install does not install
+those system packages.
+
+Prebuilt Linux assets are available from
+[GitHub Releases](https://github.com/BLig-Vox/Browny/releases). This first release
+is a prerelease; platform requirements and checksums accompany the binary.
 
 ## Current features
 
@@ -23,8 +46,8 @@ interface and **WebKitGTK** for rendering and JavaScript. Default window:
 - **Private windows** with ephemeral website storage and no persisted browser
   profile settings/restore/history records. Private bookmarks are temporary.
 - **Per-profile bookmarks and searchable history** with native managers. Ctrl+D
-  bookmarks the current page; Ctrl+H opens history. History recording has a Settings
-  opt-out; clearing history and removing bookmarks require confirmation. Native
+  opens the bookmark editor; Ctrl+H opens history. History recording has a Settings
+  opt-out; clearing history requires confirmation; bookmark editing and removal use an inline sheet. Native
   [bookmark JSON import/export](docs/BOOKMARK_TRANSFER.md) uses a bounded additive,
   confirmed merge; private imports stay temporary and explicit exports survive close.
 - Native **Web Inspector**, including the engine's console, DOM/CSS inspection,
@@ -82,12 +105,12 @@ lists, permission management, library/settings expansion, release hardening and
 representative performance budgets remain roadmap work. Reproducible owned-fixture
 release baselines are available in [docs/PERFORMANCE.md](docs/PERFORMANCE.md);
 unsigned local-development packaging is documented in [docs/PACKAGING.md](docs/PACKAGING.md).
-Neither establishes production or redistribution readiness.
+These checks do not establish production readiness.
 
 **New requested MCP direction (not implemented):** headless page/browser surface, with
-an always-visible trusted control status that identifies the selected Browny profile
+an always-visible trusted control status that identifies the selected Paisley profile
 or Incognito and provides Stop. The user wants an explicit choice to use a selected
-Browny profile's existing site sign-ins. Current MCP still uses a separate disposable
+Paisley profile's existing site sign-ins. Current MCP still uses a separate disposable
 fixture-only profile and cannot access personal sessions. No Google/live account has
 been accessed. See the [updated automation requirements](ROADMAP.md#visible-agent-control-and-mcp).
 
@@ -96,6 +119,9 @@ been accessed. See the [updated automation requirements](ROADMAP.md#visible-agen
 - Linux with a graphical desktop session.
 - Rust **1.92+**, Cargo, a C toolchain and `pkg-config`.
 - GTK **4.10+**, WebKitGTK **2.40+**, **6.0 API** (GTK4-compatible).
+- The locked Rust bindings also require Pango **1.55+** development files to build.
+  Stock Ubuntu 24.04 provides Pango 1.52, so its development packages alone
+  cannot build this lockfile; use a compatible newer SDK.
 - Rust crates: `gtk4` 0.11, `webkit6` 0.6, `url`, `serde`, `serde_json`.
 
 The 6.0 API version is not the WebKit engine release number. Keep the system
@@ -132,7 +158,7 @@ Release build:
 
 ```sh
 cargo build --release --locked
-./target/release/browny --profile work
+./target/release/paisley --profile work
 ```
 
 If working inside Distrobox with development tools installed on the host, prefix
@@ -200,7 +226,7 @@ bookmarks at most 256. Old history may be removed earlier to keep the record und
 its size budget; bookmarks are never silently evicted. Titles are capped at 256
 characters and URLs at 2,048 bytes. Managers show up to 200 search matches at once.
 Private history is never recorded; private bookmarks live only in memory.
-Browny bookmark JSON import/export is supported; folders, common browser HTML
+Paisley bookmark JSON import/export is supported; folders, common browser HTML
 interchange, history import/export, sync and a complete visit-by-visit history
 database are not implemented. Session, library and download-record files are
 independently atomic, not one cross-file transaction.
@@ -211,6 +237,20 @@ downloads remain on disk. Private browsing cannot prevent OS swap/crash traces,
 network/server records, or identification by websites.
 
 ## Downloads and security boundaries
+
+Advanced direct transfers are available through **New download…** in Downloads:
+pause/resume, up to four validated range connections, two concurrent jobs,
+speed limits, retries, durable checkpoints and optional publisher SHA-256.
+See [managed downloads](docs/MANAGED_DOWNLOADS.md) for recovery behavior and
+browser-session integration.
+
+Downloads open as a full-width sheet in the browser content area (toolbar or
+Ctrl+J), with aligned File, Size, Status, Date and Actions columns. There is no
+floating window, card or dimmed backdrop. Return to the page with Escape, the
+close button, or the Downloads toolbar button. Closing the sheet keeps transfers
+running. File rows show bundled file-type icons, progress and readable local dates.
+Icons are inferred from the filename; they do not inspect or validate file
+contents. Reveal, cancel and retry remain explicit actions.
 
 Downloads ask for a fresh local destination and keep WebKit's overwrite policy
 disabled. Choose a new filename if a file already exists. Suggested names are
@@ -242,7 +282,7 @@ cover native disk-full failure and destination permission denial/retry; see the
 [verified subset and limits](docs/DOWNLOAD_FAILURES.md). Pause/resume, restart
 recovery of in-progress transfers and a full failure matrix remain outstanding.
 
-WebKit's TLS, origin and process-security defaults are retained. Browny explicitly
+WebKit's TLS, origin and process-security defaults are retained. Paisley explicitly
 **denies permission requests** and explains the missing verified requesting-origin
 association; it does not substitute the top-level URL for an unknown requesting
 frame. Camera, microphone, location and related workflows may be unavailable.
@@ -264,10 +304,10 @@ cargo fmt --check
 cargo test --locked
 cargo clippy --locked --all-targets -- -D warnings
 cargo build --locked
-cargo test --locked --bin browny browser_smoke -- --ignored --test-threads=1
+cargo test --locked --bin paisley browser_smoke -- --ignored --test-threads=1
 python3 -I tests/test_mcp.py
-python3 -I tests/mcp_smoke.py /absolute/path/to/target/debug/browny
-python3 -I tests/mcp_https_smoke.py /absolute/path/to/target/debug/browny
+python3 -I tests/mcp_smoke.py /absolute/path/to/target/debug/paisley
+python3 -I tests/mcp_https_smoke.py /absolute/path/to/target/debug/paisley
 ```
 
 **Current reliability status:** a private isolated core established SIGSEGV in a
@@ -323,12 +363,12 @@ foreign-origin denial, unchanged-geometry label changes, PNG and process cleanup
 The programmatic smoke test ignores unrelated native desktop keypresses so they
 cannot contaminate address drafts; it does not claim to test physical shortcuts.
 
-`BROWNY_SCREENSHOT=/absolute/path.png` captures the test browser window;
-`BROWNY_LIBRARY_SCREENSHOT=/absolute/path.png` captures the filtered history manager;
-`BROWNY_DOWNLOADS_SCREENSHOT=/absolute/path.png` captures restored download records.
-`BROWNY_GRANT_SCREENSHOT` and `BROWNY_CONSENT_SCREENSHOT` capture native automation
+`PAISLEY_SCREENSHOT=/absolute/path.png` captures the test browser window;
+`PAISLEY_LIBRARY_SCREENSHOT=/absolute/path.png` captures the filtered history manager;
+`PAISLEY_DOWNLOADS_SCREENSHOT=/absolute/path.png` captures restored download records.
+`PAISLEY_GRANT_SCREENSHOT` and `PAISLEY_CONSENT_SCREENSHOT` capture native automation
 consent windows; use new absolute PNG paths.
-Optional `BROWNY_LIVE_DUCKDUCKGO=1` and `BROWNY_LIVE_DUCKAI=1` add public-site
+Optional `PAISLEY_LIVE_DUCKDUCKGO=1` and `PAISLEY_LIVE_DUCKAI=1` add public-site
 checks; they require network access and do not submit chat messages.
 
 ## Source map
@@ -359,4 +399,4 @@ checks; they require network access and do not submit chat messages.
 
 ## License
 
-Browny is made available under the MIT License. See [LICENSE](LICENSE).
+Paisley is made available under the MIT License. See [LICENSE](LICENSE).

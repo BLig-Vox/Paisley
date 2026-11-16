@@ -10,7 +10,7 @@ import unittest
 from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "package.py"
-DESKTOP = Path(__file__).resolve().parents[1] / "packaging" / "site.blig.Browny.desktop"
+DESKTOP = Path(__file__).resolve().parents[1] / "packaging" / "site.blig.Paisley.desktop"
 
 
 class PackageTests(unittest.TestCase):
@@ -18,7 +18,7 @@ class PackageTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        self.binary = self.root / "browny"
+        self.binary = self.root / "paisley"
         self.binary.write_bytes(b"dummy release executable\x00\xff")
         self.binary.chmod(0o755)
         self.output = self.root / "out.tar.gz"
@@ -26,7 +26,7 @@ class PackageTests(unittest.TestCase):
     def run_package(self, *args):
         return subprocess.run(
             [sys.executable, "-I", str(SCRIPT), "--binary", str(self.binary),
-             "--output", str(self.output), "--prefix", "/opt/browny",
+             "--output", str(self.output), "--prefix", "/opt/paisley",
              "--source-date-epoch", "123456789", *args],
             text=True, capture_output=True,
         )
@@ -42,10 +42,10 @@ class PackageTests(unittest.TestCase):
         with tarfile.open(self.output, "r:gz") as archive:
             members = archive.getmembers()
             expected = [
-                "opt/browny/bin/browny",
-                "opt/browny/share/applications/site.blig.Browny.desktop",
-                "opt/browny/share/doc/browny/MANIFEST.json",
-                "opt/browny/share/doc/browny/PACKAGING.md",
+                "opt/paisley/bin/paisley",
+                "opt/paisley/share/applications/site.blig.Paisley.desktop",
+                "opt/paisley/share/doc/paisley/MANIFEST.json",
+                "opt/paisley/share/doc/paisley/PACKAGING.md",
             ]
             self.assertEqual([item.name for item in members], expected)
             for member in members:
@@ -56,11 +56,11 @@ class PackageTests(unittest.TestCase):
             manifest = json.load(archive.extractfile(members[2]))
             self.assertEqual(binary, self.binary.read_bytes())
             desktop = archive.extractfile(members[1]).read()
-            self.assertIn(b"Exec=/opt/browny/bin/browny\n", desktop)
+            self.assertIn(b"Exec=/opt/paisley/bin/paisley\n", desktop)
             expected_hashes = {
-                "bin/browny": hashlib.sha256(binary).hexdigest(),
-                "share/applications/site.blig.Browny.desktop": hashlib.sha256(DESKTOP.read_bytes().replace(b"Exec=browny\n", b"Exec=/opt/browny/bin/browny\n")).hexdigest(),
-                "share/doc/browny/PACKAGING.md": hashlib.sha256((DESKTOP.parents[1] / "docs" / "PACKAGING.md").read_bytes()).hexdigest(),
+                "bin/paisley": hashlib.sha256(binary).hexdigest(),
+                "share/applications/site.blig.Paisley.desktop": hashlib.sha256(DESKTOP.read_bytes().replace(b"Exec=paisley\n", b"Exec=/opt/paisley/bin/paisley\n")).hexdigest(),
+                "share/doc/paisley/PACKAGING.md": hashlib.sha256((DESKTOP.parents[1] / "docs" / "PACKAGING.md").read_bytes()).hexdigest(),
             }
             self.assertEqual(manifest, {"files": expected_hashes})
         self.output.unlink()
@@ -87,7 +87,7 @@ class PackageTests(unittest.TestCase):
         self.assertFalse(self.output.exists(), "invalid timestamp left a partial archive")
 
     def test_rejects_noncanonical_or_launcher_unsafe_prefix(self):
-        for index, prefix in enumerate(("/opt/a b", "/opt/%f", "/opt/../browny", "//opt/browny", "/opt/./browny", "/opt/" + "x" * 101)):
+        for index, prefix in enumerate(("/opt/a b", "/opt/%f", "/opt/../paisley", "//opt/paisley", "/opt/./paisley", "/opt/" + "x" * 101)):
             with self.subTest(prefix=prefix):
                 output = self.root / f"invalid-{index}.tar.gz"
                 result = self.run_package("--prefix", prefix, "--output", str(output))
@@ -106,7 +106,7 @@ class PackageTests(unittest.TestCase):
 
     def test_desktop_launcher_matches_cli_and_has_no_url_handler(self):
         text = DESKTOP.read_text()
-        self.assertIn("Exec=browny", text)
+        self.assertIn("Exec=paisley", text)
         self.assertIn("Icon=web-browser", text)
         self.assertNotIn("%u", text)
         self.assertNotIn("MimeType=", text)

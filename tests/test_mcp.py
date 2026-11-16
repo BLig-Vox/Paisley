@@ -8,7 +8,7 @@ import socket
 import threading
 from unittest.mock import patch
 
-spec = importlib.util.spec_from_file_location('browny_mcp', Path(__file__).resolve().parents[1] / 'assets/mcp.py')
+spec = importlib.util.spec_from_file_location('paisley_mcp', Path(__file__).resolve().parents[1] / 'assets/mcp.py')
 mcp = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(mcp)
 
@@ -92,7 +92,7 @@ class ProtocolTests(unittest.TestCase):
     def test_trust_reader_rejects_symlinks_private_keys_and_oversized_files(self):
         load = getattr(mcp, 'load_trust_bundle', None)
         self.assertTrue(callable(load), 'Bounded public-only CA reader is not implemented')
-        with tempfile.TemporaryDirectory(prefix='browny-trust-test-') as directory:
+        with tempfile.TemporaryDirectory(prefix='paisley-trust-test-') as directory:
             root = Path(directory)
             source = root / 'input.pem'
             for data in [b'-----BEGIN PRIVATE KEY-----\ndummy\n-----END PRIVATE KEY-----\n', b'not a certificate', b'A' * (2 * 1024 * 1024 + 1)]:

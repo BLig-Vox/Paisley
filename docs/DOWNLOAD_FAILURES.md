@@ -19,14 +19,14 @@ These extend coverage of **existing production behavior**. They passed on first 
 Use the already-installed host toolchain and Wayland dependencies; no package installation or host filesystem mounting is needed:
 
 ```sh
-cargo test --offline --locked --bin browny --no-run
+cargo test --offline --locked --bin paisley --no-run
 python3 -I scripts/smoke_isolated.py \
-  /absolute/path/to/target/debug/deps/browny-TEST_HASH
+  /absolute/path/to/target/debug/deps/paisley-TEST_HASH
 ```
 
-Use Cargo's reported test-executable path, not `target/debug/browny`. Prefix commands with `distrobox-host-exec` when tools are on the host.
+Use Cargo's reported test-executable path, not `target/debug/paisley`. Prefix commands with `distrobox-host-exec` when tools are on the host.
 
-The runner always creates the limited tmpfs **inside its mandatory private mount/user/network/PID/IPC namespace** and sets `BROWNY_DOWNLOAD_CAPACITY_FIXTURE` there. The test checks the exact path and tmpfs mount/size before a bounded 2-MiB probe establishes real ENOSPC; that probe is removed before the native download. No host disk is filled. Public networking, personal profile roots and host session D-Bus remain unavailable. No engine security default is weakened.
+The runner always creates the limited tmpfs **inside its mandatory private mount/user/network/PID/IPC namespace** and sets `PAISLEY_DOWNLOAD_CAPACITY_FIXTURE` there. The test checks the exact path and tmpfs mount/size before a bounded 2-MiB probe establishes real ENOSPC; that probe is removed before the native download. No host disk is filled. Public networking, personal profile roots and host session D-Bus remain unavailable. No engine security default is weakened.
 
 An ordinary graphical smoke invocation without that fixture variable explicitly prints a skip for these I/O cases; it must not be presented as disk-full coverage. These cases are subchecks of the existing single GTK test, not additional headless tests. Non-Linux or differently sized/mounted filesystems are not silently accepted as equivalent fixtures.
 

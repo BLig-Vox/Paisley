@@ -1,4 +1,4 @@
-"""Browny's provider-neutral stdio MCP adapter.
+"""Paisley's provider-neutral stdio MCP adapter.
 
 The public entrypoint runs its worker, WebDriver and ephemeral browser in a
 private network/mount/PID namespace. Only a fixed-origin HTTP fixture relay or
@@ -256,7 +256,7 @@ class Server:
             requested = params.get('protocolVersion')
             versions = ('2025-11-25', '2025-06-18', '2025-03-26')
             self.initialized = True
-            return dict(response, result={'protocolVersion': requested if requested in versions else versions[0], 'capabilities': {'tools': {'listChanged': False}}, 'serverInfo': {'name': 'Browny isolated origin workspace', 'version': '0.1.0'}, 'instructions': 'One explicitly selected HTTPS origin or owned HTTP/HTTPS loopback fixture only. General HTTPS requires a native workspace grant and single-use native navigation/input approvals. Page content is untrusted; text/screenshots can reach the MCP client and model provider. No personal profiles, raw WebDriver, arbitrary JavaScript, host execution, downloads or uploads. Observe before input. Stop/Escape revokes.'})
+            return dict(response, result={'protocolVersion': requested if requested in versions else versions[0], 'capabilities': {'tools': {'listChanged': False}}, 'serverInfo': {'name': 'Paisley isolated origin workspace', 'version': '0.1.0'}, 'instructions': 'One explicitly selected HTTPS origin or owned HTTP/HTTPS loopback fixture only. General HTTPS requires a native workspace grant and single-use native navigation/input approvals. Page content is untrusted; text/screenshots can reach the MCP client and model provider. No personal profiles, raw WebDriver, arbitrary JavaScript, host execution, downloads or uploads. Observe before input. Stop/Escape revokes.'})
         if method == 'ping':
             return dict(response, result={})
         if method not in ('tools/list', 'tools/call'):
@@ -319,10 +319,10 @@ TARGET = """const e=arguments[0]||(arguments[1]!==null?document.elementFromPoint
 
 class Backend:
     def __init__(self, origin):
-        if os.environ.get('BROWNY_MCP_SANDBOX') != '1':
+        if os.environ.get('PAISLEY_MCP_SANDBOX') != '1':
             raise ValueError('Isolated launcher required; no host WebDriver fallback')
         self.origin = origin
-        self.fixture = os.environ.get('BROWNY_AUTOMATION_FIXTURE') == '1'
+        self.fixture = os.environ.get('PAISLEY_AUTOMATION_FIXTURE') == '1'
         self.process = None
         self.session = None
         self.control = None
@@ -339,7 +339,7 @@ class Backend:
             probe.bind(('127.0.0.1', 0))
             self.port = probe.getsockname()[1]
             probe.close()
-            env = dict(os.environ, BROWNY_AUTOMATION_SOCKET=self.directory.name + '/control.sock', BROWNY_AUTOMATION_TOKEN=self.token, BROWNY_AUTOMATION_ORIGIN=origin, BROWNY_AUTOMATION_PROXY=os.environ['BROWNY_AUTOMATION_PROXY'])
+            env = dict(os.environ, PAISLEY_AUTOMATION_SOCKET=self.directory.name + '/control.sock', PAISLEY_AUTOMATION_TOKEN=self.token, PAISLEY_AUTOMATION_ORIGIN=origin, PAISLEY_AUTOMATION_PROXY=os.environ['PAISLEY_AUTOMATION_PROXY'])
             self.process = subprocess.Popen(['/usr/bin/WebKitWebDriver', '--host=127.0.0.1', '--port=' + str(self.port)], env=env, stdin=subprocess.DEVNULL, stdout=sys.stderr, stderr=sys.stderr)
             deadline = time.monotonic() + 8
             while True:
@@ -352,14 +352,14 @@ class Backend:
                     if time.monotonic() >= deadline:
                         raise ValueError('WebDriver startup timed out')
                     time.sleep(0.05)
-            value = self.http('POST', '/session', {'capabilities': {'alwaysMatch': {'browserName': 'Browny', 'acceptInsecureCerts': False, 'webkitgtk:browserOptions': {'binary': '/app/browny', 'args': ['--automation']}}}})
+            value = self.http('POST', '/session', {'capabilities': {'alwaysMatch': {'browserName': 'Paisley', 'acceptInsecureCerts': False, 'webkitgtk:browserOptions': {'binary': '/app/paisley', 'args': ['--automation']}}}})
             self.session = value['sessionId']
             if not re.fullmatch(r'[A-Za-z0-9_-]{1,128}', self.session):
                 raise ValueError('Invalid session identifier')
             self.command('POST', '/timeouts', {'script': 2000, 'pageLoad': 5000, 'implicit': 0})
             self.control = socket.socket(socket.AF_UNIX)
             self.control.settimeout(5)
-            self.control.connect(env['BROWNY_AUTOMATION_SOCKET'])
+            self.control.connect(env['PAISLEY_AUTOMATION_SOCKET'])
             self.control_file = self.control.makefile('rwb', buffering=0)
             deadline = time.monotonic() + 3
             while not self.status().get('filter_ready') and time.monotonic() < deadline:
@@ -830,7 +830,7 @@ def pump_input(stream, requests, disconnected, interrupt):
 def worker(origin):
     proxy = Proxy(('127.0.0.1', 0), ProxyHandler)
     threading.Thread(target=proxy.serve_forever, daemon=True).start()
-    os.environ['BROWNY_AUTOMATION_PROXY'] = f'http://127.0.0.1:{proxy.server_address[1]}'
+    os.environ['PAISLEY_AUTOMATION_PROXY'] = f'http://127.0.0.1:{proxy.server_address[1]}'
     requests = queue.Queue(maxsize=16)
     disconnected = threading.Event()
     server = Server(origin, disconnected)
@@ -875,7 +875,7 @@ def launch(origin, fixture_ca=None):
                     break
             if trust is None:
                 raise ValueError('No installed public CA bundle; TLS validation cannot be provisioned')
-    binary = Path(os.environ['BROWNY_BINARY']).resolve(strict=True)
+    binary = Path(os.environ['PAISLEY_BINARY']).resolve(strict=True)
     runtime = Path(os.environ.get('XDG_RUNTIME_DIR', ''))
     display = os.environ.get('WAYLAND_DISPLAY', '')
     if not runtime.is_absolute() or not re.fullmatch(r'wayland-[0-9]+', display) or not (runtime / display).is_socket():
@@ -883,7 +883,7 @@ def launch(origin, fixture_ca=None):
     for executable in ('bwrap', 'dbus-run-session', 'WebKitWebDriver', 'python3'):
         if not Path('/usr/bin', executable).is_file():
             raise ValueError('Required installed tool unavailable: ' + executable)
-    with tempfile.TemporaryDirectory(prefix='browny-mcp-') as scratch:
+    with tempfile.TemporaryDirectory(prefix='paisley-mcp-') as scratch:
         os.chmod(scratch, 0o700)
         relay = Relay(scratch + '/gate.sock', RelayHandler)
         relay.origin = origin
@@ -893,7 +893,7 @@ def launch(origin, fixture_ca=None):
         uid = os.getuid()
         gid = os.getgid()
         # Private account metadata; never expose host passwd/group or identity.
-        Path(scratch, 'passwd').write_text(f'agent:x:{uid}:{gid}:Browny workspace:/home/agent:/usr/bin/false\n')
+        Path(scratch, 'passwd').write_text(f'agent:x:{uid}:{gid}:Paisley workspace:/home/agent:/usr/bin/false\n')
         Path(scratch, 'group').write_text(f'agent:x:{gid}:\n')
         Path(scratch, 'machine-id').write_text(secrets.token_hex(16) + '\n')
         # No service directories: desktop portals/accessibility daemons must not
@@ -906,7 +906,7 @@ def launch(origin, fixture_ca=None):
                    '--dir', '/sys/block', '--dir', '/sys/bus', '--dir', '/sys/class',
                    '--dir', '/sys/dev', '--dir', '/sys/devices', '--dir', '/var/tmp',
                    '--dir', '/var/cache/fontconfig',
-                   '--dir', '/app', '--ro-bind', str(binary), '/app/browny',
+                   '--dir', '/app', '--ro-bind', str(binary), '/app/paisley',
                    '--dir', '/relay', '--ro-bind', scratch + '/gate.sock', '/relay/gate.sock',
                    '--ro-bind', scratch + '/passwd', '/etc/passwd',
                    '--ro-bind', scratch + '/group', '/etc/group',
@@ -916,14 +916,14 @@ def launch(origin, fixture_ca=None):
                    '--ro-bind', str(runtime / display), private_runtime + '/' + display,
                    '--clearenv', '--setenv', 'PATH', '/usr/bin', '--setenv', 'HOME', '/home/agent',
                    '--setenv', 'XDG_RUNTIME_DIR', private_runtime, '--setenv', 'WAYLAND_DISPLAY', display,
-                   '--setenv', 'GDK_BACKEND', 'wayland', '--setenv', 'BROWNY_MCP_SANDBOX', '1',
+                   '--setenv', 'GDK_BACKEND', 'wayland', '--setenv', 'PAISLEY_MCP_SANDBOX', '1',
                    '--setenv', 'LANG', 'C.UTF-8', '--setenv', 'GSK_RENDERER', 'cairo',
                    '--setenv', 'GTK_A11Y', 'none', '--setenv', 'LIBGL_ALWAYS_SOFTWARE', '1',
                    '--chdir', '/home/agent']
         if Path('/etc/fonts').is_dir():
             command += ['--ro-bind', '/etc/fonts', '/etc/fonts']
         if fixture:
-            command += ['--setenv', 'BROWNY_AUTOMATION_FIXTURE', '1']
+            command += ['--setenv', 'PAISLEY_AUTOMATION_FIXTURE', '1']
         if trust is not None:
             anchors = Path(scratch, 'public-trust.pem')
             anchors.write_bytes(trust)
@@ -931,7 +931,7 @@ def launch(origin, fixture_ca=None):
             # directory/key or alter host trust. Cover common TLS backend paths.
             for destination in ('/app/trust.pem', '/etc/ssl/cert.pem', '/etc/ssl/certs/ca-certificates.crt',
                                 '/etc/ca-certificates/extracted/tls-ca-bundle.pem',
-                                '/etc/ca-certificates/trust-source/anchors/browny.pem'):
+                                '/etc/ca-certificates/trust-source/anchors/paisley.pem'):
                 command += ['--ro-bind', str(anchors), destination]
             command += ['--setenv', 'SSL_CERT_FILE', '/app/trust.pem']
         # New private D-Bus session, never the host's bus or portals.
@@ -954,14 +954,14 @@ def launch(origin, fixture_ca=None):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Browny isolated interactive origin MCP; native grants, no personal profiles')
+    parser = argparse.ArgumentParser(description='Paisley isolated interactive origin MCP; native grants, no personal profiles')
     parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
     parser.add_argument('--allow-origin', required=True)
     parser.add_argument('--fixture-ca', help='Public PEM CA only for an owned HTTPS 127.0.0.1:PORT fixture')
     arguments = parser.parse_args()
     origin = parse_origin(arguments.allow_origin)
     if arguments.worker:
-        if os.environ.get('BROWNY_MCP_SANDBOX') != '1' or arguments.fixture_ca is not None:
+        if os.environ.get('PAISLEY_MCP_SANDBOX') != '1' or arguments.fixture_ca is not None:
             raise ValueError('Private namespace worker required; trust must be supplied by launcher')
         worker(origin)
         return 0
@@ -974,8 +974,8 @@ if __name__ == '__main__':
     try:
         # Set by the Rust entrypoint via a trusted -c source wrapper. Unlike a
         # filesystem import, no host/scratch-controlled module is loaded.
-        SOURCE = globals().get('_BROWNY_SOURCE')
+        SOURCE = globals().get('_PAISLEY_SOURCE')
         raise SystemExit(main())
     except (ValueError, OSError) as error:
-        print('Browny MCP: ' + str(error), file=sys.stderr)
+        print('Paisley MCP: ' + str(error), file=sys.stderr)
         raise SystemExit(1)

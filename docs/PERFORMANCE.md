@@ -9,11 +9,11 @@ This reference run predates the profile-catalog/settings integration and root ma
 Run in a graphical session from `Browny/`, using installed host tools through `distrobox-host-exec` when needed. Choose new absolute output/screenshot paths; existing files are not overwritten. No packages, host settings or caches need changing.
 
 ```sh
-BROWNY_BENCHMARK_OUTPUT="$PWD/target/baseline-new.json" \
-BROWNY_BENCHMARK_SCREENSHOT="$PWD/target/baseline-new-window.png" \
-BROWNY_BENCHMARK_PAGE_SCREENSHOT="$PWD/target/baseline-new-page.png" \
+PAISLEY_BENCHMARK_OUTPUT="$PWD/target/baseline-new.json" \
+PAISLEY_BENCHMARK_SCREENSHOT="$PWD/target/baseline-new-window.png" \
+PAISLEY_BENCHMARK_PAGE_SCREENSHOT="$PWD/target/baseline-new-page.png" \
 G_DEBUG=fatal-criticals \
-cargo test --release --offline --locked --bin browny browser_smoke \
+cargo test --release --offline --locked --bin paisley browser_smoke \
   -- --ignored --test-threads=1 --nocapture
 ```
 
@@ -29,7 +29,7 @@ rustfmt --edition 2024 --check src/browser_benchmarks.rs
 
 ## Reference conditions
 
-- Browny 0.1.0, optimized Cargo release test executable; Rust/Cargo 1.99.1.
+- Paisley 0.1.0, optimized Cargo release test executable; Rust/Cargo 1.99.1.
 - Intel Core 7 150U; Linux `7.2.14-arch1-1`; reported MemTotal 16,048,112 KiB.
 - GTK 4.24.1; WebKitGTK 2.54.2; Wayland desktop, `GskVulkanRenderer`, scale 1.
 - Window 1280 × 800; initial captured WebView 1280 × 698. The 30-tab notebook/final viewport was 1280 × 694.

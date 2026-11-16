@@ -15,7 +15,7 @@ security audit, a threat-model substitute or LibreWolf/Brave parity claim.
 | DuckDuckGo promotions | Top-frame HTTPS-domain-restricted stylesheet, dynamic/scoping graphical fixtures. | Cosmetic cleanup only; not general ad/tracker request blocking. |
 | Permissions | Explicit deny for every permission-request signal, with a native explanation. Real geolocation fixture receives PERMISSION_DENIED and displays the reason. | Safe requesting-origin attribution, per-origin prompts/grants/revocation and camera/microphone/notification/clipboard fixtures are not implemented. See below. |
 | Hyperlink auditing / DNS prefetch | Installed engine exposes deprecated/ineffective setters; no functioning protection advertised. | Engine capability decision, not pretend toggles. |
-| Referrers / GPC / DNT | No separately verified Browny controls. | Capability/behavior research and fixture verification; signals alone are not tracking prevention. |
+| Referrers / GPC / DNT | No separately verified Paisley controls. | Capability/behavior research and fixture verification; signals alone are not tracking prevention. |
 | Fingerprinting resistance | No verified anti-fingerprinting system. | Research engine coverage and compatibility; do not substitute spoofing-script claims for security. |
 | DNS / proxy | Normal browsing uses engine/OS defaults. MCP uses private networking, a fixed HTTP fixture relay or exact HTTPS CONNECT to once-resolved validated public peers; private/mixed results fail closed. Unit resolver tests use supplied answers, not public DNS. | No normal-browser DNS/proxy privacy or system-wide VPN claim. No live public-origin compatibility validation; one origin deliberately excludes third-party dependencies. |
 | Profiles / sessions | Normal cookies/local storage and tab order/selection survive clean restart; separate profile isolated; private records never written; locks/corrupt/future-version/symlink tests pass. | Version migrations/recovery, crash/interruption matrix, rename/delete/registry and encrypted storage. Same-user filesystem races are not an OS boundary. |
@@ -38,7 +38,7 @@ the missing request types.
 
 A WebView's current URI identifies its top-level page, **not necessarily the frame
 requesting access**. A page-provided script/message or an unrelated permissions
-query is not trusted evidence tying a later request to a principal. Browny must
+query is not trusted evidence tying a later request to a principal. Paisley must
 not save or auto-apply a top-level-origin grant to a potentially different frame.
 
 Until that association is established, normal browsing explicitly denies all
