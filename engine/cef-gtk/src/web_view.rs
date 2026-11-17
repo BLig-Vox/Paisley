@@ -167,6 +167,17 @@ mod imp {
 
             // Event controllers
             let motion_controller = gtk::EventControllerMotion::new();
+            // Enter can be the only pointer event before the first wheel event.
+            let obj_weak = self.obj().downgrade();
+            motion_controller.connect_enter(move |_, x, y| {
+                if let Some(obj) = obj_weak.upgrade() {
+                    let imp = obj.imp();
+                    if let Some(servo) = imp.servo_runner.borrow().as_ref() {
+                        let scale = obj.device_scale();
+                        servo.motion(logical_to_device(x, scale), logical_to_device(y, scale));
+                    }
+                }
+            });
             let obj_weak = self.obj().downgrade();
             motion_controller.connect_motion(move |_, x, y| {
                 if let Some(obj) = obj_weak.upgrade() {
@@ -509,6 +520,14 @@ impl WebView {
         }
     }
     #[cfg(feature = "test-support")]
+    pub fn test_scroll_at(&self, x: f64, y: f64, dy: f64) {
+        if let Some(runner) = self.imp().servo_runner.borrow().as_ref() {
+            let scale = self.device_scale();
+            runner.motion(x * scale, y * scale);
+            runner.scroll(0.0, dy * scale);
+        }
+    }
+    #[cfg(feature = "test-support")]
     pub fn file_choice_pending(&self) -> bool {
         self.imp().file_choice.borrow().is_some()
     }
@@ -543,20 +562,25 @@ impl WebView {
     }
     #[cfg(feature = "test-support")]
     pub fn test_named_key(&self, key: &str, code: u32) {
+        self.test_key_with_modifiers(key, code, 0);
+    }
+
+    #[cfg(feature = "test-support")]
+    pub fn test_key_with_modifiers(&self, key: &str, code: u32, modifiers: u32) {
         if let Some(runner) = self.imp().servo_runner.borrow().as_ref() {
             runner.key_press(
                 key.into(),
                 false,
                 crate::key_tables::KeyLocation::Standard,
                 code,
-                0,
+                modifiers,
             );
             runner.key_release(
                 key.into(),
                 false,
                 crate::key_tables::KeyLocation::Standard,
                 code,
-                0,
+                modifiers,
             );
         }
     }

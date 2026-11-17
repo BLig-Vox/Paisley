@@ -949,14 +949,12 @@ impl Browser {
                 browser.closing.set(true);
                 browser.downloads.borrow().shutdown();
                 let snapshot = browser.snapshot_session();
-                if let Some(writer) = browser.writer.borrow_mut().take()
-                    && let Err(error) = writer.finish(
+                if let Some(writer) = browser.writer.borrow_mut().take() {
+                    writer.finish_async(
                         snapshot,
                         browser.library.borrow().clone(),
                         browser.downloads.borrow().storage_snapshot(),
-                    )
-                {
-                    eprintln!("Could not save final session: {error}");
+                    );
                 }
                 let tabs = browser.tabs.replace(Vec::new());
                 for tab in tabs {

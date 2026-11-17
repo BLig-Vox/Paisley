@@ -257,6 +257,11 @@ pub(crate) fn run() -> gtk::glib::ExitCode {
         browser.window.close();
         return gtk::glib::ExitCode::SUCCESS;
     }
+    if std::env::var_os("PAISLEY_NATIVE_SCROLL").is_some() {
+        nested_scroll(&browser, &fixture);
+        browser.window.close();
+        return gtk::glib::ExitCode::SUCCESS;
+    }
     if std::env::var_os("PAISLEY_NATIVE_POPUP").is_some() {
         select_popup_lifecycle(&browser, &fixture);
         browser.window.close();
@@ -1173,9 +1178,24 @@ fn keyboard_lifecycle(browser: &Rc<Browser>, fixture: &Fixture) {
         wait_until("Backspace still removes period", || {
             view.title().as_deref() == Some(&format!("Typed:{id}:a"))
         });
+        view.test_key_with_modifiers("\"", 48, 1);
+        wait_until("shifted double quote is inserted", || {
+            view.title().as_deref() == Some(&format!("Typed:{id}:a\""))
+        });
     }
     browser.close_tab(browser.active_tab().unwrap().id);
     eprintln!(
         "CEF keyboard: literal period, real Delete and Backspace passed in text, email and textarea"
     );
+}
+
+#[cfg(feature = "cef")]
+fn nested_scroll(browser: &Rc<Browser>, fixture: &Fixture) {
+    let view = browser.add_tab(None, Some(&format!("{}/scroll", fixture.base)));
+    wait_until("scroll fixture painted", || view.input_surface_ready() && view.title().as_deref() == Some("Paisley native fixture"));
+    view.evaluate_javascript("document.body.innerHTML='<div id=panel style=\"position:absolute;left:100px;top:100px;width:200px;height:200px;overflow:auto\"><div style=\"height:2000px\">Scrollable</div></div>';document.getElementById('panel').onscroll=()=>document.title='nested:'+document.getElementById('panel').scrollTop;document.title='scroll ready'");
+    wait_until("nested scroll panel ready", || view.title().as_deref() == Some("scroll ready"));
+    view.test_scroll_at(150.0, 150.0, 3.0);
+    wait_until("wheel scrolls panel under pointer", || view.title().is_some_and(|s| s.starts_with("nested:") && s != "nested:0"));
+    browser.close_tab(browser.active_tab().unwrap().id);
 }

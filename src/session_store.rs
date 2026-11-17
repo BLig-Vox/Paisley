@@ -5,9 +5,32 @@ use paisley::{
     profile::{Profile, Session},
 };
 use std::{
+    cell::RefCell,
     sync::{Arc, mpsc},
     thread,
 };
+
+thread_local! {
+    static FINISHING: RefCell<Vec<thread::JoinHandle<Result<(), String>>>> = const { RefCell::new(Vec::new()) };
+}
+
+fn report_finished(worker: thread::JoinHandle<Result<(), String>>) {
+    match worker.join() {
+        Ok(Ok(())) => {},
+        Ok(Err(error)) => eprintln!("Could not save final session: {error}"),
+        Err(_) => eprintln!("Session writer stopped unexpectedly"),
+    }
+}
+
+/// Wait after GTK has removed the last window, so final profile writes are
+/// durable without holding the window's close callback on disk I/O.
+pub fn finish_pending() {
+    FINISHING.with(|pending| {
+        for worker in pending.borrow_mut().drain(..) {
+            report_finished(worker);
+        }
+    });
+}
 
 enum Request {
     Save(Session, Library, Option<DownloadHistory>),
@@ -19,6 +42,20 @@ pub struct SessionWriter {
     worker: Option<thread::JoinHandle<Result<(), String>>>,
 }
 impl SessionWriter {
+    pub fn finish_async(self, session: Session, library: Library, downloads: Option<DownloadHistory>) {
+        FINISHING.with(|pending| {
+            let mut pending = pending.borrow_mut();
+            let mut i = 0;
+            while i < pending.len() {
+                if pending[i].is_finished() {
+                    report_finished(pending.swap_remove(i));
+                } else {
+                    i += 1;
+                }
+            }
+            pending.push(thread::spawn(move || self.finish(session, library, downloads)));
+        });
+    }
     pub fn new(profile: Arc<Profile>) -> Self {
         let (send, receive) = mpsc::sync_channel(2);
         let (error_send, errors) = mpsc::sync_channel(2);
@@ -99,6 +136,18 @@ impl SessionWriter {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn asynchronous_finish_saves_before_shutdown_returns() {
+        let root = std::env::temp_dir().join(format!("paisley-async-session-{}-{}", std::process::id(), std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+        let profile = Arc::new(Profile::open_at(&root, "work", false).unwrap());
+        let session = Session { tabs: vec!["https://example.org/".into()], active: 0 };
+        SessionWriter::new(Arc::clone(&profile)).finish_async(session.clone(), Library::default(), None);
+        finish_pending();
+        assert_eq!(profile.load_session().unwrap(), session);
+        drop(profile);
+        std::fs::remove_dir_all(root).unwrap();
+    }
 
     #[test]
     fn writes_download_records_even_when_session_and_library_fail() {

@@ -246,6 +246,7 @@ struct Page {
     closing: bool,
     retired: bool,
     inspector: Option<(u64, inspector::Bridge)>,
+    pointer: (i32, i32),
 }
 pub fn run_if_requested() {
     let args: Vec<String> = std::env::args().collect();
@@ -603,6 +604,7 @@ fn run(args: Vec<String>, main_args: Args, mut app: App) {
                                 closing: false,
                                 retired: false,
                                 inspector: Some((*target, bridge)),
+                                pointer: (0, 0),
                             },
                         );
                     } else {
@@ -669,6 +671,7 @@ fn run(args: Vec<String>, main_args: Args, mut app: App) {
                             closing: false,
                             retired: false,
                             inspector: None,
+                            pointer: (0, 0),
                         },
                     );
                 } else {
@@ -808,6 +811,7 @@ fn handle(page: &mut Page, action: Option<Action>) {
             }
         }
         Some(Action::Motion(pos)) => {
+            page.pointer = (pos.x as i32, pos.y as i32);
             if let Some(host) = page.browser.host() {
                 host.send_mouse_move_event(
                     Some(&MouseEvent {
@@ -819,12 +823,18 @@ fn handle(page: &mut Page, action: Option<Action>) {
                 );
             }
         }
-        Some(Action::ButtonPress(pos)) => mouse(page, pos.button, pos.x, pos.y, false),
-        Some(Action::ButtonRelease(pos)) => mouse(page, pos.button, pos.x, pos.y, true),
+        Some(Action::ButtonPress(pos)) => {
+            page.pointer = (pos.x as i32, pos.y as i32);
+            mouse(page, pos.button, pos.x, pos.y, false)
+        }
+        Some(Action::ButtonRelease(pos)) => {
+            page.pointer = (pos.x as i32, pos.y as i32);
+            mouse(page, pos.button, pos.x, pos.y, true)
+        }
         Some(Action::Scroll(scroll)) => {
             if let Some(host) = page.browser.host() {
                 host.send_mouse_wheel_event(
-                    Some(&MouseEvent::default()),
+                    Some(&MouseEvent { x: page.pointer.0, y: page.pointer.1, ..Default::default() }),
                     (-scroll.dx * 40.0) as i32,
                     (-scroll.dy * 40.0) as i32,
                 );

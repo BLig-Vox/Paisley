@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0-alpha.5 — Scrolling and close responsiveness
+
+- Route wheel events to the last pointer location so nested panels can receive scrolling.
+- Save the final session off the GTK close callback and wait for pending saves before exit.
+- Add nested scrolling, shifted quote input and session persistence regression checks.
+
 ## 0.2.0-alpha.4 — Keyboard and inspector stability
 
 - Fix period being interpreted as Delete in CEF inputs. Map punctuation and shifted digits to Chromium virtual keys, preserving separate Unicode text events.

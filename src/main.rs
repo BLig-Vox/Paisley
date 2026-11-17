@@ -156,6 +156,7 @@ fn main() -> gtk::glib::ExitCode {
     let mut launch_args = vec!["paisley".to_owned()];
     launch_args.extend(links);
     let result = app.run_with_args(&launch_args);
+    session_store::finish_pending();
     #[cfg(feature = "cef")]
     cef_gtk::finish_shutdown();
     if failed.get() {

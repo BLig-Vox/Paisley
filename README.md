@@ -25,9 +25,9 @@ right-side DevTools. Website permissions/notifications, IME composition, HiDPI
 and opener-preserving popups remain unfinished. See [CEF setup and known gaps](docs/CEF_PRERELEASE.md).
 Deprecation does not imply feature parity or a fixed per-tab memory guarantee.
 
-## 0.2.0-alpha.4 patch
+## 0.2.0-alpha.5 patch
 
-Fixes literal `.` input and inspector closure during DevTools message bursts.
+Routes wheel input to the panel under the pointer and saves the final session outside the window close callback. The earlier punctuation and inspector stability fixes remain included.
 
 ## Install
 
@@ -36,7 +36,7 @@ Install the complete matching CEF **156.0.30** runtime first, following
 
 ```sh
 export CEF_PATH=/absolute/path/to/cef_linux_x86_64
-python3 scripts/build-limited.py --limit-mb 3000 -- cargo install vox-paisley --version 0.2.0-alpha.4 --locked
+python3 scripts/build-limited.py --limit-mb 3000 -- cargo install vox-paisley --version 0.2.0-alpha.5 --locked
 paisley --backend-info
 paisley --install-desktop
 ```
