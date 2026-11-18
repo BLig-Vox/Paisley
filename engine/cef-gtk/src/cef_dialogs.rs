@@ -7,6 +7,32 @@ pub struct Dialogs {
     pending: Option<(u64, JsdialogCallback)>,
     auth: Option<(u64, AuthCallback)>,
     file: Option<(u64, FileDialogCallback)>,
+    screen: Option<(u64, MediaAccessCallback)>,
+}
+pub fn cancel_screen(state: &ViewState) {
+    let pending = state.dialogs.lock().unwrap().screen.take();
+    if let Some((id, callback)) = pending {
+        state.events.send(Event::CancelDialog(id));
+        callback.cancel();
+    }
+}
+wrap_permission_handler! {
+ pub struct MediaHandler {state:ViewState}
+ impl PermissionHandler {
+  fn on_request_media_access_permission(&self,_browser:Option<&mut Browser>,frame:Option<&mut Frame>,origin:Option<&CefString>,permissions:u32,callback:Option<&mut MediaAccessCallback>)->i32 {
+   let Some(callback)=callback else{return 0;};
+   let origin=strings::borrowed(origin,2048);
+   let allowed=permissions==MediaAccessPermissionTypes::DESKTOP_VIDEO_CAPTURE.get_raw()
+    && frame.as_ref().is_some_and(|f|f.is_main()!=0)
+    && url::Url::parse(&origin).is_ok_and(|url| matches!(url.scheme(),"https"|"http") && url.host_str().is_some());
+   if !allowed {callback.cancel();return 1;}
+   let id={let mut dialogs=self.state.dialogs.lock().unwrap();
+    if dialogs.screen.is_some()||dialogs.next==u64::MAX {drop(dialogs);callback.cancel();return 1;}
+    dialogs.next+=1;let id=dialogs.next;dialogs.screen=Some((id,callback.clone()));id};
+   self.state.events.send(Event::PermissionRequest(ipc::PermissionRequest{request_id:id,feature_name:format!("sharing your entire desktop (all visible screens) with {origin}. Other open windows may be visible.")}));
+   1
+  }
+ }
 }
 fn begin(
     state: &ViewState,
@@ -61,6 +87,7 @@ pub fn cancel_auth(state: &ViewState) {
     }
 }
 pub fn cancel(state: &ViewState) {
+    cancel_screen(state);
     cancel_auth(state);
     cancel_file(state);
     cancel_script(state);
@@ -80,6 +107,19 @@ pub fn cancel_file(state: &ViewState) {
     }
 }
 pub fn response(state: &ViewState, response: &ipc::ServoResponse) {
+    if let Some(ipc::servo_response::Payload::Permission(answer)) = &response.payload {
+        let callback = {
+            let mut dialogs = state.dialogs.lock().unwrap();
+            if dialogs.screen.as_ref().is_some_and(|(id, _)| *id == response.request_id) {
+                dialogs.screen.take().map(|(_, callback)| callback)
+            } else { None }
+        };
+        if let Some(callback) = callback {
+            if answer.allow { callback.cont(MediaAccessPermissionTypes::DESKTOP_VIDEO_CAPTURE.get_raw()); }
+            else { callback.cancel(); }
+        }
+        return;
+    }
     if let Some(ipc::servo_response::Payload::FileChooser(answer)) = &response.payload {
         let callback = {
             let mut dialogs = state.dialogs.lock().unwrap();

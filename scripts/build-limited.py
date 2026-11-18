@@ -57,8 +57,8 @@ def worker(args, command):
     expected = limit // os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PAGE_SIZE')
     if actual != str(expected) or swap != '0':
         raise RuntimeError(f'Unsafe build limits: memory.max={actual}, swap.max={swap}')
-    if available_bytes() < 2048 * MIB:
-        raise RuntimeError('Less than 2 GiB system memory available; build was not started')
+    if available_bytes() < 4096 * MIB:
+        raise RuntimeError('Less than 4 GiB system memory available; build was not started')
     env = os.environ.copy()
     env.update(CARGO_BUILD_JOBS='1', CARGO_PROFILE_DEV_DEBUG='0',
                CARGO_PROFILE_TEST_DEBUG='0', CARGO_PROFILE_DEV_CODEGEN_UNITS='256',
@@ -79,7 +79,7 @@ def worker(args, command):
             report.update(peak_mib=max(report['peak_mib'], round(current / MIB, 2)),
                           seconds=round(time.monotonic() - start, 1))
             args.report.write_text(json.dumps(report, indent=2))
-            if available_bytes() < 2048 * MIB:
+            if available_bytes() < 4096 * MIB:
                 reason = 'System available memory fell below 2 GiB'
                 stop(process)
                 break
@@ -105,7 +105,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     limits = parser.add_mutually_exclusive_group()
     limits.add_argument('--limit-gib', type=int, choices=(1, 2), default=2)
-    limits.add_argument('--limit-mb', type=int, choices=(3000,), help='Hard decimal 3 GB cap (3,000,000,000 bytes)')
+    limits.add_argument('--limit-mb', type=int, choices=(2000, 3000,), help='Hard decimal RAM cap in MB')
     parser.add_argument('--report', type=Path,
                         default=Path(__file__).resolve().parents[1] / 'target/build-limited.json')
     parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)

@@ -50,6 +50,7 @@ message ServoAction {
     uint64 inspect_page = 37;
     ClearSiteData clear_site_data = 38;
     bool strict_privacy = 39;
+    bool focused = 40;
   }
 }
 

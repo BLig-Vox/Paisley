@@ -301,6 +301,13 @@ impl PageRunner {
         });
     }
 
+    pub fn set_focused(&self, focused: bool) {
+        self.send_action(ServoAction {
+            webview_id: 0,
+            action: Some(servo_action::Action::Focused(focused)),
+        });
+    }
+
     pub fn load_url(&self, url: &str) {
         self.send_action(ServoAction {
             webview_id: 0,

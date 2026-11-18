@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0-alpha.6 — Focus, dragging and binary bundle
+
+- Keep CEF focus with the selected GTK content widget, including DevTools.
+- Forward held mouse buttons during motion so scrollbar and page dragging work.
+- Add explicit, deny-by-default desktop-video capture permission requests; cancel prompts on navigation, shutdown and renderer replacement. Camera, microphone and capture audio remain unsupported by this bridge.
+- Provide a Linux x86_64 prebuilt bundle containing both executables and the matching CEF runtime.
+- Support a hard decimal 2 GB build cap and preserve a 4 GiB system memory reserve.
+
 ## 0.2.0-alpha.5 — Scrolling and close responsiveness
 
 - Route wheel events to the last pointer location so nested panels can receive scrolling.

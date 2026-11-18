@@ -25,18 +25,21 @@ right-side DevTools. Website permissions/notifications, IME composition, HiDPI
 and opener-preserving popups remain unfinished. See [CEF setup and known gaps](docs/CEF_PRERELEASE.md).
 Deprecation does not imply feature parity or a fixed per-tab memory guarantee.
 
-## 0.2.0-alpha.5 patch
+## 0.2.0-alpha.6 patch
 
-Routes wheel input to the panel under the pointer and saves the final session outside the window close callback. The earlier punctuation and inspector stability fixes remain included.
+Separates DevTools/page focus, forwards held buttons for dragging, and adds deny-by-default desktop-video permission requests. The earlier scrolling, punctuation and close-responsiveness fixes remain included. Full screen-capture compatibility is still unverified.
 
-## Install
+## Install from source
+
+This version is available from GitHub; crates.io publication requires renewing
+the publisher credentials. Use the prebuilt download below to avoid compiling.
 
 Install the complete matching CEF **156.0.30** runtime first, following
 [the runtime instructions](docs/CEF_PRERELEASE.md), then:
 
 ```sh
 export CEF_PATH=/absolute/path/to/cef_linux_x86_64
-python3 scripts/build-limited.py --limit-mb 3000 -- cargo install vox-paisley --version 0.2.0-alpha.5 --locked
+python3 scripts/build-limited.py --limit-mb 2000 -- cargo install --git https://github.com/BLig-Vox/Paisley --tag v0.2.0-alpha.6 --locked
 paisley --backend-info
 paisley --install-desktop
 ```
@@ -64,9 +67,26 @@ requires its complete runtime. See
 [Runtime dependencies](docs/PACKAGING.md). The Cargo install does not install
 those system packages.
 
-The current prerelease provides source/Cargo packages. Older prebuilt Linux
-assets remain under their original [GitHub Releases](https://github.com/BLig-Vox/Paisley/releases);
-they are not updated binaries for this version.
+### Prebuilt Linux download
+
+Download `paisley-v0.2.0-alpha.6-linux-x86_64.tar.gz` and `SHA256SUMS` from
+[GitHub Releases](https://github.com/BLig-Vox/Paisley/releases/tag/v0.2.0-alpha.6).
+The archive includes both executables, the logo and complete CEF runtime assets.
+It requires Linux x86_64, glibc 2.39+, GTK 4.12+ and compatible system libraries;
+see [binary requirements](docs/PACKAGING.md). No Rust compiler is needed.
+
+```sh
+sha256sum --ignore-missing -c SHA256SUMS
+tar -xzf paisley-v0.2.0-alpha.6-linux-x86_64.tar.gz
+cd paisley-v0.2.0-alpha.6-linux-x86_64
+./bin/paisley --backend-info
+./bin/paisley --install-desktop
+./bin/paisley
+```
+
+Keep the extracted directory in a permanent location before installing its
+launcher. Run as an ordinary desktop user; Chromium sandboxing stays enabled.
+System libraries and fonts are not bundled. These are unsigned prerelease files.
 
 Open links from another application with `paisley https://example.com` (one or
 more HTTP/HTTPS URLs). After installing desktop integration, select Paisley in

@@ -1,4 +1,4 @@
-# CEF backend status: 0.2.0-alpha.4
+# CEF backend status: 0.2.0-alpha.6
 
 ## Backend selection
 
@@ -44,7 +44,7 @@ the upstream download tool. No code is downloaded automatically at startup.
 Use `paisley --backend-info` to inspect selection; `paisley --help` works even
 when the runtime is missing.
 
-Run as an ordinary desktop user with Chromium's sandbox available. Follow CEF's Linux sandbox installation requirements for the exact distribution and operating system. Production builds do not accept the test-only sandbox override. The root Bot Screen tests used an explicit debug/test-support exception; that is not evidence of a validated secure non-root installation. No CEF binary archive or automatic runtime installer is provided in this prerelease.
+Run as an ordinary desktop user with Chromium's sandbox available. Follow CEF's Linux sandbox installation requirements for the exact distribution and operating system. Production builds do not accept the test-only sandbox override. The root Bot Screen tests used an explicit debug/test-support exception; that is not evidence of a validated secure non-root installation. The alpha.6 GitHub binary archive includes the matching CEF runtime and both executables; system GTK libraries and fonts remain required. No runtime is downloaded at startup.
 
 ## Verified behavior
 
@@ -54,14 +54,14 @@ Native tests cover shared/private cookies, text/PNG/ZIP/PDF downloads, pauses an
 
 ## Known gaps
 
-- Website notification and sensitive permission integration is incomplete. Existing WebKit feature documentation does not imply CEF parity.
+- Desktop-video permission prompts are wired with cancellation and a deny default; full capture compatibility is unverified. Camera, microphone, capture audio and website notification integration remain incomplete. Existing WebKit feature documentation does not imply CEF parity.
 - HiDPI screen scale is not implemented correctly. Use a scale-1 display for preview testing.
 - IME composition is not wired; text rendering is not proof of input-method support.
 - New-window handling creates independent HTTP(S) tabs and does not preserve `window.opener`/WindowProxy semantics. Some OAuth flows may fail.
-- A separate matching runtime is still required. Secure non-root deployment has not been validated on Bot Screen, which runs as root.
+- Source/Cargo installations still require a separate matching runtime. Secure non-root deployment has not been validated on Bot Screen, which runs as root.
 - Native download fsync runs on the GTK thread and can briefly stall the interface. Interrupted/cancelled partials are removed when terminal state is handled; an abrupt whole-application/OS crash may leave a private staging directory requiring manual cleanup.
 - Flatpak file portal support and fractional/HiDPI dropdown placement are not verified.
 
 ## Support crates
 
-`paisley-engine-transport` is published as `0.1.0-alpha.1` and `paisley-cef-gtk` as `0.1.0-alpha.2` so Cargo can resolve the CEF graph. Their APIs are internal and may change. The GTK adapter retains its MPL-2.0 upstream notices; transport and root application are MIT. See THIRD_PARTY_NOTICES.md and engine/cef-gtk/UPSTREAM.md in the source repository.
+`paisley-engine-transport` is published as `0.1.0-alpha.1` and `paisley-cef-gtk` as `0.1.0-alpha.4` so Cargo can resolve the CEF graph. Their APIs are internal and may change. The GTK adapter retains its MPL-2.0 upstream notices; transport and root application are MIT. See THIRD_PARTY_NOTICES.md and engine/cef-gtk/UPSTREAM.md in the source repository.

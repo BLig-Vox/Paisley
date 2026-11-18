@@ -6,6 +6,37 @@ The archive contains an explicitly supplied, already-built launcher and matching
 
 Paisley uses the repository’s MIT license, declared in Cargo.toml. Release archives include LICENSE and bundled dependency notices. They are unsigned prerelease artifacts; checksums detect changes but are not signatures. Updates are installed explicitly from Cargo or GitHub Releases.
 
+## Alpha.6 prebuilt CEF bundle
+
+`paisley-v0.2.0-alpha.6-linux-x86_64.tar.gz` contains both executables, the
+matching CEF 156.0.30 runtime data, locales, sandbox helper, logo and licenses.
+The runtime is resolved relative to the launcher, so moving the whole directory
+is supported. Run `bin/paisley --install-desktop` after choosing its permanent
+location. GTK and OS libraries are not bundled: glibc 2.39+, GTK 4.12+ and
+compatible GLib, Pango, Cairo, GDK Pixbuf, Graphene, X11/Wayland, NSS and audio
+libraries must be installed. Ubuntu 24.04 library resolution is checked for
+this build; it is not a universal Linux static binary.
+
+Sandboxing stays enabled. Use a regular desktop account and the operating
+system's supported Chromium sandbox setup. Never run the browser as root or
+work around sandbox setup by disabling it. The archive does not install a
+setuid helper or change OS security settings automatically. Where unprivileged
+user namespaces are restricted, an administrator must configure the sandbox
+according to their distribution's policy.
+
+To reproduce the archive after building both binaries:
+
+```sh
+python3 scripts/package-cef.py --binaries /absolute/path/to/binaries \
+  --runtime /absolute/path/to/cef_linux_x86_64 \
+  --output /path/to/new-archive.tar.gz --source-date-epoch EPOCH
+```
+
+The packager streams files, emits a per-file SHA-256 manifest, preserves runtime
+credits, normalizes modes and timestamps, and refuses to replace an existing
+archive. Its packaged helper has ordinary executable permissions, not setuid.
+For fonts and shared system dependencies, follow the sections below.
+
 ## Current CEF source builds
 
 CEF is now the default; WebKit is deprecated. Keep `paisley` and `paisley-engine`

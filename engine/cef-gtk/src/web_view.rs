@@ -69,6 +69,7 @@ mod imp {
         pub script_dialog: RefCell<Option<(u64, glib::WeakRef<gtk::Window>)>>,
         pub auth_dialog: RefCell<Option<(u64, glib::WeakRef<gtk::Window>)>>,
         pub file_choice: RefCell<Option<(u64, glib::WeakRef<gtk::Window>)>>,
+        pub permission_dialog: RefCell<Option<(u64, gio::Cancellable)>>,
         pub page_activity: Cell<Option<(std::time::Instant, bool)>>,
         pub certificate: RefCell<Option<gio::TlsCertificate>>,
         pub certificate_flags: Cell<u32>,
@@ -203,11 +204,11 @@ mod imp {
                         let y = logical_to_device(y, scale);
                         match event.event_type() {
                             gdk::EventType::ButtonPress => {
+                                controller.widget().expect("Controller widget").grab_focus();
                                 if let Some(button_event) = event.downcast_ref::<gdk::ButtonEvent>()
                                 {
                                     servo.button_press(button_event.button(), x, y);
                                 }
-                                controller.widget().expect("Controller widget").grab_focus();
                             }
                             gdk::EventType::ButtonRelease => {
                                 if let Some(button_event) = event.downcast_ref::<gdk::ButtonEvent>()
@@ -235,6 +236,25 @@ mod imp {
                 glib::Propagation::Proceed
             });
             self.obj().add_controller(legacy_controller);
+
+            let focus_controller = gtk::EventControllerFocus::new();
+            let obj_weak = self.obj().downgrade();
+            focus_controller.connect_enter(move |_| {
+                if let Some(obj) = obj_weak.upgrade() {
+                    if let Some(runner) = obj.imp().servo_runner.borrow().as_ref() {
+                        runner.set_focused(true);
+                    }
+                }
+            });
+            let obj_weak = self.obj().downgrade();
+            focus_controller.connect_leave(move |_| {
+                if let Some(obj) = obj_weak.upgrade() {
+                    if let Some(runner) = obj.imp().servo_runner.borrow().as_ref() {
+                        runner.set_focused(false);
+                    }
+                }
+            });
+            self.obj().add_controller(focus_controller);
 
             let key_controller = gtk::EventControllerKey::new();
             let obj_weak = self.obj().downgrade();
@@ -459,6 +479,7 @@ impl WebView {
         let policy = imp.blocking.borrow();
         runner.set_blocking(policy.enabled, policy.exceptions.clone());
         runner.set_visible(self.is_mapped());
+        runner.set_focused(self.has_focus());
         if let Some(manager) = imp.user_content_manager.borrow().as_ref() {
             manager.attach(runner.clone());
         }
@@ -525,6 +546,16 @@ impl WebView {
             let scale = self.device_scale();
             runner.motion(x * scale, y * scale);
             runner.scroll(0.0, dy * scale);
+        }
+    }
+    #[cfg(feature = "test-support")]
+    pub fn test_drag(&self, x: f64, y: f64, end_x: f64, end_y: f64) {
+        if let Some(runner) = self.imp().servo_runner.borrow().as_ref() {
+            let scale = self.device_scale();
+            runner.motion(x * scale, y * scale);
+            runner.button_press(1, x * scale, y * scale);
+            runner.motion(end_x * scale, end_y * scale);
+            runner.button_release(1, end_x * scale, end_y * scale);
         }
     }
     #[cfg(feature = "test-support")]
@@ -833,6 +864,13 @@ impl WebView {
     }
 
     fn dismiss_dialogs(&self, id: Option<u64>) {
+        let permission = {
+            let mut pending = self.imp().permission_dialog.borrow_mut();
+            if pending.as_ref().is_some_and(|(request, _)| id.is_none_or(|id| id == *request)) {
+                pending.take()
+            } else { None }
+        };
+        if let Some((_, cancellable)) = permission { cancellable.cancel(); }
         for slot in [
             &self.imp().script_dialog,
             &self.imp().auth_dialog,
@@ -1171,15 +1209,23 @@ impl WebView {
             .build();
         dialog.set_buttons(&["Deny", "Allow"]);
         dialog.set_cancel_button(0);
-        dialog.set_default_button(1);
+        dialog.set_default_button(0);
 
+        let generation = self.imp().renderer_generation.get();
+        let cancellable = gio::Cancellable::new();
+        if let Some((_, previous)) = self.imp().permission_dialog.replace(Some((request_id, cancellable.clone()))) {
+            previous.cancel();
+        }
         let obj_weak = self.downgrade();
-        dialog.choose(parent.as_ref(), gio::Cancellable::NONE, move |result| {
-            let allow = matches!(result, Ok(1));
-            if let Some(obj) = obj_weak.upgrade()
-                && let Some(servo) = obj.imp().servo_runner.borrow().as_ref()
-            {
-                servo.send_permission_response(request_id, allow);
+        dialog.choose(parent.as_ref(), Some(&cancellable), move |result| {
+            let Some(obj) = obj_weak.upgrade() else { return; };
+            if obj.imp().stopped.get() || obj.imp().renderer_generation.get() != generation { return; }
+            let pending = {
+                let mut slot = obj.imp().permission_dialog.borrow_mut();
+                if slot.as_ref().is_some_and(|(id, _)| *id == request_id) { slot.take() } else { None }
+            };
+            if pending.is_some() && let Some(servo) = obj.imp().servo_runner.borrow().as_ref() {
+                servo.send_permission_response(request_id, matches!(result, Ok(1)));
             }
         });
     }

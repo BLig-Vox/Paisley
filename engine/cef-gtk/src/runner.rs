@@ -122,6 +122,7 @@ wrap_load_handler! {
     struct Loading { state:ViewState }
     impl LoadHandler {
         fn on_loading_state_change(&self,browser:Option<&mut Browser>,loading:i32,back:i32,forward:i32){
+            if loading!=0 {dialogs::cancel_screen(&self.state);}
             self.state.events.send(Event::HistoryChanged(ipc::HistoryState{can_go_back:back!=0,can_go_forward:forward!=0}));
             if loading==0 {if let Some(browser)=browser.as_deref(){publish_tls(browser,&self.state.events);}}
             let url=browser.and_then(|b|b.main_frame()).map(|f|CefString::from(&f.url()).to_string()).unwrap_or_default();
@@ -152,6 +153,7 @@ wrap_client! {
         }}
         fn dialog_handler(&self)->Option<DialogHandler>{Some(dialogs::FileHandler::new(self.state.clone()))}
         fn jsdialog_handler(&self)->Option<JsdialogHandler>{Some(dialogs::Handler::new(self.state.clone()))}
+        fn permission_handler(&self)->Option<PermissionHandler>{Some(dialogs::MediaHandler::new(self.state.clone()))}
         fn download_handler(&self)->Option<DownloadHandler>{Some(downloads::Handler::new(self.state.transfers.clone(),Events{id:0,output:self.state.events.output.clone()}))}
         fn render_handler(&self)->Option<RenderHandler>{Some(Paint::new(self.state.clone()))}
         fn display_handler(&self)->Option<DisplayHandler>{Some(Display::new(self.state.clone()))}
@@ -247,6 +249,7 @@ struct Page {
     retired: bool,
     inspector: Option<(u64, inspector::Bridge)>,
     pointer: (i32, i32),
+    mouse_buttons: u32,
 }
 pub fn run_if_requested() {
     let args: Vec<String> = std::env::args().collect();
@@ -605,6 +608,7 @@ fn run(args: Vec<String>, main_args: Args, mut app: App) {
                                 retired: false,
                                 inspector: Some((*target, bridge)),
                                 pointer: (0, 0),
+                                mouse_buttons: 0,
                             },
                         );
                     } else {
@@ -672,6 +676,7 @@ fn run(args: Vec<String>, main_args: Args, mut app: App) {
                             retired: false,
                             inspector: None,
                             pointer: (0, 0),
+                            mouse_buttons: 0,
                         },
                     );
                 } else {
@@ -795,7 +800,11 @@ fn handle(page: &mut Page, action: Option<Action>) {
         Some(Action::Visible(visible)) => {
             if let Some(host) = page.browser.host() {
                 host.was_hidden((!visible) as i32);
-                host.set_focus(visible as i32);
+            }
+        }
+        Some(Action::Focused(focused)) => {
+            if let Some(host) = page.browser.host() {
+                host.set_focus(focused as i32);
             }
         }
         Some(Action::EvaluateJavascript(js)) => {
@@ -817,6 +826,7 @@ fn handle(page: &mut Page, action: Option<Action>) {
                     Some(&MouseEvent {
                         x: pos.x as i32,
                         y: pos.y as i32,
+                        modifiers: page.mouse_buttons,
                         ..Default::default()
                     }),
                     0,
@@ -825,16 +835,18 @@ fn handle(page: &mut Page, action: Option<Action>) {
         }
         Some(Action::ButtonPress(pos)) => {
             page.pointer = (pos.x as i32, pos.y as i32);
+            page.mouse_buttons |= mouse_button_flag(pos.button);
             mouse(page, pos.button, pos.x, pos.y, false)
         }
         Some(Action::ButtonRelease(pos)) => {
             page.pointer = (pos.x as i32, pos.y as i32);
+            page.mouse_buttons &= !mouse_button_flag(pos.button);
             mouse(page, pos.button, pos.x, pos.y, true)
         }
         Some(Action::Scroll(scroll)) => {
             if let Some(host) = page.browser.host() {
                 host.send_mouse_wheel_event(
-                    Some(&MouseEvent { x: page.pointer.0, y: page.pointer.1, ..Default::default() }),
+                    Some(&MouseEvent { x: page.pointer.0, y: page.pointer.1, modifiers: page.mouse_buttons }),
                     (-scroll.dx * 40.0) as i32,
                     (-scroll.dy * 40.0) as i32,
                 );
@@ -842,6 +854,9 @@ fn handle(page: &mut Page, action: Option<Action>) {
         }
         _ => {}
     }
+}
+fn mouse_button_flag(button: u32) -> u32 {
+    match button { 1 => 1 << 4, 2 => 1 << 5, 3 => 1 << 6, _ => 0 }
 }
 fn mouse(page: &Page, button: u32, x: f64, y: f64, up: bool) {
     if let Some(host) = page.browser.host() {
@@ -854,6 +869,7 @@ fn mouse(page: &Page, button: u32, x: f64, y: f64, up: bool) {
             Some(&MouseEvent {
                 x: x as i32,
                 y: y as i32,
+                modifiers: page.mouse_buttons,
                 ..Default::default()
             }),
             kind,

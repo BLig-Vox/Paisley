@@ -11,3 +11,5 @@ Not a drop-in replacement for WebKitGTK: website notifications/permissions, IME 
 Adapted GTK integration files remain MPL-2.0. See LICENSE and UPSTREAM.md for provenance.
 
 0.1.0-alpha.2 fixes punctuation virtual-key mapping (period must not become Delete) and accommodates bounded DevTools protocol bursts without the old 64-message disconnect.
+
+0.1.0-alpha.4 separates focus from visibility, preserves held mouse buttons during motion, and introduces cancellable, deny-by-default desktop-video permission requests. End-to-end capture compatibility is unverified.

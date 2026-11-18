@@ -262,6 +262,11 @@ pub(crate) fn run() -> gtk::glib::ExitCode {
         browser.window.close();
         return gtk::glib::ExitCode::SUCCESS;
     }
+    if std::env::var_os("PAISLEY_NATIVE_DRAG").is_some() {
+        drag_input(&browser, &fixture);
+        browser.window.close();
+        return gtk::glib::ExitCode::SUCCESS;
+    }
     if std::env::var_os("PAISLEY_NATIVE_POPUP").is_some() {
         select_popup_lifecycle(&browser, &fixture);
         browser.window.close();
@@ -1197,5 +1202,16 @@ fn nested_scroll(browser: &Rc<Browser>, fixture: &Fixture) {
     wait_until("nested scroll panel ready", || view.title().as_deref() == Some("scroll ready"));
     view.test_scroll_at(150.0, 150.0, 3.0);
     wait_until("wheel scrolls panel under pointer", || view.title().is_some_and(|s| s.starts_with("nested:") && s != "nested:0"));
+    browser.close_tab(browser.active_tab().unwrap().id);
+}
+
+#[cfg(feature = "cef")]
+fn drag_input(browser: &Rc<Browser>, fixture: &Fixture) {
+    let view = browser.add_tab(None, Some(&format!("{}/drag", fixture.base)));
+    wait_until("drag fixture ready", || view.input_surface_ready() && view.title().as_deref() == Some("Paisley native fixture"));
+    view.evaluate_javascript("document.body.innerHTML='<div id=area style=\"position:absolute;left:50px;top:50px;width:300px;height:300px\"></div>';document.getElementById('area').onmousemove=e=>{if(e.buttons===1)document.title='drag held'};document.title='drag ready'");
+    wait_until("drag target ready", || view.title().as_deref() == Some("drag ready"));
+    view.test_drag(100.0,100.0,200.0,200.0);
+    wait_until("drag movement retains left button", || view.title().as_deref() == Some("drag held"));
     browser.close_tab(browser.active_tab().unwrap().id);
 }
