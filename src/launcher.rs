@@ -25,7 +25,7 @@ fn complete_runtime(path: &Path) -> bool {
         && REQUIRED.iter().all(|file| path.join(file).is_file())
         && std::fs::read_to_string(path.join("include/cef_version.h")).is_ok_and(|header| {
             header.lines().any(|line| {
-                line == "#define CEF_VERSION \"156.0.30+g6028375+chromium-156.0.8078.96\""
+                line == "#define CEF_VERSION \"156.0.8+g426920c+chromium-156.0.8078.48\""
             })
         })
 }
@@ -35,7 +35,7 @@ fn resolve_runtime(path: &Path) -> Option<PathBuf> {
     for candidate in [
         path.to_path_buf(),
         path.join("cef_linux_x86_64"),
-        path.join("156.0.30/cef_linux_x86_64"),
+        path.join("156.0.8/cef_linux_x86_64"),
     ] {
         if complete_runtime(&candidate) {
             return candidate.canonicalize().ok();
@@ -50,7 +50,7 @@ fn runtime(executable: &Path) -> io::Result<PathBuf> {
         if let Some(path) = env::var_os(name) {
             return resolve_runtime(Path::new(&path)).ok_or_else(|| {
                 io::Error::other(format!(
-                    "{name} does not name a complete absolute CEF 156.0.30 runtime directory"
+                    "{name} does not name a complete absolute CEF 156.0.8 runtime directory"
                 ))
             });
         }
@@ -67,7 +67,7 @@ fn runtime(executable: &Path) -> io::Result<PathBuf> {
         candidates.push(PathBuf::from(path));
     }
     candidates.into_iter().find_map(|p| resolve_runtime(&p)).ok_or_else(|| io::Error::other(
-        "CEF runtime not found. Install the complete matching CEF 156.0.30 distribution, then set PAISLEY_CEF_RUNTIME to its absolute directory (see docs/CEF_PRERELEASE.md). No WebKit fallback was started."))
+        "CEF runtime not found. Install the complete matching CEF 156.0.8 distribution, then set PAISLEY_CEF_RUNTIME to its absolute directory (see docs/CEF_PRERELEASE.md). No WebKit fallback was started."))
 }
 
 fn prepare_engine(
@@ -114,7 +114,7 @@ fn run() -> io::Result<()> {
         println!(
             "Backend: {}",
             if cfg!(feature = "cef") {
-                "CEF 156.0.30"
+                "CEF 156.0.8"
             } else {
                 "WebKit (deprecated)"
             }
@@ -160,7 +160,7 @@ mod tests {
             std::fs::create_dir_all(path.join("include")).unwrap();
             std::fs::write(
                 path.join("include/cef_version.h"),
-                "#define CEF_VERSION \"156.0.30+g6028375+chromium-156.0.8078.96\"\n",
+                "#define CEF_VERSION \"156.0.8+g426920c+chromium-156.0.8078.48\"\n",
             )
             .unwrap();
             for file in REQUIRED {
@@ -185,7 +185,7 @@ mod tests {
     #[test]
     fn discovers_exact_and_versioned_parent() {
         let f = Fixture::new();
-        let child = f.0.join("156.0.30/cef_linux_x86_64");
+        let child = f.0.join("156.0.8/cef_linux_x86_64");
         f.populate(&child);
         assert_eq!(
             resolve_runtime(&f.0).unwrap(),

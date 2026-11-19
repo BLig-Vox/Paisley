@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0 — CEF media and interaction updates
+
+- Use a codec-enabled CEF 156.0.8 runtime for H.264/AAC playback and enable component updates by default.
+- Preserve popup opener relationships and support external file drops.
+- Older CEF is used than in alpha.6; runtime provenance and limitations are documented.
+
 ## 0.2.0-alpha.6 — Focus, dragging and binary bundle
 
 - Keep CEF focus with the selected GTK content widget, including DevTools.

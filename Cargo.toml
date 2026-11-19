@@ -1,6 +1,6 @@
 [package]
 name = "vox-paisley"
-version = "0.2.0-alpha.6"
+version = "0.2.0"
 edition = "2024"
 default-run = "paisley"
 rust-version = "1.92"
@@ -33,7 +33,7 @@ cef-test-support = ["cef", "cef-gtk/test-support"]
 
 [dependencies]
 paisley-engine-transport = { path = "engine/transport", version = "=0.1.0-alpha.1" }
-cef-gtk = { package = "paisley-cef-gtk", path = "engine/cef-gtk", version = "=0.1.0-alpha.4", optional = true }
+cef-gtk = { package = "paisley-cef-gtk", path = "engine/cef-gtk", version = "=0.1.0-alpha.5", optional = true }
 gtk = { package = "gtk4", version = "0.11", features = ["v4_10"] }
 webkit = { package = "webkit6", version = "0.6" }
 url = "2.5"

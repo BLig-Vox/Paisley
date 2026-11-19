@@ -12,7 +12,7 @@ import tempfile
 import tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
-CEF_VERSION = '#define CEF_VERSION "156.0.30+g6028375+chromium-156.0.8078.96"'
+CEF_VERSION = '#define CEF_VERSION "156.0.8+g426920c+chromium-156.0.8078.48"'
 REQUIRED = ('libcef.so', 'icudtl.dat', 'resources.pak', 'chrome_100_percent.pak',
             'chrome_200_percent.pak', 'v8_context_snapshot.bin', 'chrome-sandbox',
             'locales/en-US.pak', 'include/cef_version.h', 'CREDITS.html', 'archive.json')
@@ -66,7 +66,7 @@ def main():
         ('share/applications/site.blig.Paisley.desktop', ROOT / 'packaging/site.blig.Paisley.desktop', 0o644),
         ('share/icons/hicolor/256x256/apps/site.blig.Paisley.png', ROOT / 'assets/branding/paisley-logo-stand.png', 0o644),
     ])
-    manifest = json.dumps({'version': version, 'cef': '156.0.30',
+    manifest = json.dumps({'version': version, 'cef': '156.0.8',
                            'files': {name: digest(path) for name, path, _ in files}},
                           sort_keys=True, indent=2).encode() + b'\n'
     args.output.parent.mkdir(parents=True, exist_ok=True)

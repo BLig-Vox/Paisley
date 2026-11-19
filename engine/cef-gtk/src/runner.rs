@@ -264,7 +264,7 @@ wrap_app! {
             // Route HTTP/proxy challenges to our GTK handler instead of a detached Chrome window.
             command.append_switch(Some(&"disable-chrome-login-prompt".into()));
             command.append_switch(Some(&"no-first-run".into()));
-            if std::env::var("PAISLEY_CEF_COMPONENT_UPDATES").as_deref() == Ok("1") {
+            if std::env::var("PAISLEY_CEF_COMPONENT_UPDATES").as_deref() != Ok("0") {
                 command.append_switch_with_value(Some(&"component-updater".into()), Some(&"fast-update".into()));
             } else {
                 command.append_switch(Some(&"disable-component-update".into()));

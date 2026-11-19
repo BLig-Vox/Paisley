@@ -1,4 +1,6 @@
-# CEF backend status: 0.2.0-alpha.6
+> Runtime: OBS-Rust codec-enabled CEF 156.0.8 (Chromium 156.0.8078.48), older than alpha.6. The standard official CEF download lacks H.264/AAC. Use the codec-enabled release archive and its published checksum: https://github.com/obs-rust/cef/releases/tag/8078. Component updates are enabled by default; set `PAISLEY_CEF_COMPONENT_UPDATES=0` to disable them. On Linux Widevine may require a restart after download.
+
+# CEF backend status: 0.2.0
 
 ## Backend selection
 
@@ -10,7 +12,7 @@ Servo is not included.
 
 ## Building and launching CEF
 
-Linux x86_64 only has been exercised. Install the normal Paisley build dependencies, GTK4 4.12+ and the protobuf compiler (`protoc`). The pinned Rust dependency is cef-rs 156.6.0, whose matching CEF is 156.0.30 (Chromium 156.0.8078.96).
+Linux x86_64 only has been exercised. Install the normal Paisley build dependencies, GTK4 4.12+ and the protobuf compiler (`protoc`). The pinned Rust dependency is cef-rs 156.1.0, whose matching CEF is 156.0.8 (Chromium 156.0.8078.48).
 
 Download/extract that exact minimal CEF distribution using cef-rs's `download-cef` tooling, which also writes its required `archive.json`. `CEF_PATH` must point to that distribution or its versioned parent. A build with no `CEF_PATH` lets cef-rs fetch the runtime into its build directory, but Cargo does not install it with the executable. The runtime uses roughly 1.9 GB disk space. Its library, resource packs, locale directory, ICU data, V8 snapshot and sandbox are all required; copying `libcef.so` alone is insufficient.
 
@@ -44,7 +46,7 @@ the upstream download tool. No code is downloaded automatically at startup.
 Use `paisley --backend-info` to inspect selection; `paisley --help` works even
 when the runtime is missing.
 
-Run as an ordinary desktop user with Chromium's sandbox available. Follow CEF's Linux sandbox installation requirements for the exact distribution and operating system. Production builds do not accept the test-only sandbox override. The root Bot Screen tests used an explicit debug/test-support exception; that is not evidence of a validated secure non-root installation. The alpha.6 GitHub binary archive includes the matching CEF runtime and both executables; system GTK libraries and fonts remain required. No runtime is downloaded at startup.
+Run as an ordinary desktop user with Chromium's sandbox available. Follow CEF's Linux sandbox installation requirements for the exact distribution and operating system. Production builds do not accept the test-only sandbox override. The root Bot Screen tests used an explicit debug/test-support exception; that is not evidence of a validated secure non-root installation. The 0.2.0 GitHub binary archive includes the matching CEF runtime and both executables; system GTK libraries and fonts remain required. No runtime is downloaded at startup.
 
 ## Verified behavior
 
@@ -52,16 +54,14 @@ The recorded native suite passed 60 tab creation/close cycles with checkpoints a
 
 Native tests cover shared/private cookies, text/PNG/ZIP/PDF downloads, pauses and closed source tabs, clear-site-data, strict cookies/WebRTC, right-side DevTools, script dialogs, basic HTTP authentication, Unicode file upload and dropdowns. Japanese, Chinese and emoji text displayed; IME composition is not implemented. See [the evidence ledger](testing/2026-11-17/cef-progress.md) for exact builds, measurements and limits.
 
-Netflix is not a supported playback target for the bundled build. The bundle does not include Widevine. For local development, set `PAISLEY_CEF_COMPONENT_UPDATES=1` to opt in to CEF's component updater. On Linux, restart Paisley after the updater installs Widevine. Component updates stay disabled by default.
-
-With the component installed, a local capability probe reported Widevine support for AV1, VP9, and Opus, but not for H.264 or AAC with the stock CEF build. Netflix still returned `M7701-1003` on a movie. See [CEF's codec guidance](https://github.com/chromiumembedded/cef/issues/3559) and [Netflix's playback guidance](https://help.netflix.com/en/node/27451).
+The codec-enabled CEF runtime played a Netflix movie and a YouTube livestream in desktop testing. Widevine is obtained through the component updater and may require a restart. The runtime does not include Widevine. Audible output was not verified on the test desktop.
 
 ### Testing a codec-enabled CEF build
 
 Build the same CEF revision on a dedicated Linux x86_64 builder. See [CEF's Linux build setup](https://github.com/chromiumembedded/cef/blob/master/docs/automated_build_setup.md#linux-configuration) for dependencies and resource requirements. Do not substitute a different CEF patch version or publish the proprietary-codec runtime without reviewing distribution rights.
 
 ```sh
-cef_pin=6028375a4532fb89d23b58635f5c0d3a82c93959
+cef_pin=426920c33ef22551e0b8f48cf343d623ac25642d
 curl -fsSL "https://raw.githubusercontent.com/chromiumembedded/cef/$cef_pin/tools/automate/automate-git.py" -o automate-git.py
 export GN_DEFINES="is_official_build=true use_sysroot=true symbol_level=1 is_cfi=false use_thin_lto=false chrome_pgo_phase=0 proprietary_codecs=true ffmpeg_branding=Chrome"
 python3 automate-git.py --download-dir="$HOME/paisley-cef-codecs" --branch=8078 \
@@ -82,7 +82,7 @@ python3 -m http.server 18762 --bind 127.0.0.1 --directory tests/fixtures
 - Desktop-video permission prompts are wired with cancellation and a deny default; full capture compatibility is unverified. Camera, microphone, capture audio and website notification integration remain incomplete. Existing WebKit feature documentation does not imply CEF parity.
 - HiDPI screen scale is not implemented correctly. Use a scale-1 display for preview testing.
 - IME composition is not wired; text rendering is not proof of input-method support.
-- New-window handling creates independent HTTP(S) tabs and does not preserve `window.opener`/WindowProxy semantics. Some OAuth flows may fail.
+- Popup behavior was tested with crates.io GitHub sign-in; other OAuth flows may vary.
 - Source/Cargo installations still require a separate matching runtime. Secure non-root deployment has not been validated on Bot Screen, which runs as root.
 - Native download fsync runs on the GTK thread and can briefly stall the interface. Interrupted/cancelled partials are removed when terminal state is handled; an abrupt whole-application/OS crash may leave a private staging directory requiring manual cleanup.
 - Flatpak file portal support and fractional/HiDPI dropdown placement are not verified.

@@ -1,6 +1,6 @@
 [package]
 name = "paisley-cef-gtk"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 edition = "2024"
 license = "MPL-2.0"
 readme = "README.md"
@@ -17,7 +17,8 @@ default = []
 test-support = []
 
 [dependencies]
-cef = { version = "=156.6.0", default-features = false, features = ["sandbox"] }
+cef-dll-sys = "=156.1.0"
+cef = { version = "=156.1.0", default-features = false, features = ["sandbox"] }
 libc = "0.2"
 paisley-engine-transport = { path = "../transport", version = "=0.1.0-alpha.1" }
 gio = "0.22"

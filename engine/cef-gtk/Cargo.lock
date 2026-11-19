@@ -168,9 +168,9 @@ dependencies = [
 
 [[package]]
 name = "cef"
-version = "156.6.0+156.0.30"
+version = "156.1.0+156.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ccf965a472527fea5b7fc508ae3dca5115a1d8f8534558fe3aa8d8712fceeec9"
+checksum = "fb823e721b3ea203f4635e71532db2b010696c074518eb4f6154fd7f47fc6fcb"
 dependencies = [
  "cef-dll-sys",
  "libloading",
@@ -180,9 +180,9 @@ dependencies = [
 
 [[package]]
 name = "cef-dll-sys"
-version = "156.6.0+156.0.30"
+version = "156.1.0+156.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d35a4bcb237ea9c8cb88f2e66f63394fd0321ece6f1a74be7c0354f115e1a096"
+checksum = "33767687af821e69e1c90667567dd98db581e57f268fa532ef358040c91f9c86"
 dependencies = [
  "anyhow",
  "cc",
@@ -1194,10 +1194,11 @@ checksum = "384b8ab6d37215f3c5301a95a4accb5d64aa607f1fcb26a11b5303878451b4fe"
 
 [[package]]
 name = "paisley-cef-gtk"
-version = "0.1.0-alpha.3"
+version = "0.1.0-alpha.5"
 dependencies = [
  "async-channel",
  "cef",
+ "cef-dll-sys",
  "gio",
  "glib",
  "gtk4",
