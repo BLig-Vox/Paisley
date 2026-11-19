@@ -62,10 +62,43 @@ struct ViewState {
     strict: Arc<std::sync::atomic::AtomicBool>,
     dialogs: Arc<Mutex<dialogs::Dialogs>>,
     popup: Arc<Mutex<ipc::PopupState>>,
+    drag: Arc<Mutex<Option<LocalDrag>>>,
+}
+struct LocalDrag {
+    data: DragData,
+    allowed: DragOperationsMask,
+    operation: DragOperationsMask,
+    entered: bool,
 }
 wrap_render_handler! {
     struct Paint { state:ViewState }
     impl RenderHandler {
+        fn start_dragging(
+            &self,
+            _browser: Option<&mut Browser>,
+            data: Option<&mut DragData>,
+            allowed: DragOperationsMask,
+            _x: i32,
+            _y: i32,
+        ) -> i32 {
+            let Some(data) = data.and_then(|data| ImplDragData::clone(data)) else {
+                return 0;
+            };
+            data.reset_file_contents();
+            *self.state.drag.lock().unwrap() = Some(LocalDrag {
+                data,
+                allowed,
+                operation: DragOperationsMask::default(),
+                entered: false,
+            });
+            1
+        }
+
+        fn update_drag_cursor(&self, _browser: Option<&mut Browser>, operation: DragOperationsMask) {
+            if let Some(drag) = self.state.drag.lock().unwrap().as_mut() {
+                drag.operation = operation;
+            }
+        }
         fn on_popup_show(&self,_browser:Option<&mut Browser>,show:i32){
             if cfg!(feature="test-support") && std::env::var_os("PAISLEY_NATIVE_POPUP").is_some(){eprintln!("POPUP native show {show}");}
             let state={let mut popup=self.state.popup.lock().unwrap();popup.serial=popup.serial.wrapping_add(1);popup.visible=show!=0;popup.clone()};
@@ -585,6 +618,7 @@ fn run(args: Vec<String>, main_args: Args, mut app: App) {
                         strict: strict_policy.clone(),
                         dialogs: Default::default(),
                         popup: Default::default(),
+                        drag: Default::default(),
                     };
                     let info = WindowInfo::default().set_as_windowless(0);
                     let settings = BrowserSettings {
@@ -649,6 +683,7 @@ fn run(args: Vec<String>, main_args: Args, mut app: App) {
                     strict: strict_policy.clone(),
                     dialogs: Default::default(),
                     popup: Default::default(),
+                    drag: Default::default(),
                 };
                 let info = WindowInfo::default().set_as_windowless(0);
                 let settings = BrowserSettings {
@@ -749,10 +784,18 @@ fn handle(page: &mut Page, action: Option<Action>) {
             *page.state.blocking.lock().unwrap() = policy;
         }
         Some(Action::KeyPress(key)) => {
+            if key.key == "Escape" && finish_local_drag(page, false) {
+                return;
+            }
             key_event(page, &key.key, key.key_code, key.modifiers, false)
         }
         Some(Action::KeyRelease(key)) => {
             key_event(page, &key.key, key.key_code, key.modifiers, true)
+        }
+        Some(Action::StopLoading(_)) => {
+            if !finish_local_drag(page, false) {
+                page.browser.stop_load();
+            }
         }
         Some(Action::Reload(_)) => page.browser.reload(),
         Some(Action::GoBack(_)) => page.browser.go_back(),
@@ -803,6 +846,9 @@ fn handle(page: &mut Page, action: Option<Action>) {
             }
         }
         Some(Action::Focused(focused)) => {
+            if !focused {
+                finish_local_drag(page, false);
+            }
             if let Some(host) = page.browser.host() {
                 host.set_focus(focused as i32);
             }
@@ -821,6 +867,9 @@ fn handle(page: &mut Page, action: Option<Action>) {
         }
         Some(Action::Motion(pos)) => {
             page.pointer = (pos.x as i32, pos.y as i32);
+            if move_local_drag(page) {
+                return;
+            }
             if let Some(host) = page.browser.host() {
                 host.send_mouse_move_event(
                     Some(&MouseEvent {
@@ -834,14 +883,19 @@ fn handle(page: &mut Page, action: Option<Action>) {
             }
         }
         Some(Action::ButtonPress(pos)) => {
+            if pos.button == 1 {
+                finish_local_drag(page, false);
+            }
             page.pointer = (pos.x as i32, pos.y as i32);
             page.mouse_buttons |= mouse_button_flag(pos.button);
-            mouse(page, pos.button, pos.x, pos.y, false)
+            mouse(page, pos.button, pos.x, pos.y, false, pos.click_count)
         }
         Some(Action::ButtonRelease(pos)) => {
             page.pointer = (pos.x as i32, pos.y as i32);
             page.mouse_buttons &= !mouse_button_flag(pos.button);
-            mouse(page, pos.button, pos.x, pos.y, true)
+            if pos.button != 1 || !finish_local_drag(page, true) {
+                mouse(page, pos.button, pos.x, pos.y, true, pos.click_count);
+            }
         }
         Some(Action::Scroll(scroll)) => {
             if let Some(host) = page.browser.host() {
@@ -855,10 +909,73 @@ fn handle(page: &mut Page, action: Option<Action>) {
         _ => {}
     }
 }
+fn drag_pointer(page: &Page) -> (MouseEvent, bool) {
+    let (x, y) = page.pointer;
+    let (width, height) = *page.state.size.lock().unwrap();
+    (
+        MouseEvent {
+            x,
+            y,
+            modifiers: page.mouse_buttons,
+        },
+        x >= 0 && y >= 0 && x < width && y < height,
+    )
+}
+fn move_local_drag(page: &Page) -> bool {
+    let Some(host) = page.browser.host() else {
+        return false;
+    };
+    let (event, inside) = drag_pointer(page);
+    let (allowed, was_inside, mut data) = {
+        let mut state = page.state.drag.lock().unwrap();
+        let Some(drag) = state.as_mut() else {
+            return false;
+        };
+        let was_inside = drag.entered;
+        drag.entered = inside;
+        if !inside {
+            drag.operation = DragOperationsMask::default();
+        }
+        (
+            drag.allowed,
+            was_inside,
+            (inside && !was_inside).then(|| Clone::clone(&drag.data)),
+        )
+    };
+    if inside {
+        if let Some(data) = data.as_mut() {
+            host.drag_target_drag_enter(Some(data), Some(&event), allowed);
+        }
+        host.drag_target_drag_over(Some(&event), allowed);
+    } else if was_inside {
+        host.drag_target_drag_leave();
+    }
+    true
+}
+fn finish_local_drag(page: &Page, released: bool) -> bool {
+    let Some(drag) = page.state.drag.lock().unwrap().take() else {
+        return false;
+    };
+    if let Some(host) = page.browser.host() {
+        let (event, inside) = drag_pointer(page);
+        let mut operation = DragOperationsMask::default();
+        if drag.entered {
+            if released && inside && drag.operation != operation {
+                host.drag_target_drop(Some(&event));
+                operation = drag.operation;
+            } else {
+                host.drag_target_drag_leave();
+            }
+        }
+        host.drag_source_ended_at(event.x, event.y, operation);
+        host.drag_source_system_drag_ended();
+    }
+    true
+}
 fn mouse_button_flag(button: u32) -> u32 {
     match button { 1 => 1 << 4, 2 => 1 << 5, 3 => 1 << 6, _ => 0 }
 }
-fn mouse(page: &Page, button: u32, x: f64, y: f64, up: bool) {
+fn mouse(page: &Page, button: u32, x: f64, y: f64, up: bool, click_count: i32) {
     if let Some(host) = page.browser.host() {
         let kind = match button {
             2 => MouseButtonType::MIDDLE,
@@ -874,7 +991,7 @@ fn mouse(page: &Page, button: u32, x: f64, y: f64, up: bool) {
             }),
             kind,
             up as i32,
-            1,
+            click_count.max(1),
         );
     }
 }

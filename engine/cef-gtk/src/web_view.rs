@@ -191,6 +191,15 @@ mod imp {
             });
             self.obj().add_controller(motion_controller);
 
+            let click_count = std::rc::Rc::new(std::cell::Cell::new(1));
+            let click = gtk::GestureClick::new();
+            click.set_propagation_phase(gtk::PropagationPhase::Capture);
+            let press_count = click_count.clone();
+            click.connect_pressed(move |_, count, _, _| press_count.set(count));
+            let release_count = click_count.clone();
+            click.connect_released(move |_, count, _, _| release_count.set(count));
+            self.obj().add_controller(click);
+
             let legacy_controller = gtk::EventControllerLegacy::new();
             let obj_weak = self.obj().downgrade();
             legacy_controller.connect_event(move |controller, event| {
@@ -207,16 +216,17 @@ mod imp {
                                 controller.widget().expect("Controller widget").grab_focus();
                                 if let Some(button_event) = event.downcast_ref::<gdk::ButtonEvent>()
                                 {
-                                    servo.button_press(button_event.button(), x, y);
+                                    servo.button_press(button_event.button(), x, y, click_count.replace(1));
                                 }
                             }
                             gdk::EventType::ButtonRelease => {
                                 if let Some(button_event) = event.downcast_ref::<gdk::ButtonEvent>()
                                 {
-                                    servo.button_release(button_event.button(), x, y);
+                                    servo.button_release(button_event.button(), x, y, click_count.replace(1));
                                 }
                             }
                             gdk::EventType::TouchBegin => {
+                                click_count.set(1);
                                 servo.touch_begin(x, y);
                                 controller.widget().expect("Controller widget").grab_focus();
                             }
@@ -224,6 +234,7 @@ mod imp {
                                 servo.touch_update(x, y);
                             }
                             gdk::EventType::TouchEnd => {
+                                click_count.set(1);
                                 servo.touch_end(x, y);
                             }
                             gdk::EventType::TouchCancel => {
@@ -536,8 +547,8 @@ impl WebView {
         self.grab_focus();
         if let Some(runner) = self.imp().servo_runner.borrow().as_ref() {
             let scale = self.device_scale();
-            runner.button_press(1, x * scale, y * scale);
-            runner.button_release(1, x * scale, y * scale);
+            runner.button_press(1, x * scale, y * scale, 1);
+            runner.button_release(1, x * scale, y * scale, 1);
         }
     }
     #[cfg(feature = "test-support")]
@@ -553,9 +564,9 @@ impl WebView {
         if let Some(runner) = self.imp().servo_runner.borrow().as_ref() {
             let scale = self.device_scale();
             runner.motion(x * scale, y * scale);
-            runner.button_press(1, x * scale, y * scale);
+            runner.button_press(1, x * scale, y * scale, 1);
             runner.motion(end_x * scale, end_y * scale);
-            runner.button_release(1, end_x * scale, end_y * scale);
+            runner.button_release(1, end_x * scale, end_y * scale, 1);
         }
     }
     #[cfg(feature = "test-support")]
@@ -740,7 +751,9 @@ impl WebView {
     }
 
     pub fn stop_loading(&self) {
-        self.evaluate_javascript("window.stop()");
+        if let Some(runner) = self.imp().servo_runner.borrow().as_ref() {
+            runner.stop_loading();
+        }
         self.set_is_loading(false);
     }
 

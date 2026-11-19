@@ -52,6 +52,8 @@ The recorded native suite passed 60 tab creation/close cycles with checkpoints a
 
 Native tests cover shared/private cookies, text/PNG/ZIP/PDF downloads, pauses and closed source tabs, clear-site-data, strict cookies/WebRTC, right-side DevTools, script dialogs, basic HTTP authentication, Unicode file upload and dropdowns. Japanese, Chinese and emoji text displayed; IME composition is not implemented. See [the evidence ledger](testing/2026-11-17/cef-progress.md) for exact builds, measurements and limits.
 
+Netflix is not a supported playback target. The bundled CEF runtime does not include Widevine, and Netflix's [M7701-1003 guidance](https://help.netflix.com/en/node/27451) recommends using a supported browser for protected playback.
+
 ## Known gaps
 
 - Desktop-video permission prompts are wired with cancellation and a deny default; full capture compatibility is unverified. Camera, microphone, capture audio and website notification integration remain incomplete. Existing WebKit feature documentation does not imply CEF parity.

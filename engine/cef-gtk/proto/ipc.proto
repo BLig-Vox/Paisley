@@ -51,6 +51,7 @@ message ServoAction {
     ClearSiteData clear_site_data = 38;
     bool strict_privacy = 39;
     bool focused = 40;
+    bool stop_loading = 101;
   }
 }
 
@@ -157,12 +158,14 @@ message ButtonPress {
   uint32 button = 1;
   double x = 2;
   double y = 3;
+  int32 click_count = 4;
 }
 
 message ButtonRelease {
   uint32 button = 1;
   double x = 2;
   double y = 3;
+  int32 click_count = 4;
 }
 
 enum Location {

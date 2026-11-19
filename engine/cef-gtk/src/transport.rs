@@ -327,6 +327,13 @@ impl PageRunner {
         });
     }
 
+    pub fn stop_loading(&self) {
+        self.send_action(ServoAction {
+            webview_id: 0,
+            action: Some(servo_action::Action::StopLoading(true)),
+        });
+    }
+
     pub fn reload(&self) {
         self.send_action(ServoAction {
             webview_id: 0,
@@ -368,20 +375,30 @@ impl PageRunner {
         });
     }
 
-    pub fn button_press(&self, button: u32, x: f64, y: f64) {
+    pub fn button_press(&self, button: u32, x: f64, y: f64, click_count: i32) {
         self.send_action(ServoAction {
             webview_id: 0,
             action: Some(servo_action::Action::ButtonPress(
-                crate::proto_ipc::ButtonPress { button, x, y },
+                crate::proto_ipc::ButtonPress {
+                    button,
+                    x,
+                    y,
+                    click_count,
+                },
             )),
         });
     }
 
-    pub fn button_release(&self, button: u32, x: f64, y: f64) {
+    pub fn button_release(&self, button: u32, x: f64, y: f64, click_count: i32) {
         self.send_action(ServoAction {
             webview_id: 0,
             action: Some(servo_action::Action::ButtonRelease(
-                crate::proto_ipc::ButtonRelease { button, x, y },
+                crate::proto_ipc::ButtonRelease {
+                    button,
+                    x,
+                    y,
+                    click_count,
+                },
             )),
         });
     }
