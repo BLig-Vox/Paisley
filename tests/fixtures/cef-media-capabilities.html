@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>CEF media capabilities</title>
+<h1>CEF media capabilities</h1>
+<pre id="results" aria-live="polite"></pre>
+<script>
+const probes = [
+    ['H.264', 'video/mp4; codecs="avc1.640028"', 'videoCapabilities', 'cenc'],
+    ['AAC', 'audio/mp4; codecs="mp4a.40.2"', 'audioCapabilities', 'cenc'],
+    ['VP9', 'video/webm; codecs="vp09.00.10.08"', 'videoCapabilities', 'webm'],
+    ['Opus', 'audio/webm; codecs="opus"', 'audioCapabilities', 'webm'],
+];
+
+async function probe([name, contentType, capability, initDataType]) {
+    const mediaSource = globalThis.MediaSource?.isTypeSupported(contentType) ?? false;
+    let widevine = false;
+    try {
+        await navigator.requestMediaKeySystemAccess('com.widevine.alpha', [
+            { initDataTypes: [initDataType], [capability]: [{ contentType }] },
+        ]);
+        widevine = true;
+    } catch {
+        widevine = false;
+    }
+    return name + ': MediaSource=' + mediaSource + ', Widevine=' + widevine;
+}
+
+Promise.all(probes.map(probe)).then(results => {
+    document.getElementById('results').textContent = results.join('\n');
+});
+</script>
+</html>

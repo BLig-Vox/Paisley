@@ -1715,11 +1715,20 @@ This describes transport security, not the trustworthiness of the website.",
     }
 
     fn add_tab(self: &Rc<Self>, related: Option<&View>, initial: Option<&str>) -> View {
+        let (view, origins) = self.create_view(related);
+        self.add_view_tab(view, origins, initial)
+    }
+
+    fn add_view_tab(
+        self: &Rc<Self>,
+        view: View,
+        notification_origins: Vec<String>,
+        initial: Option<&str>,
+    ) -> View {
         #[cfg(feature = "cef")]
         self.start_native_session();
         let id = self.next_id.get();
         self.next_id.set(id + 1);
-        let (view, notification_origins) = self.create_view(related);
         view.set_hexpand(true);
         view.set_vexpand(true);
         let error = gtk::Label::builder()
@@ -2146,11 +2155,18 @@ This describes transport security, not the trustworthiness of the website.",
             }
         });
         let weak = Rc::downgrade(self);
-        view.connect_create_web_view(move |_, uri| {
-            if let Some(browser) = weak.upgrade()
-                && super::external_link(uri).is_some()
-            {
-                browser.add_tab(None, Some(uri));
+        view.connect_create_web_view(move |opener, popup_id| {
+            if let Some(browser) = weak.upgrade() {
+                let (popup, origins) = browser.create_view(None);
+                if popup.attach_popup(opener, popup_id) {
+                    browser.add_view_tab(popup, origins, None);
+                }
+            }
+        });
+        let weak = Rc::downgrade(self);
+        view.connect_popup_closed(move || {
+            if let Some(browser) = weak.upgrade() {
+                browser.close_tab(id);
             }
         });
         let weak = Rc::downgrade(self);

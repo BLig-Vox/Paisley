@@ -242,6 +242,23 @@ impl PageRunner {
     pub fn inspector(config_dir: Option<&str>, temporary: bool, target: u64) -> Self {
         Self::with_target(config_dir, temporary, target)
     }
+    pub fn attach_popup(&self, id: u64) -> Option<Self> {
+        let engine = self.engine.clone();
+        let mut routes = engine.routes.borrow_mut();
+        if id < (1 << 63) || routes.contains_key(&id) {
+            return None;
+        }
+        let inbox = Rc::new(paisley_engine_transport::mailbox::Mailbox::new());
+        routes.insert(id, inbox.clone());
+        drop(routes);
+        let runner = Self { engine, id, event_receiver: inbox, closing: Cell::new(false) };
+        runner.send_action(ServoAction {
+            webview_id: 0,
+            action: Some(servo_action::Action::AttachPopup(true)),
+        });
+        Some(runner)
+    }
+
     fn with_target(config_dir: Option<&str>, temporary: bool, target: u64) -> Self {
         let engine = EngineProcess::acquire(config_dir, temporary);
         let id = engine.next_id.get();
@@ -361,6 +378,18 @@ impl PageRunner {
             action: Some(servo_action::Action::Resize(crate::proto_ipc::Resize {
                 width,
                 height,
+            })),
+        });
+    }
+
+    pub fn file_drag(&self, phase: crate::proto_ipc::file_drag::Phase, x: f64, y: f64, paths: Vec<String>) {
+        self.send_action(ServoAction {
+            webview_id: 0,
+            action: Some(servo_action::Action::FileDrag(crate::proto_ipc::FileDrag {
+                phase: phase.into(),
+                x,
+                y,
+                paths,
             })),
         });
     }

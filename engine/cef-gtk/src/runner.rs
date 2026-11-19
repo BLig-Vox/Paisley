@@ -50,9 +50,17 @@ impl Events {
         }
     }
 }
+struct CreatedPopup {
+    browser: Browser,
+    state: ViewState,
+    opener: Events,
+}
+
 #[derive(Clone)]
 struct ViewState {
     events: Events,
+    popup_sender: mpsc::Sender<CreatedPopup>,
+    opener: Option<Events>,
     size: Arc<Mutex<(i32, i32)>>,
     closed: Arc<std::sync::atomic::AtomicBool>,
     blocking: Arc<Mutex<ipc::Blocking>>,
@@ -170,9 +178,59 @@ wrap_load_handler! {
 wrap_life_span_handler! {
     struct Lifetime { state:ViewState }
     impl LifeSpanHandler {
-        fn on_before_popup(&self,_browser:Option<&mut Browser>,_frame:Option<&mut Frame>,_popup_id:i32,url:Option<&CefString>,_target:Option<&CefString>,_disposition:WindowOpenDisposition,gesture:i32,_features:Option<&PopupFeatures>,_info:Option<&mut WindowInfo>,_client:Option<&mut Option<Client>>,_settings:Option<&mut BrowserSettings>,_extra:Option<&mut Option<DictionaryValue>>,_access:Option<&mut i32>)->i32{
-            if gesture!=0 {if let Some(url)=url.map(ToString::to_string).filter(|s|url::Url::parse(s).is_ok_and(|u|matches!(u.scheme(),"http"|"https"))){self.state.events.send(Event::CreateWebView(ipc::CreateWebView{url}));}}
-            1
+        fn on_before_popup(
+            &self,
+            _browser: Option<&mut Browser>,
+            _frame: Option<&mut Frame>,
+            _popup_id: i32,
+            url: Option<&CefString>,
+            _target: Option<&CefString>,
+            _disposition: WindowOpenDisposition,
+            gesture: i32,
+            _features: Option<&PopupFeatures>,
+            info: Option<&mut WindowInfo>,
+            client: Option<&mut Option<Client>>,
+            _settings: Option<&mut BrowserSettings>,
+            _extra: Option<&mut Option<DictionaryValue>>,
+            _access: Option<&mut i32>,
+        ) -> i32 {
+            let url = url.map(ToString::to_string).unwrap_or_default();
+            if gesture == 0 || !(url.is_empty() || url == "about:blank"
+                || url::Url::parse(&url).is_ok_and(|url| matches!(url.scheme(), "http" | "https"))) {
+                return 1;
+            }
+            let (Some(info), Some(client)) = (info, client) else { return 1 };
+            static NEXT_POPUP: std::sync::atomic::AtomicU64 =
+                std::sync::atomic::AtomicU64::new(1 << 63);
+            let id = NEXT_POPUP.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            *info = WindowInfo::default().set_as_windowless(0);
+            let state = ViewState {
+                events: Events { id, output: self.state.events.output.clone() },
+                popup_sender: self.state.popup_sender.clone(),
+                opener: Some(self.state.events.clone()),
+                size: Arc::new(Mutex::new((800, 600))),
+                closed: Default::default(),
+                blocking: Arc::new(Mutex::new(self.state.blocking.lock().unwrap().clone())),
+                top: Default::default(),
+                activity: Default::default(),
+                transfers: self.state.transfers.clone(),
+                strict: self.state.strict.clone(),
+                dialogs: Default::default(),
+                popup: Default::default(),
+                drag: Default::default(),
+            };
+            *client = Some(PageClient::new(state));
+            0
+        }
+
+        fn on_after_created(&self, browser: Option<&mut Browser>) {
+            if let (Some(browser), Some(opener)) = (browser, self.state.opener.as_ref()) {
+                let _ = self.state.popup_sender.send(CreatedPopup {
+                    browser: browser.clone(),
+                    state: self.state.clone(),
+                    opener: opener.clone(),
+                });
+            }
         }
         fn on_before_close(&self,_browser:Option<&mut Browser>){dialogs::cancel(&self.state);self.state.closed.store(true,std::sync::atomic::Ordering::Release);self.state.events.send(Event::ViewClosed(true));}
     }
@@ -206,7 +264,11 @@ wrap_app! {
             // Route HTTP/proxy challenges to our GTK handler instead of a detached Chrome window.
             command.append_switch(Some(&"disable-chrome-login-prompt".into()));
             command.append_switch(Some(&"no-first-run".into()));
-            command.append_switch(Some(&"disable-component-update".into()));
+            if std::env::var("PAISLEY_CEF_COMPONENT_UPDATES").as_deref() == Ok("1") {
+                command.append_switch_with_value(Some(&"component-updater".into()), Some(&"fast-update".into()));
+            } else {
+                command.append_switch(Some(&"disable-component-update".into()));
+            }
             command.append_switch_with_value(Some(&"disk-cache-size".into()),Some(&"67108864".into()));
             command.append_switch_with_value(Some(&"media-cache-size".into()),Some(&"16777216".into()));
         }}
@@ -283,6 +345,7 @@ struct Page {
     inspector: Option<(u64, inspector::Bridge)>,
     pointer: (i32, i32),
     mouse_buttons: u32,
+    external_file_drag: bool,
 }
 pub fn run_if_requested() {
     let args: Vec<String> = std::env::args().collect();
@@ -421,6 +484,7 @@ fn run(args: Vec<String>, main_args: Args, mut app: App) {
     });
     let output = Arc::new(Mutex::new(std::io::stdout()));
     let mut pages: HashMap<u64, Page> = HashMap::new();
+    let (popup_sender, popups) = mpsc::channel::<CreatedPopup>();
     let mut stopping = None;
     let mut strict_privacy = false;
     let strict_policy = Arc::new(std::sync::atomic::AtomicBool::new(false));
@@ -433,6 +497,31 @@ fn run(args: Vec<String>, main_args: Args, mut app: App) {
     let mut last_probe = Instant::now() - Duration::from_secs(5);
     loop {
         do_message_loop_work();
+        for CreatedPopup { browser, state, opener } in popups.try_iter() {
+            if state.closed.load(std::sync::atomic::Ordering::Acquire) {
+                continue;
+            }
+            if stopping.is_some() || pages.len() >= 32
+                || !pages.get(&opener.id).is_some_and(|page| !page.closing)
+            {
+                if let Some(host) = browser.host() {
+                    host.close_browser(1);
+                }
+                continue;
+            }
+            let id = state.events.id;
+            pages.insert(id, Page {
+                browser,
+                state,
+                closing: false,
+                retired: false,
+                inspector: None,
+                pointer: (0, 0),
+                mouse_buttons: 0,
+                external_file_drag: false,
+            });
+            opener.send(Event::CreateWebView(ipc::CreateWebView { popup_id: id }));
+        }
         services.reap();
         let frontend_ids: Vec<_> = pages
             .iter()
@@ -521,6 +610,10 @@ fn run(args: Vec<String>, main_args: Args, mut app: App) {
                 }
             };
             let id = action.webview_id;
+            if matches!(action.action, Some(Action::AttachPopup(_))) && !pages.contains_key(&id) {
+                Events { id, output: output.clone() }.send(Event::ViewClosed(true));
+                continue;
+            }
             if action
                 .action
                 .as_ref()
@@ -609,6 +702,8 @@ fn run(args: Vec<String>, main_args: Args, mut app: App) {
                             id,
                             output: output.clone(),
                         },
+                        popup_sender: popup_sender.clone(),
+                        opener: None,
                         size: Arc::new(Mutex::new((640, 600))),
                         closed: Default::default(),
                         blocking: Default::default(),
@@ -643,6 +738,7 @@ fn run(args: Vec<String>, main_args: Args, mut app: App) {
                                 inspector: Some((*target, bridge)),
                                 pointer: (0, 0),
                                 mouse_buttons: 0,
+                                external_file_drag: false,
                             },
                         );
                     } else {
@@ -674,6 +770,8 @@ fn run(args: Vec<String>, main_args: Args, mut app: App) {
                         id,
                         output: output.clone(),
                     },
+                    popup_sender: popup_sender.clone(),
+                    opener: None,
                     size: Arc::new(Mutex::new((800, 600))),
                     closed: Default::default(),
                     blocking: Default::default(),
@@ -712,6 +810,7 @@ fn run(args: Vec<String>, main_args: Args, mut app: App) {
                             inspector: None,
                             pointer: (0, 0),
                             mouse_buttons: 0,
+                            external_file_drag: false,
                         },
                     );
                 } else {
@@ -865,6 +964,21 @@ fn handle(page: &mut Page, action: Option<Action>) {
                 }
             }
         }
+        Some(Action::AttachPopup(_)) => {
+            if let Some(frame) = page.browser.main_frame() {
+                let url = CefString::from(&frame.url()).to_string();
+                page.state.events.send(Event::UrlChanged(ipc::UrlChanged { url }));
+            }
+            if let Some(host) = page.browser.host() {
+                if let Some(entry) = host.visible_navigation_entry() {
+                    let title = CefString::from(&entry.title()).to_string();
+                    page.state.events.send(Event::TitleChanged(ipc::TitleChanged { title }));
+                }
+                host.invalidate(PaintElementType::VIEW);
+            }
+            publish_tls(&page.browser, &page.state.events);
+        }
+        Some(Action::FileDrag(drag)) => external_file_drag(page, drag),
         Some(Action::Motion(pos)) => {
             page.pointer = (pos.x as i32, pos.y as i32);
             if move_local_drag(page) {
@@ -907,6 +1021,35 @@ fn handle(page: &mut Page, action: Option<Action>) {
             }
         }
         _ => {}
+    }
+}
+fn external_file_drag(page: &mut Page, drag: ipc::FileDrag) {
+    use ipc::file_drag::Phase;
+    let Ok(phase) = Phase::try_from(drag.phase) else { return };
+    let Some(host) = page.browser.host() else { return };
+    if phase == Phase::Leave {
+        if std::mem::take(&mut page.external_file_drag) {
+            host.drag_target_drag_leave();
+        }
+        return;
+    }
+    let event = MouseEvent { x: drag.x as i32, y: drag.y as i32, modifiers: 0 };
+    let operations = cef::sys::cef_drag_operations_mask_t::DRAG_OPERATION_COPY.into();
+    if !page.external_file_drag {
+        if drag.paths.is_empty() || drag.paths.iter().any(|path| !std::path::Path::new(path).is_absolute()) {
+            return;
+        }
+        let Some(mut data) = drag_data_create() else { return };
+        for path in drag.paths {
+            data.add_file(Some(&path.as_str().into()), None);
+        }
+        host.drag_target_drag_enter(Some(&mut data), Some(&event), operations);
+        page.external_file_drag = true;
+    }
+    host.drag_target_drag_over(Some(&event), operations);
+    if phase == Phase::Drop {
+        host.drag_target_drop(Some(&event));
+        page.external_file_drag = false;
     }
 }
 fn drag_pointer(page: &Page) -> (MouseEvent, bool) {

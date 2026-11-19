@@ -52,7 +52,30 @@ The recorded native suite passed 60 tab creation/close cycles with checkpoints a
 
 Native tests cover shared/private cookies, text/PNG/ZIP/PDF downloads, pauses and closed source tabs, clear-site-data, strict cookies/WebRTC, right-side DevTools, script dialogs, basic HTTP authentication, Unicode file upload and dropdowns. Japanese, Chinese and emoji text displayed; IME composition is not implemented. See [the evidence ledger](testing/2026-11-17/cef-progress.md) for exact builds, measurements and limits.
 
-Netflix is not a supported playback target. The bundled CEF runtime does not include Widevine, and Netflix's [M7701-1003 guidance](https://help.netflix.com/en/node/27451) recommends using a supported browser for protected playback.
+Netflix is not a supported playback target for the bundled build. The bundle does not include Widevine. For local development, set `PAISLEY_CEF_COMPONENT_UPDATES=1` to opt in to CEF's component updater. On Linux, restart Paisley after the updater installs Widevine. Component updates stay disabled by default.
+
+With the component installed, a local capability probe reported Widevine support for AV1, VP9, and Opus, but not for H.264 or AAC with the stock CEF build. Netflix still returned `M7701-1003` on a movie. See [CEF's codec guidance](https://github.com/chromiumembedded/cef/issues/3559) and [Netflix's playback guidance](https://help.netflix.com/en/node/27451).
+
+### Testing a codec-enabled CEF build
+
+Build the same CEF revision on a dedicated Linux x86_64 builder. See [CEF's Linux build setup](https://github.com/chromiumembedded/cef/blob/master/docs/automated_build_setup.md#linux-configuration) for dependencies and resource requirements. Do not substitute a different CEF patch version or publish the proprietary-codec runtime without reviewing distribution rights.
+
+```sh
+cef_pin=6028375a4532fb89d23b58635f5c0d3a82c93959
+curl -fsSL "https://raw.githubusercontent.com/chromiumembedded/cef/$cef_pin/tools/automate/automate-git.py" -o automate-git.py
+export GN_DEFINES="is_official_build=true use_sysroot=true symbol_level=1 is_cfi=false use_thin_lto=false chrome_pgo_phase=0 proprietary_codecs=true ffmpeg_branding=Chrome"
+python3 automate-git.py --download-dir="$HOME/paisley-cef-codecs" --branch=8078 \
+  --checkout="$cef_pin" --x64-build --no-debug-build --no-chromium-history \
+  --minimal-distrib-only --build-target=cefsimple
+```
+
+Stage the matching minimal distribution in a separate absolute directory with the same layout as the stock runtime: copy both Release and Resources contents to the runtime root, and retain the include directory. Leave the installed runtime untouched. Start the checkout build using PAISLEY_CEF_RUNTIME pointing to the new directory and the development Widevine opt-in above. Use a separate profile for the first launch.
+
+Serve the local codec probe with the command below. Visit http://127.0.0.1:18762/cef-media-capabilities.html in Paisley. Verify MediaSource and Widevine are both true for H.264 and AAC before using an authenticated Netflix session. Media capability detection is not proof of playback; for Netflix, verify that the movie plays and the timeline advances.
+
+```sh
+python3 -m http.server 18762 --bind 127.0.0.1 --directory tests/fixtures
+```
 
 ## Known gaps
 

@@ -20,6 +20,20 @@ use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use std::sync::OnceLock;
 
+fn local_drop_paths(value: &glib::Value) -> Option<Vec<String>> {
+    let paths: Vec<_> = value
+        .get::<gdk::FileList>()
+        .ok()?
+        .files()
+        .into_iter()
+        .map(|file| {
+            let path = file.path()?;
+            path.to_str().filter(|_| path.is_file()).map(str::to_owned)
+        })
+        .collect::<Option<_>>()?;
+    (!paths.is_empty()).then_some(paths)
+}
+
 const G_LOG_DOMAIN: &str = "ServoGtk";
 
 /// Convert a logical widget coordinate or delta to the device pixels Servo
@@ -65,6 +79,7 @@ mod imp {
         pub temporary_storage: Cell<bool>,
         #[property(get, set, construct_only)]
         pub inspected_page: Cell<u64>,
+        pub is_popup: Cell<bool>,
         pub stopped: Cell<bool>,
         pub script_dialog: RefCell<Option<(u64, glib::WeakRef<gtk::Window>)>>,
         pub auth_dialog: RefCell<Option<(u64, glib::WeakRef<gtk::Window>)>>,
@@ -150,13 +165,10 @@ mod imp {
                     Signal::builder("load-changed")
                         .param_types([LoadEvent::static_type()])
                         .build(),
-                    // Emitted when page content requests a new top-level
-                    // WebView (window.open / target=_blank). The single string
-                    // parameter is the destination URL. A handler is expected
-                    // to open a new window hosting a fresh WebView for it.
                     Signal::builder("create-web-view")
-                        .param_types([String::static_type()])
+                        .param_types([u64::static_type()])
                         .build(),
+                    Signal::builder("popup-closed").build(),
                 ]
             })
         }
@@ -247,6 +259,7 @@ mod imp {
                 glib::Propagation::Proceed
             });
             self.obj().add_controller(legacy_controller);
+            self.obj().install_file_drop();
 
             let focus_controller = gtk::EventControllerFocus::new();
             let obj_weak = self.obj().downgrade();
@@ -484,6 +497,22 @@ impl WebView {
             )
         });
         drop(config);
+        self.install_runner(runner);
+    }
+
+    pub fn attach_popup(&self, opener: &Self, id: u64) -> bool {
+        let runner = {
+            let opener = opener.imp().servo_runner.borrow();
+            opener.as_ref().and_then(|runner| runner.attach_popup(id))
+        };
+        let Some(runner) = runner else { return false };
+        self.imp().is_popup.set(true);
+        self.install_runner(Rc::new(runner));
+        true
+    }
+
+    fn install_runner(&self, runner: Rc<PageRunner>) {
+        let imp = self.imp();
         let generation = imp.renderer_generation.get().wrapping_add(1);
         imp.renderer_generation.set(generation);
         let events = runner.event_receiver();
@@ -750,6 +779,67 @@ impl WebView {
         }
     }
 
+    fn install_file_drop(&self) {
+        use crate::proto_ipc::file_drag::Phase;
+        let target = gtk::DropTarget::new(gdk::FileList::static_type(), gdk::DragAction::COPY);
+        target.set_preload(true);
+        let position = Rc::new(Cell::new(None));
+        let entered = Rc::new(Cell::new(false));
+        let send = {
+            let obj = self.downgrade();
+            Rc::new(move |phase, x, y, paths| {
+                let Some(obj) = obj.upgrade() else { return false };
+                let runner = obj.imp().servo_runner.borrow();
+                let Some(runner) = runner.as_ref() else { return false };
+                let scale = obj.device_scale();
+                runner.file_drag(phase, logical_to_device(x, scale), logical_to_device(y, scale), paths);
+                true
+            })
+        };
+        let hover = {
+            let send = send.clone();
+            let entered = entered.clone();
+            let position = position.clone();
+            Rc::new(move |target: &gtk::DropTarget, x, y| {
+                position.set(Some((x, y)));
+                if entered.get() {
+                    send(Phase::Move, x, y, Vec::new());
+                } else if let Some(paths) = target.value().as_ref().and_then(local_drop_paths) {
+                    entered.set(send(Phase::Move, x, y, paths));
+                }
+                gdk::DragAction::COPY
+            })
+        };
+        let on_enter = hover.clone();
+        target.connect_enter(move |target, x, y| on_enter(target, x, y));
+        let on_motion = hover.clone();
+        target.connect_motion(move |target, x, y| on_motion(target, x, y));
+        let latest_position = position.clone();
+        target.connect_value_notify(move |target| {
+            if let Some((x, y)) = latest_position.get() {
+                hover(target, x, y);
+            }
+        });
+        let leave_entered = entered.clone();
+        let leave_send = send.clone();
+        target.connect_leave(move |_| {
+            position.set(None);
+            if leave_entered.replace(false) {
+                leave_send(Phase::Leave, 0.0, 0.0, Vec::new());
+            }
+        });
+        target.connect_drop(move |_, value, x, y| {
+            if entered.replace(false) {
+                send(Phase::Drop, x, y, Vec::new())
+            } else if let Some(paths) = local_drop_paths(value) {
+                send(Phase::Drop, x, y, paths)
+            } else {
+                false
+            }
+        });
+        self.add_controller(target);
+    }
+
     pub fn stop_loading(&self) {
         if let Some(runner) = self.imp().servo_runner.borrow().as_ref() {
             runner.stop_loading();
@@ -821,24 +911,22 @@ impl WebView {
         )
     }
 
-    /// Connect to the `create-web-view` signal, emitted when page content
-    /// requests a new top-level web view (`window.open` / `target=_blank`).
-    ///
-    /// The handler receives the destination URL and is expected to open a new
-    /// window hosting a fresh [`WebView`] loading it. Because the engine runs
-    /// one view per subprocess, the auxiliary view Servo created is not
-    /// rendered here; this signal lets the embedder recreate the popup as a
-    /// real, fully functional window.
-    pub fn connect_create_web_view<F: Fn(&Self, &str) + 'static>(
+    pub fn connect_create_web_view<F: Fn(&Self, u64) + 'static>(
         &self,
-        f: F,
+        callback: F,
     ) -> glib::SignalHandlerId {
         self.connect_closure(
             "create-web-view",
             false,
-            glib::closure_local!(move |obj: &Self, url: String| {
-                f(obj, &url);
-            }),
+            glib::closure_local!(move |view: &Self, id: u64| callback(view, id)),
+        )
+    }
+
+    pub fn connect_popup_closed(&self, callback: impl Fn() + 'static) -> glib::SignalHandlerId {
+        self.connect_closure(
+            "popup-closed",
+            false,
+            glib::closure_local!(move |_: &Self| callback()),
         )
     }
 
@@ -1325,7 +1413,8 @@ impl WebView {
         match event_type {
             servo_event::Event::ViewClosed(_) => {
                 self.shutdown();
-                self.emit_by_name::<()>("renderer-terminated", &[]);
+                let signal = if self.imp().is_popup.get() { "popup-closed" } else { "renderer-terminated" };
+                self.emit_by_name::<()>(signal, &[]);
             }
             servo_event::Event::PageError(error) => {
                 if error.unavailable {
@@ -1540,7 +1629,7 @@ impl WebView {
                 self.show_permission_dialog(request);
             }
             servo_event::Event::CreateWebView(create) => {
-                self.emit_by_name::<()>("create-web-view", &[&create.url]);
+                self.emit_by_name::<()>("create-web-view", &[&create.popup_id]);
             }
             servo_event::Event::ContextMenuRequest(request) => {
                 self.show_context_menu(request);
