@@ -311,14 +311,16 @@ mod imp {
             let scroll_controller =
                 gtk::EventControllerScroll::new(gtk::EventControllerScrollFlags::BOTH_AXES);
             let obj_weak = self.obj().downgrade();
-            scroll_controller.connect_scroll(move |_, delta_x, delta_y| {
+            scroll_controller.connect_scroll(move |controller, delta_x, delta_y| {
                 if let Some(obj) = obj_weak.upgrade() {
                     let imp = obj.imp();
                     if let Some(servo) = imp.servo_runner.borrow().as_ref() {
                         let scale = obj.device_scale();
+                        // Surface deltas are pixels; the runner converts wheel units using 40 pixels per step.
+                        let unit_scale = if controller.unit() == gtk::gdk::ScrollUnit::Surface { 1.0 / 40.0 } else { 1.0 };
                         servo.scroll(
-                            logical_to_device(delta_x, scale),
-                            logical_to_device(delta_y, scale),
+                            logical_to_device(delta_x * unit_scale, scale),
+                            logical_to_device(delta_y * unit_scale, scale),
                         );
                     }
                 }
