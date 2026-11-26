@@ -1,3 +1,4 @@
+pub mod native_extensions;
 pub mod bookmark_transfer;
 pub mod download_history;
 pub mod library;

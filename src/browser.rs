@@ -2138,6 +2138,14 @@ This describes transport security, not the trustworthiness of the website.",
             if let Some(browser) = weak.upgrade()
                 && let Some(tab) = browser.tab(id)
             {
+                if matches!(event, cef_gtk::LoadEvent::Finished)
+                    && !browser.profile.private && !tab.error.is_visible()
+                    && let Some(uri) = tab.view.uri()
+                {
+                    for script in paisley::native_extensions::scripts(&browser.profile.data_dir, &uri) {
+                        tab.view.evaluate_javascript(&script);
+                    }
+                }
                 match event {
                     cef_gtk::LoadEvent::Started => {
                         tab.committed.set(false);
